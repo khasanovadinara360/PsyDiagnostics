@@ -1,0 +1,188 @@
+﻿<UserControl x:Class="PsyDiagnostics.Views.ParticipantView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <UserControl.Resources>
+
+        <Style x:Key="ValidatedTextBox" TargetType="TextBox">
+            <Setter Property="Margin" Value="0 3"/>
+            <Setter Property="BorderBrush" Value="Gray"/>
+            <Setter Property="BorderThickness" Value="1"/>
+
+            <Style.Triggers>
+                <Trigger Property="Validation.HasError" Value="True">
+                    <Setter Property="BorderBrush" Value="Red"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                    <Setter Property="ToolTip"
+                            Value="{Binding RelativeSource={RelativeSource Self},
+                            Path=(Validation.Errors)[0].ErrorContent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+
+            <TextBlock Text="ID"/>
+            <TextBox Width="200"
+                     Text="{Binding SearchId}"/>
+
+            <StackPanel Orientation="Horizontal" Margin="0 10">
+                <Button Content="Найти" Command="{Binding SearchCommand}" Margin="5"/>
+                <Button Content="Сохранить" Command="{Binding SaveCommand}" Margin="5"/>
+            </StackPanel>
+
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      CanContentScroll="True">
+
+            <TabControl Margin="10">
+
+                <!-- ЛИЧНЫЕ -->
+                <TabItem Header="Личные">
+                    <StackPanel Margin="10">
+
+                        <TextBlock Text="ФИО"/>
+                        <TextBox Style="{StaticResource ValidatedTextBox}"
+                                 PreviewTextInput="OnlyLetters"
+                                 Text="{Binding Current.FullName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+
+                        <TextBlock Text="Дата рождения"/>
+                        <DatePicker SelectedDate="{Binding Current.BirthDate, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Возраст"/>
+                        <TextBox Text="{Binding Current.Age, Mode=OneWay}" IsReadOnly="True"/>
+
+                        <TextBlock Text="Место рождения"/>
+                        <TextBox Style="{StaticResource ValidatedTextBox}"
+                                 Text="{Binding Current.BirthPlace, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+
+                        <TextBlock Text="Гражданство"/>
+                        <ComboBox ItemsSource="{Binding Citizenships}"
+                                  SelectedItem="{Binding Current.Citizenship}"/>
+
+                    </StackPanel>
+                </TabItem>
+
+                <!-- СОЦ -->
+                <TabItem Header="Социальные">
+                    <StackPanel Margin="10">
+
+                        <TextBlock Text="Образование"/>
+                        <ComboBox ItemsSource="{Binding EducationLevels}"
+                                  SelectedItem="{Binding Current.EducationLevel}"/>
+
+                        <TextBlock Text="Семейное положение"/>
+                        <ComboBox ItemsSource="{Binding MaritalStatuses}"
+                                  SelectedItem="{Binding Current.MaritalStatus}"/>
+
+                        <CheckBox Content="Есть дети"
+                                  IsChecked="{Binding Current.HasChildren}"/>
+
+                        <TextBlock Text="Профессия"/>
+                        <TextBox Style="{StaticResource ValidatedTextBox}"
+                                 Text="{Binding Current.ProfessionBeforeConviction, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+
+                    </StackPanel>
+                </TabItem>
+
+                <!-- КРИМИНАЛ -->
+                <TabItem Header="Криминальные">
+                    <StackPanel Margin="10">
+
+                        <TextBlock Text="Статья"/>
+
+                        <TextBox Width="200"
+                                 Text="{Binding ArticleSearch, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <ListBox ItemsSource="{Binding FilteredArticles}"
+                                 SelectedItem="{Binding SelectedArticle}"
+                                 MaxHeight="120">
+
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Display}"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+
+                        </ListBox>
+
+                        <TextBlock Text="Часть"/>
+                        <ComboBox ItemsSource="{Binding AvailableParts}"
+                                  SelectedItem="{Binding Current.ArticlePart}"/>
+
+                        <TextBlock Text="Пункт"/>
+                        <ComboBox ItemsSource="{Binding AvailablePoints}"
+                                  SelectedItem="{Binding Current.ArticlePoint}"/>
+
+                        <TextBlock Text="{Binding Current.CriminalArticle}"
+                                   FontWeight="Bold"
+                                   Foreground="Blue"
+                                   Margin="0 5"/>
+
+                        <TextBlock Text="Срок (лет)"/>
+                        <TextBox Style="{StaticResource ValidatedTextBox}"
+                                 PreviewTextInput="OnlyNumbers"
+                                 Text="{Binding Current.SentenceTerm, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+
+                        <TextBlock Text="{Binding Current.SentenceTermDisplay}"
+                                   Foreground="Blue"
+                                   FontWeight="Bold"/>
+
+                        <TextBlock Text="Тип преступления"/>
+                        <ComboBox ItemsSource="{Binding CrimeTypes}"
+                                  SelectedItem="{Binding Current.CrimeType}"/>
+
+                        <TextBlock Text="Рецидив"/>
+                        <ComboBox ItemsSource="{Binding Recidivisms}"
+                                  SelectedItem="{Binding Current.Recidivism}"/>
+
+                        <TextBlock Text="Отряд"/>
+                        <TextBox Style="{StaticResource ValidatedTextBox}"
+                                 PreviewTextInput="OnlyNumbers"
+                                 Text="{Binding Current.Unit, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+
+                        <TextBlock Text="Категория"/>
+                        <ComboBox ItemsSource="{Binding Categories}"
+                                  SelectedItem="{Binding Current.Category}"/>
+
+                        <!-- ТЕСТ -->
+                        <Button Content="Перейти к тестированию"
+                                Height="40"
+                                Margin="0 20 0 0"
+                                Command="{Binding GoToTestCommand}"/>
+
+                        <!-- 🔥 ИИ БЛОК -->
+                        <Separator Margin="0 20"/>
+
+                        <TextBlock Text="Анализ риска рецидива"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Margin="0 10"/>
+
+                        <Button Content="Рассчитать риск (ИИ)"
+                                Command="{Binding DataContext.CalculateRiskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                Height="45"
+                                Background="#4CAF50"
+                                Foreground="White"
+                                FontWeight="Bold"/>
+
+                    </StackPanel>
+                </TabItem>
+
+            </TabControl>
+
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

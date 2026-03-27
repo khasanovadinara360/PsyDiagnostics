@@ -1,0 +1,24 @@
+﻿<UserControl x:Class="PsyDiagnostics.Views.TestView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <StackPanel Margin="20">
+
+        <TextBlock Text="{Binding TestName}" FontSize="20"/>
+
+        <ProgressBar Value="{Binding Progress}" Maximum="100" Height="20"/>
+
+        <TextBlock Text="{Binding CurrentQuestion.Text}" Margin="20"/>
+
+        <UniformGrid Columns="4">
+            <Button Content="0" Command="{Binding AnswerCommand}" CommandParameter="0"/>
+            <Button Content="1" Command="{Binding AnswerCommand}" CommandParameter="1"/>
+            <Button Content="2" Command="{Binding AnswerCommand}" CommandParameter="2"/>
+            <Button Content="3" Command="{Binding AnswerCommand}" CommandParameter="3"/>
+        </UniformGrid>
+
+        <Button Content="Далее"
+                Command="{Binding NextTestCommand}"
+                Margin="10"/>
+    </StackPanel>
+</UserControl>
