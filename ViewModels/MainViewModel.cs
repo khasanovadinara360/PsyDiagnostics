@@ -14,23 +14,13 @@ namespace PsyDiagnostics.ViewModels
     {
         private DatabaseService _db = new DatabaseService();
 
-        // =========================
-        // ПОИСК
-        // =========================
         private string _searchId;
         public string SearchId
         {
             get => _searchId;
-            set
-            {
-                _searchId = value;
-                OnPropertyChanged();
-            }
+            set { _searchId = value; OnPropertyChanged(); }
         }
 
-        // =========================
-        // УЧАСТНИК
-        // =========================
         private Participant _current;
         public Participant Current
         {
@@ -55,9 +45,6 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(CanSave));
         }
 
-        // =========================
-        // ENUM ДЛЯ UI
-        // =========================
         public Array EducationLevels => Enum.GetValues(typeof(EducationLevel));
         public Array MaritalStatuses => Enum.GetValues(typeof(MaritalStatus));
         public Array CrimeTypes => Enum.GetValues(typeof(CrimeType));
@@ -65,42 +52,25 @@ namespace PsyDiagnostics.ViewModels
         public Array Categories => Enum.GetValues(typeof(Category));
         public Array Citizenships => Enum.GetValues(typeof(Citizenship));
 
-        // =========================
-        // КОМАНДЫ
-        // =========================
         public ICommand SearchCommand { get; }
         public ICommand SaveCommand { get; }
         public ICommand GoToTestCommand { get; }
         public ICommand CalculateRiskCommand { get; }
 
-        // =========================
-        // НАВИГАЦИЯ
-        // =========================
         private object _currentView;
         public object CurrentView
         {
             get => _currentView;
-            set
-            {
-                _currentView = value;
-                OnPropertyChanged();
-            }
+            set { _currentView = value; OnPropertyChanged(); }
         }
 
-        // =========================
-        // СТАТЬИ
-        // =========================
         public List<Article> AllArticles { get; set; } = new List<Article>();
 
         private List<Article> _filteredArticles;
         public List<Article> FilteredArticles
         {
             get => _filteredArticles;
-            set
-            {
-                _filteredArticles = value;
-                OnPropertyChanged();
-            }
+            set { _filteredArticles = value; OnPropertyChanged(); }
         }
 
         private string _articleSearch;
@@ -113,17 +83,11 @@ namespace PsyDiagnostics.ViewModels
                 OnPropertyChanged();
 
                 if (string.IsNullOrWhiteSpace(value))
-                {
                     FilteredArticles = null;
-                }
                 else
-                {
                     FilteredArticles = AllArticles
-                        .Where(a =>
-                            a.Number.Contains(value) ||
-                            a.Title.ToLower().Contains(value.ToLower()))
+                        .Where(a => a.Number.Contains(value) || a.Title.ToLower().Contains(value.ToLower()))
                         .ToList();
-                }
             }
         }
 
@@ -151,9 +115,6 @@ namespace PsyDiagnostics.ViewModels
         public List<string> AvailableParts => SelectedArticle?.Parts;
         public List<string> AvailablePoints => SelectedArticle?.Points;
 
-        // =========================
-        // КОНСТРУКТОР
-        // =========================
         public MainViewModel()
         {
             SearchCommand = new RelayCommand(Search);
@@ -166,9 +127,6 @@ namespace PsyDiagnostics.ViewModels
             ShowParticipant();
         }
 
-        // =========================
-        // ОТКРЫТЬ АНКЕТУ
-        // =========================
         private void ShowParticipant()
         {
             var vm = new ParticipantViewModel();
@@ -178,15 +136,12 @@ namespace PsyDiagnostics.ViewModels
             vm.OnNavigateToTest = (participant) =>
             {
                 Current = participant;
-                GoToTest(); // 🔥 исправлено
+                GoToTest();
             };
 
             CurrentView = vm;
         }
 
-        // =========================
-        // ТЕСТЫ
-        // =========================
         private void GoToTest()
         {
             if (Current == null)
@@ -199,7 +154,7 @@ namespace PsyDiagnostics.ViewModels
 
             selectionVM.OnTestSelected += (selectedTest) =>
             {
-                var testVM = new TestViewModel(this, selectedTest); // 🔥 исправлено
+                var testVM = new TestViewModel(this, selectedTest);
 
                 testVM.OnFinished += () =>
                 {
@@ -212,9 +167,38 @@ namespace PsyDiagnostics.ViewModels
             CurrentView = selectionVM;
         }
 
+        // 🔥 ВОТ ГЛАВНОЕ — ВЫВОД РЕЗУЛЬТАТОВ
         public void ShowResult(Dictionary<string, int> results)
         {
-            MessageBox.Show("Все тесты пройдены");
+            if (Current == null)
+            {
+                MessageBox.Show("Нет участника");
+                return;
+            }
+
+            var report = _db.GetFullReport(Current.PrisonerId);
+
+            if (report.aiResults == null || report.aiResults.Count == 0)
+            {
+                MessageBox.Show("Нет результатов");
+                return;
+            }
+
+            string text = "РЕЗУЛЬТАТЫ:\n\n";
+
+            foreach (var r in report.aiResults)
+            {
+                string risk = r.Prediction == 1
+                    ? "Высокий риск"
+                    : "Низкий риск";
+
+                text += $"{r.TestName}\n" +
+                        $"Баллы: {r.Score}\n" +
+                        $"Прогноз: {risk}\n" +
+                        $"Дата: {r.Date}\n\n";
+            }
+
+            MessageBox.Show(text);
         }
 
         public void ShowHistory()
@@ -222,9 +206,6 @@ namespace PsyDiagnostics.ViewModels
             CurrentView = new ParticipantViewModel();
         }
 
-        // =========================
-        // ПОИСК
-        // =========================
         private void Search()
         {
             try
@@ -270,9 +251,6 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-        // =========================
-        // СОХРАНЕНИЕ
-        // =========================
         private void Save()
         {
             if (string.IsNullOrWhiteSpace(SearchId))
@@ -297,9 +275,6 @@ namespace PsyDiagnostics.ViewModels
             MessageBox.Show("Сохранено");
         }
 
-        // =========================
-        // ИИ
-        // =========================
         private void CalculateRisk()
         {
             if (Current == null)

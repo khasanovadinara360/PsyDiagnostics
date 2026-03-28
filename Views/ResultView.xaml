@@ -1,14 +1,27 @@
 ﻿<UserControl x:Class="PsyDiagnostics.Views.ResultView"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
- xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:local="clr-namespace:PsyDiagnostics.Helpers">
 
-    <StackPanel Margin="20">
+    <Grid>
+        <DataGrid ItemsSource="{Binding Results}" AutoGenerateColumns="False">
+            <DataGrid.Columns>
 
-        <TextBlock Text="Результат" FontSize="22"/>
+                <DataGridTextColumn Header="Тест" Binding="{Binding TestName}" />
+                <DataGridTextColumn Header="Баллы" Binding="{Binding Score}" />
+                <DataGridTextColumn Header="Дата" Binding="{Binding Date}" />
 
-        <TextBlock Text="{Binding Risk}" Margin="20"/>
+                <DataGridTextColumn Header="Прогноз">
+                    <DataGridTextColumn.Binding>
+                        <Binding Path="Prediction">
+                            <Binding.Converter>
+                                <local:PredictionConverter/>
+                            </Binding.Converter>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                </DataGridTextColumn>
 
-        <Button Content="История"
-                Command="{Binding ToHistoryCommand}"/>
-    </StackPanel>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
 </UserControl>

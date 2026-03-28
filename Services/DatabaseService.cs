@@ -2,6 +2,7 @@
 using PsyDiagnostics.Models;
 using System;
 using System.Collections.Generic;
+using System.Windows;
 
 namespace PsyDiagnostics.Services
 {
@@ -9,13 +10,62 @@ namespace PsyDiagnostics.Services
     {
         private string _conn = "Data Source=psy.db";
 
+        // ===================== INIT DB =====================
+
+        private void InitializeDatabase(SqliteConnection db)
+        {
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS Participants (
+                PrisonerId TEXT PRIMARY KEY,
+                FullName TEXT,
+                BirthDate TEXT,
+                BirthPlace TEXT,
+                Citizenship TEXT,
+                EducationLevel TEXT,
+                MaritalStatus TEXT,
+                HasChildren INTEGER,
+                ProfessionBeforeConviction TEXT,
+                CriminalArticle TEXT,
+                SentenceTerm TEXT,
+                CrimeType TEXT,
+                Recidivism TEXT,
+                Unit TEXT,
+                Category TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS Results (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                PrisonerId TEXT,
+                TestName TEXT,
+                Score INTEGER,
+                Date TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS TestResults (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                PrisonerId TEXT,
+                TestName TEXT,
+                Score INTEGER,
+                Prediction INTEGER,
+                CreatedAt TEXT
+            );
+            ";
+
+            cmd.ExecuteNonQuery();
+        }
+
+        // ===================== PARTICIPANT =====================
+
         public Participant GetParticipant(string id)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
-            cmd.CommandText = "SELECT * FROM Participants WHERE TRIM(PrisonerId) = TRIM($id)";
+            cmd.CommandText = "SELECT * FROM Participants WHERE TRIM(PrisonerId)=TRIM($id)";
             cmd.Parameters.AddWithValue("$id", id?.Trim());
 
             using var r = cmd.ExecuteReader();
@@ -46,7 +96,6 @@ namespace PsyDiagnostics.Services
                     ProfessionBeforeConviction = r["ProfessionBeforeConviction"].ToString(),
 
                     ArticleNumber = r["CriminalArticle"]?.ToString(),
-
                     SentenceTerm = r["SentenceTerm"]?.ToString(),
 
                     CrimeType = Enum.TryParse<CrimeType>(r["CrimeType"]?.ToString(), out var ct)
@@ -69,6 +118,7 @@ namespace PsyDiagnostics.Services
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
 
@@ -93,7 +143,6 @@ namespace PsyDiagnostics.Services
             cmd.Parameters.AddWithValue("$prof", p.ProfessionBeforeConviction);
 
             cmd.Parameters.AddWithValue("$art", p.CriminalArticle);
-
             cmd.Parameters.AddWithValue("$term", p.SentenceTerm);
 
             cmd.Parameters.AddWithValue("$crime", p.CrimeType.ToString());
@@ -105,49 +154,79 @@ namespace PsyDiagnostics.Services
             cmd.ExecuteNonQuery();
         }
 
-        public (Participant participant, List<ResultRecord> results) GetFullReport(string id)
-        {
-            var participant = GetParticipant(id);
-            var results = new List<ResultRecord>();
+        // ===================== NEW AI RESULTS =====================
 
-            using var db = new SqliteConnection(_conn);
-            db.Open();
-
-            var cmd = db.CreateCommand();
-            cmd.CommandText = "SELECT * FROM Results WHERE PrisonerId=$id";
-            cmd.Parameters.AddWithValue("$id", id);
-
-            using var r = cmd.ExecuteReader();
-
-            while (r.Read())
-            {
-                results.Add(new ResultRecord
-                {
-                    TestName = r["TestName"].ToString(),
-                    Score = Convert.ToInt32(r["Score"]),
-                    Date = r["Date"].ToString()
-                });
-            }
-
-            return (participant, results);
-        }
-
-        public void SaveResult(string prisonerId, string testName, int score)
+        public void SaveTestResult(string prisonerId, string testName, int score, int prediction)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
+
             cmd.CommandText =
-            @"INSERT INTO Results (PrisonerId, TestName, Score, Date)
-      VALUES ($id,$test,$score,$date)";
+            @"INSERT INTO TestResults 
+              (PrisonerId, TestName, Score, Prediction, CreatedAt)
+              VALUES ($id,$test,$score,$pred,$date)";
 
             cmd.Parameters.AddWithValue("$id", prisonerId);
             cmd.Parameters.AddWithValue("$test", testName);
             cmd.Parameters.AddWithValue("$score", score);
-            cmd.Parameters.AddWithValue("$date", DateTime.Now.ToString("yyyy-MM-dd"));
+            cmd.Parameters.AddWithValue("$pred", prediction);
+            cmd.Parameters.AddWithValue("$date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             cmd.ExecuteNonQuery();
+        }
+
+        // ===================== FULL REPORT =====================
+
+        public (Participant participant, List<ResultRecord> results, List<TestResultRecord> aiResults)
+            GetFullReport(string id)
+        {
+            var participant = GetParticipant(id);
+            var results = new List<ResultRecord>();
+            var aiResults = new List<TestResultRecord>();
+
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd1 = db.CreateCommand();
+            cmd1.CommandText = "SELECT * FROM Results WHERE PrisonerId=$id";
+            cmd1.Parameters.AddWithValue("$id", id);
+
+            using (var r = cmd1.ExecuteReader())
+            {
+                while (r.Read())
+                {
+                    results.Add(new ResultRecord
+                    {
+                        TestName = r["TestName"].ToString(),
+                        Score = Convert.ToInt32(r["Score"]),
+                        Date = r["Date"].ToString()
+                    });
+                }
+            }
+
+            var cmd2 = db.CreateCommand();
+            cmd2.CommandText = "SELECT * FROM TestResults WHERE PrisonerId=$id";
+            cmd2.Parameters.AddWithValue("$id", id);
+
+            using (var r = cmd2.ExecuteReader())
+            {
+                while (r.Read())
+                {
+                    aiResults.Add(new TestResultRecord
+                    {
+                        TestName = r["TestName"].ToString(),
+                        Score = Convert.ToInt32(r["Score"]),
+                        Prediction = Convert.ToInt32(r["Prediction"]),
+                        Date = r["CreatedAt"].ToString()
+                    });
+                }
+            }
+
+            return (participant, results, aiResults);
         }
     }
 }

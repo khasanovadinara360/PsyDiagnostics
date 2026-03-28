@@ -1,28 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Windows.Input;
-using PsyDiagnostics.Helpers;
+﻿using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
+using System.Collections.ObjectModel;
 
 namespace PsyDiagnostics.ViewModels
 {
-    public class ResultViewModel : BaseViewModel
+    public class ResultsViewModel : BaseViewModel
     {
-        private MainViewModel _main;
+        private readonly DatabaseService _db = new DatabaseService();
 
-        public string Risk { get; set; }
+        public ObservableCollection<TestResultRecord> Results { get; set; }
+            = new ObservableCollection<TestResultRecord>();
 
-        public ICommand ToHistoryCommand { get; }
-
-        public ResultViewModel(MainViewModel main, Dictionary<string, int> results)
+        public ResultsViewModel(string prisonerId)
         {
-            _main = main;
+            Load(prisonerId);
+        }
 
-            var ml = new MLPredictor();
-            Risk = ml.Predict(results);
+        private void Load(string id)
+        {
+            var data = _db.GetFullReport(id);
 
-            // ✅ исправлено
-            ToHistoryCommand = new RelayCommand(_ => _main.ShowHistory());
+            Results.Clear();
+
+            foreach (var r in data.aiResults)
+                Results.Add(r);
         }
     }
 }

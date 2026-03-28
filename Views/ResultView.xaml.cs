@@ -1,6 +1,8 @@
-﻿namespace PsyDiagnostics.Views
+﻿using System.Windows.Controls;
+
+namespace PsyDiagnostics.Views
 {
-    public partial class ResultView : System.Windows.Controls.UserControl
+    public partial class ResultView : UserControl
     {
         public ResultView()
         {

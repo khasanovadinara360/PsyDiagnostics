@@ -117,17 +117,23 @@ namespace PsyDiagnostics.ViewModels
                 .SelectMany(q => q.Answers ?? new List<Answer>())
                 .Max(a => a.Value);
 
-            double normalized = (double)sum / (Questions.Count * maxPerQuestion) * 100;
-            int finalScore = (int)normalized;
+            int rawScore = sum;
+            int maxScore = Questions.Count * maxPerQuestion;
+
+            int finalScore = (int)((rawScore / (double)maxScore) * 100);
+
+            // 🔥 ДОБАВЛЕНО
+            int prediction = finalScore >= 60 ? 1 : 0;
 
             string level = _test.GetLevel(finalScore);
 
             if (_main.Current != null)
             {
-                db.SaveResult(
+                db.SaveTestResult(
                     _main.Current.PrisonerId,
                     _test.Name,
-                    finalScore
+                    finalScore,
+                    prediction
                 );
             }
 

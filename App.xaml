@@ -20,10 +20,6 @@
             <views:TestView/>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:ResultViewModel}">
-            <views:ResultView/>
-        </DataTemplate>
-
         <DataTemplate DataType="{x:Type vm:HistoryViewModel}">
             <views:HistoryView/>
         </DataTemplate>
