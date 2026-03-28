@@ -14,6 +14,7 @@ namespace PsyDiagnostics.ViewModels
     {
         private readonly MainViewModel _main;
         private readonly DatabaseService db = new DatabaseService();
+        private readonly MlService _ml = new MlService();
 
         public ObservableCollection<Question> Questions { get; set; }
 
@@ -46,7 +47,6 @@ namespace PsyDiagnostics.ViewModels
         private Dictionary<string, int> results = new();
         private Test _test;
 
-        // 🔥 КОНСТРУКТОР С ВЫБРАННЫМ ТЕСТОМ
         public TestViewModel(MainViewModel main, TestDefinition selectedTest)
         {
             _main = main;
@@ -61,6 +61,9 @@ namespace PsyDiagnostics.ViewModels
 
             NextCommand = new RelayCommand(Next);
             PrevCommand = new RelayCommand(Prev, () => _currentIndex > 0);
+
+            // обучение из БД (если есть данные)
+            _ml.TrainFromDatabase(db);
         }
 
         private void Next()
@@ -82,7 +85,6 @@ namespace PsyDiagnostics.ViewModels
             {
                 CurrentQuestion = Questions[_currentIndex];
 
-                // 🔥 восстановление выбора
                 foreach (var a in CurrentQuestion.Answers)
                     a.IsSelected = a.Value == CurrentQuestion.Answer;
 
@@ -122,10 +124,37 @@ namespace PsyDiagnostics.ViewModels
 
             int finalScore = (int)((rawScore / (double)maxScore) * 100);
 
-            // 🔥 ДОБАВЛЕНО
-            int prediction = finalScore >= 60 ? 1 : 0;
+            results[_test.Name] = finalScore;
 
-            string level = _test.GetLevel(finalScore);
+            var aiInput = new AiData
+            {
+                Aggression = results.GetValueOrDefault("Aggression", 50),
+                Impulsivity = results.GetValueOrDefault("Impulsivity", 50),
+                Depression = results.GetValueOrDefault("Depression", 50),
+                Stress = results.GetValueOrDefault("Stress", 50),
+                Adaptation = results.GetValueOrDefault("Adaptation", 50),
+                Anxiety = results.GetValueOrDefault("Anxiety", 50),
+                Resilience = results.GetValueOrDefault("Resilience", 50),
+                Hostility = results.GetValueOrDefault("Hostility", 50)
+            };
+
+            var pred = _ml.Predict(aiInput);
+
+            if (pred == null)
+            {
+                MessageBox.Show("Недостаточно данных для ИИ");
+                return;
+            }
+
+            // 🔥 нормальная вероятность
+            double probability = Math.Clamp(pred.Probability, 0, 1);
+            int percent = (int)(probability * 100);
+
+            string levelRisk =
+                percent < 40 ? "Низкий" :
+                percent < 70 ? "Средний" : "Высокий";
+
+            string explanation = BuildExplanation(aiInput);
 
             if (_main.Current != null)
             {
@@ -133,15 +162,55 @@ namespace PsyDiagnostics.ViewModels
                     _main.Current.PrisonerId,
                     _test.Name,
                     finalScore,
-                    prediction
+                    percent >= 50 ? 1 : 0,
+                    probability
                 );
             }
 
-            results[_test.Name] = finalScore;
+            string level = _test.GetLevel(finalScore);
 
-            MessageBox.Show($"{_test.Name}\nБаллы: {finalScore}\nУровень: {level}");
+            MessageBox.Show(
+                $"{_test.Name}\n" +
+                $"Баллы: {finalScore}\n" +
+                $"Уровень: {level}\n\n" +
+
+                $"ИИ вероятность: {percent}%\n" +
+                $"Риск: {levelRisk}\n\n" +
+
+                $"Причины:\n{explanation}"
+            );
 
             OnFinished?.Invoke();
+        }
+
+        private string BuildExplanation(AiData d)
+        {
+            var reasons = new List<string>();
+
+            if (d.Aggression > 70)
+                reasons.Add("Высокая агрессивность");
+
+            if (d.Impulsivity > 70)
+                reasons.Add("Высокая импульсивность");
+
+            if (d.Stress < 40)
+                reasons.Add("Низкая стрессоустойчивость");
+
+            if (d.Adaptation < 40)
+                reasons.Add("Плохая социальная адаптация");
+
+            if (d.Anxiety > 70)
+                reasons.Add("Высокая тревожность");
+
+            if (d.Resilience < 40)
+                reasons.Add("Низкая психологическая устойчивость");
+
+            if (d.Hostility > 70)
+                reasons.Add("Выраженная враждебность");
+
+            return reasons.Count == 0
+                ? "Факторы риска не выражены"
+                : string.Join("\n", reasons);
         }
 
         public Dictionary<string, int> GetResults() => results;

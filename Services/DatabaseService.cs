@@ -2,6 +2,7 @@
 using PsyDiagnostics.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 
 namespace PsyDiagnostics.Services
@@ -156,7 +157,7 @@ namespace PsyDiagnostics.Services
 
         // ===================== NEW AI RESULTS =====================
 
-        public void SaveTestResult(string prisonerId, string testName, int score, int prediction)
+        public void SaveTestResult(string prisonerId, string testName, int score, int prediction, double probability)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
@@ -166,13 +167,14 @@ namespace PsyDiagnostics.Services
 
             cmd.CommandText =
             @"INSERT INTO TestResults 
-              (PrisonerId, TestName, Score, Prediction, CreatedAt)
-              VALUES ($id,$test,$score,$pred,$date)";
+      (PrisonerId, TestName, Score, Prediction, Probability, CreatedAt)
+      VALUES ($id,$test,$score,$pred,$prob,$date)";
 
             cmd.Parameters.AddWithValue("$id", prisonerId);
             cmd.Parameters.AddWithValue("$test", testName);
             cmd.Parameters.AddWithValue("$score", score);
             cmd.Parameters.AddWithValue("$pred", prediction);
+            cmd.Parameters.AddWithValue("$prob", probability);
             cmd.Parameters.AddWithValue("$date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             cmd.ExecuteNonQuery();
@@ -221,12 +223,57 @@ namespace PsyDiagnostics.Services
                         TestName = r["TestName"].ToString(),
                         Score = Convert.ToInt32(r["Score"]),
                         Prediction = Convert.ToInt32(r["Prediction"]),
+                        Probability = r["Probability"] != DBNull.Value ? Convert.ToDouble(r["Probability"]): 0,
                         Date = r["CreatedAt"].ToString()
                     });
                 }
             }
 
             return (participant, results, aiResults);
+        }
+
+        public List<AiData> GetAiTrainingData()
+        {
+            var list = new List<AiData>();
+
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+            cmd.CommandText = "SELECT * FROM TestResults";
+
+            using var r = cmd.ExecuteReader();
+
+            var temp = new Dictionary<string, AiData>();
+
+            while (r.Read())
+            {
+                string id = r["PrisonerId"].ToString();
+                string test = r["TestName"].ToString();
+                int score = Convert.ToInt32(r["Score"]);
+                int pred = Convert.ToInt32(r["Prediction"]);
+
+                if (!temp.ContainsKey(id))
+                    temp[id] = new AiData();
+
+                var d = temp[id];
+
+                switch (test)
+                {
+                    case "Aggression": d.Aggression = score; break;
+                    case "Impulsivity": d.Impulsivity = score; break;
+                    case "Depression": d.Depression = score; break;
+                    case "Stress": d.Stress = score; break;
+                    case "Adaptation": d.Adaptation = score; break;
+                    case "Anxiety": d.Anxiety = score; break;
+                    case "Resilience": d.Resilience = score; break;
+                    case "Hostility": d.Hostility = score; break;
+                }
+
+                d.Label = pred;
+            }
+
+            return temp.Values.ToList();
         }
     }
 }

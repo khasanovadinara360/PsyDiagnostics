@@ -12,5 +12,6 @@ namespace PsyDiagnostics.Models
         public int Score { get; set; }
         public int Prediction { get; set; }
         public string Date { get; set; }
+        public double Probability { get; set; }
     }
 }
