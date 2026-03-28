@@ -7,7 +7,7 @@ namespace PsyDiagnostics.Views
         public TestView()
         {
             InitializeComponent();
-            DataContext = new TestViewModel(App.MainVM);
+            DataContext = new TestViewModel(new MainViewModel());
         }
     }
 }

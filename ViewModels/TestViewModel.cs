@@ -6,13 +6,13 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using PsyDiagnostics.Helpers;
+using System;
 
 namespace PsyDiagnostics.ViewModels
 {
     public class TestViewModel : BaseViewModel
     {
         private readonly MainViewModel _main;
-
         private readonly DatabaseService db = new DatabaseService();
 
         private int _currentIndex;
@@ -35,10 +35,16 @@ namespace PsyDiagnostics.ViewModels
 
         public ICommand AnswerCommand { get; }
         public ICommand NextTestCommand { get; }
+        public ICommand FinishCommand { get; }
+
+        public event Action OnFinished;
 
         // 👉 ВСЕ РЕЗУЛЬТАТЫ
         private Dictionary<string, int> allResults = new();
 
+        // =========================
+        // КОНСТРУКТОР (ОДИН!)
+        // =========================
         public TestViewModel(MainViewModel main)
         {
             _main = main;
@@ -49,7 +55,12 @@ namespace PsyDiagnostics.ViewModels
             LoadTest(0);
 
             AnswerCommand = new RelayCommand<int>(Answer);
-            NextTestCommand = new RelayCommand<object>(_ => NextTest());
+            NextTestCommand = new RelayCommand(() => NextTest());
+
+            FinishCommand = new RelayCommand(() =>
+            {
+                OnFinished?.Invoke();
+            });
         }
 
         // =========================
@@ -62,7 +73,7 @@ namespace PsyDiagnostics.ViewModels
 
             Questions = new ObservableCollection<Question>(Tests[index].Questions);
 
-            CurrentQuestion = Questions.First();
+            CurrentQuestion = Questions.FirstOrDefault();
 
             OnPropertyChanged(nameof(TestName));
             OnPropertyChanged(nameof(Progress));
@@ -110,17 +121,16 @@ namespace PsyDiagnostics.ViewModels
                 result = "Высокий";
 
             // 💾 Сохраняем в БД
-            if (_main.CurrentParticipant != null)
+            if (_main.Current != null)
             {
                 db.SaveResult(
-                    _main.CurrentParticipant.Id,
+                    _main.Current.PrisonerId,
                     test.Name,
                     sum
-                    
                 );
             }
 
-            // сохраняем в общий словарь
+            // сохраняем результат
             allResults[test.Name] = sum;
 
             MessageBox.Show($"{test.Name}\nБаллы: {sum}\n{result}");
@@ -137,8 +147,10 @@ namespace PsyDiagnostics.ViewModels
             }
             else
             {
-                // 👉 ВСЕ ТЕСТЫ ПРОЙДЕНЫ → ПЕРЕХОД К РЕЗУЛЬТАТУ
+                // 👉 ВСЕ ТЕСТЫ ПРОЙДЕНЫ
                 _main.ShowResult(allResults);
+
+                OnFinished?.Invoke();
             }
         }
     }

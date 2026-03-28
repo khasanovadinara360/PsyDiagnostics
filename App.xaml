@@ -1,13 +1,18 @@
-<Application x:Class="PsyDiagnostics.App"
+﻿<Application x:Class="PsyDiagnostics.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:PsyDiagnostics.ViewModels"
-             xmlns:views="clr-namespace:PsyDiagnostics.Views">
+             xmlns:views="clr-namespace:PsyDiagnostics.Views"
+             StartupUri="MainWindow.xaml">
 
     <Application.Resources>
 
         <DataTemplate DataType="{x:Type vm:ParticipantViewModel}">
             <views:ParticipantView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:TestSelectionViewModel}">
+            <views:TestSelectionView/>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:TestViewModel}">

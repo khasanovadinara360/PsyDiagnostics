@@ -1,0 +1,17 @@
+﻿<UserControl x:Class="PsyDiagnostics.Views.TestSelectionView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <StackPanel Margin="20">
+        <TextBlock Text="Выбор теста" FontSize="20" Margin="0,0,0,10"/>
+
+        <ListBox ItemsSource="{Binding Tests}"
+                 SelectedItem="{Binding SelectedTest}"/>
+
+        <Button Content="Начать"
+                Command="{Binding SelectCommand}"
+                CommandParameter="{Binding SelectedTest}"
+                Margin="0,10,0,0"/>
+    </StackPanel>
+
+</UserControl>

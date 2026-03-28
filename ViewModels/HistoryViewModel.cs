@@ -1,7 +1,6 @@
 ﻿using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using PsyDiagnostics.Helpers;
@@ -10,51 +9,56 @@ namespace PsyDiagnostics.ViewModels
 {
     public class HistoryViewModel : BaseViewModel
     {
-        private readonly DatabaseService db = new DatabaseService();
-        private readonly ReportService reportService = new ReportService();
-        private readonly RiskService riskService = new RiskService();
+        private readonly MainViewModel _main;
+        private readonly DatabaseService _db = new DatabaseService();
 
         // =========================
-        // ПОИСК
+        // ДАННЫЕ
         // =========================
-        private string _searchId;
-        public string SearchId
+        private Participant _participant;
+        public Participant Participant
         {
-            get => _searchId;
-            set { _searchId = value; OnPropertyChanged(); }
+            get => _participant;
+            set
+            {
+                _participant = value;
+                OnPropertyChanged();
+            }
         }
 
-        // =========================
-        // УЧАСТНИК
-        // =========================
-        private Participant _current;
-        public Participant Current
-        {
-            get => _current;
-            set { _current = value; OnPropertyChanged(); }
-        }
-
-        // =========================
-        // РЕЗУЛЬТАТЫ
-        // =========================
         public ObservableCollection<ResultRecord> Results { get; set; }
+            = new ObservableCollection<ResultRecord>();
 
         // =========================
         // КОМАНДЫ
         // =========================
-        public ICommand SearchCommand { get; }
-        public ICommand ExportCommand { get; }
+        public ICommand LoadCommand { get; }
+        public ICommand BackCommand { get; }
 
-        public HistoryViewModel()
+        private string _searchId;
+        public string SearchId
         {
-            Results = new ObservableCollection<ResultRecord>();
-
-            SearchCommand = new RelayCommand<object>(_ => Load());
-            ExportCommand = new RelayCommand<object>(_ => Export());
+            get => _searchId;
+            set
+            {
+                _searchId = value;
+                OnPropertyChanged();
+            }
         }
 
         // =========================
-        // ЗАГРУЗКА ИЗ БД
+        // КОНСТРУКТОР
+        // =========================
+        public HistoryViewModel(MainViewModel main)
+        {
+            _main = main;
+
+            LoadCommand = new RelayCommand(() => Load());
+            BackCommand = new RelayCommand(() => GoBack());
+        }
+
+        // =========================
+        // ЗАГРУЗКА ИСТОРИИ
         // =========================
         private void Load()
         {
@@ -64,47 +68,27 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            var (participant, results) = db.GetFullReport(SearchId);
+            var report = _db.GetFullReport(SearchId);
 
-            if (participant == null)
+            if (report.participant == null)
             {
-                MessageBox.Show("Не найдено");
+                MessageBox.Show("Не найден");
                 return;
             }
 
-            Current = participant;
+            Participant = report.participant;
 
             Results.Clear();
-            foreach (var r in results)
+            foreach (var r in report.results)
                 Results.Add(r);
         }
 
         // =========================
-        // PDF + РИСК
+        // НАЗАД
         // =========================
-        private void Export()
+        private void GoBack()
         {
-            if (Current == null || Results.Count == 0)
-            {
-                MessageBox.Show("Нет данных");
-                return;
-            }
-
-            // 👉 собираем словарь для ML
-            var dict = Results.ToDictionary(r => r.TestName, r => r.Score);
-
-            // 👉 считаем риск
-            var risk = riskService.CalculateRisk(dict);
-
-            // 👉 генерим PDF
-            reportService.Generate(
-                "report.pdf",
-                Current,
-                Results.ToList(),
-                risk
-            );
-
-            MessageBox.Show("PDF сохранён 🔥");
+            _main.CurrentView = _main;
         }
     }
 }

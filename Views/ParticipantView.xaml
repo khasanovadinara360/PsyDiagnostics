@@ -29,22 +29,24 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- 🔍 ПОИСК -->
         <StackPanel Grid.Row="0">
 
             <TextBlock Text="ID"/>
-            <TextBox Width="200"
-                     Text="{Binding SearchId}"/>
+
+            <TextBox Text="{Binding DataContext.SearchId, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,5"
+                     Width="200"/>
 
             <StackPanel Orientation="Horizontal" Margin="0 10">
-                <Button Content="Найти" Command="{Binding SearchCommand}" Margin="5"/>
-                <Button Content="Сохранить" Command="{Binding SaveCommand}" Margin="5"/>
+                <Button Content="Найти" Command="{Binding DataContext.SearchCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="5"/>
+                <Button Content="Сохранить" Command="{Binding DataContext.SaveCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="5"/>
             </StackPanel>
 
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto"
-                      CanContentScroll="True">
+        <!-- 📋 ОСНОВНАЯ ФОРМА -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
 
             <TabControl Margin="10">
 
@@ -54,22 +56,21 @@
 
                         <TextBlock Text="ФИО"/>
                         <TextBox Style="{StaticResource ValidatedTextBox}"
-                                 PreviewTextInput="OnlyLetters"
-                                 Text="{Binding Current.FullName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                                 Text="{Binding CurrentParticipant.FullName, UpdateSourceTrigger=PropertyChanged}"/>
 
                         <TextBlock Text="Дата рождения"/>
-                        <DatePicker SelectedDate="{Binding Current.BirthDate, UpdateSourceTrigger=PropertyChanged}"/>
+                        <DatePicker SelectedDate="{Binding CurrentParticipant.BirthDate}"/>
 
                         <TextBlock Text="Возраст"/>
-                        <TextBox Text="{Binding Current.Age, Mode=OneWay}" IsReadOnly="True"/>
+                        <TextBox Text="{Binding CurrentParticipant.Age, Mode=OneWay}" IsReadOnly="True"/>
 
                         <TextBlock Text="Место рождения"/>
                         <TextBox Style="{StaticResource ValidatedTextBox}"
-                                 Text="{Binding Current.BirthPlace, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                                 Text="{Binding CurrentParticipant.BirthPlace, UpdateSourceTrigger=PropertyChanged}"/>
 
                         <TextBlock Text="Гражданство"/>
-                        <ComboBox ItemsSource="{Binding Citizenships}"
-                                  SelectedItem="{Binding Current.Citizenship}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.Citizenships, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.Citizenship}"/>
 
                     </StackPanel>
                 </TabItem>
@@ -79,103 +80,107 @@
                     <StackPanel Margin="10">
 
                         <TextBlock Text="Образование"/>
-                        <ComboBox ItemsSource="{Binding EducationLevels}"
-                                  SelectedItem="{Binding Current.EducationLevel}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.EducationLevels, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.EducationLevel}"/>
 
                         <TextBlock Text="Семейное положение"/>
-                        <ComboBox ItemsSource="{Binding MaritalStatuses}"
-                                  SelectedItem="{Binding Current.MaritalStatus}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.MaritalStatuses, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.MaritalStatus}"/>
 
                         <CheckBox Content="Есть дети"
-                                  IsChecked="{Binding Current.HasChildren}"/>
+                                  IsChecked="{Binding CurrentParticipant.HasChildren}"/>
 
                         <TextBlock Text="Профессия"/>
                         <TextBox Style="{StaticResource ValidatedTextBox}"
-                                 Text="{Binding Current.ProfessionBeforeConviction, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                                 Text="{Binding CurrentParticipant.ProfessionBeforeConviction, UpdateSourceTrigger=PropertyChanged}"/>
 
                     </StackPanel>
                 </TabItem>
 
-                <!-- КРИМИНАЛ -->
+                <!-- 🔥 КРИМИНАЛ -->
                 <TabItem Header="Криминальные">
                     <StackPanel Margin="10">
 
+                        <!-- 🔍 ПОИСК СТАТЬИ -->
                         <TextBlock Text="Статья"/>
 
-                        <TextBox Width="200"
-                                 Text="{Binding ArticleSearch, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Width="250"
+                                 Margin="0,5"
+                                 Text="{Binding DataContext.ArticleSearch, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=PropertyChanged}"/>
 
-                        <ListBox ItemsSource="{Binding FilteredArticles}"
-                                 SelectedItem="{Binding SelectedArticle}"
-                                 MaxHeight="120">
+                        <ListBox ItemsSource="{Binding DataContext.FilteredArticles, RelativeSource={RelativeSource AncestorType=Window}}"
+                                 SelectedItem="{Binding DataContext.SelectedArticle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                 MaxHeight="150"
+                                 BorderBrush="Gray"
+                                 BorderThickness="1"
+                                 Margin="0,5">
 
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Display}"/>
+                                    <TextBlock Text="{Binding Display}" Padding="5"/>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
 
                         </ListBox>
 
+                        <!-- ЧАСТЬ -->
                         <TextBlock Text="Часть"/>
-                        <ComboBox ItemsSource="{Binding AvailableParts}"
-                                  SelectedItem="{Binding Current.ArticlePart}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.AvailableParts, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.ArticlePart}"
+                                  Margin="0,5"/>
 
+                        <!-- ПУНКТ -->
                         <TextBlock Text="Пункт"/>
-                        <ComboBox ItemsSource="{Binding AvailablePoints}"
-                                  SelectedItem="{Binding Current.ArticlePoint}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.AvailablePoints, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.ArticlePoint}"
+                                  Margin="0,5"/>
 
-                        <TextBlock Text="{Binding Current.CriminalArticle}"
+                        <!-- ГОТОВАЯ СТАТЬЯ -->
+                        <TextBlock Text="{Binding CurrentParticipant.CriminalArticle}"
                                    FontWeight="Bold"
                                    Foreground="Blue"
-                                   Margin="0 5"/>
+                                   Margin="0,10"/>
 
+                        <!-- СРОК -->
                         <TextBlock Text="Срок (лет)"/>
                         <TextBox Style="{StaticResource ValidatedTextBox}"
-                                 PreviewTextInput="OnlyNumbers"
-                                 Text="{Binding Current.SentenceTerm, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                                 Text="{Binding CurrentParticipant.SentenceTerm, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,5"/>
 
-                        <TextBlock Text="{Binding Current.SentenceTermDisplay}"
+                        <TextBlock Text="{Binding CurrentParticipant.SentenceTermDisplay}"
                                    Foreground="Blue"
-                                   FontWeight="Bold"/>
+                                   FontWeight="Bold"
+                                   Margin="0,5"/>
 
+                        <!-- ТИП -->
                         <TextBlock Text="Тип преступления"/>
-                        <ComboBox ItemsSource="{Binding CrimeTypes}"
-                                  SelectedItem="{Binding Current.CrimeType}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.CrimeTypes, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.CrimeType}"
+                                  Margin="0,5"/>
 
+                        <!-- РЕЦИДИВ -->
                         <TextBlock Text="Рецидив"/>
-                        <ComboBox ItemsSource="{Binding Recidivisms}"
-                                  SelectedItem="{Binding Current.Recidivism}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.Recidivisms, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.Recidivism}"
+                                  Margin="0,5"/>
 
+                        <!-- ОТРЯД -->
                         <TextBlock Text="Отряд"/>
                         <TextBox Style="{StaticResource ValidatedTextBox}"
-                                 PreviewTextInput="OnlyNumbers"
-                                 Text="{Binding Current.Unit, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"/>
+                                 Text="{Binding CurrentParticipant.Unit, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0,5"/>
 
+                        <!-- КАТЕГОРИЯ -->
                         <TextBlock Text="Категория"/>
-                        <ComboBox ItemsSource="{Binding Categories}"
-                                  SelectedItem="{Binding Current.Category}"/>
+                        <ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding CurrentParticipant.Category}"
+                                  Margin="0,5"/>
 
                         <!-- ТЕСТ -->
                         <Button Content="Перейти к тестированию"
                                 Height="40"
                                 Margin="0 20 0 0"
                                 Command="{Binding GoToTestCommand}"/>
-
-                        <!-- 🔥 ИИ БЛОК -->
-                        <Separator Margin="0 20"/>
-
-                        <TextBlock Text="Анализ риска рецидива"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   Margin="0 10"/>
-
-                        <Button Content="Рассчитать риск (ИИ)"
-                                Command="{Binding DataContext.CalculateRiskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                Height="45"
-                                Background="#4CAF50"
-                                Foreground="White"
-                                FontWeight="Bold"/>
 
                     </StackPanel>
                 </TabItem>

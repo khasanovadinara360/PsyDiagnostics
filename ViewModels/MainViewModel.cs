@@ -1,50 +1,321 @@
 ﻿using PsyDiagnostics.Helpers;
 using PsyDiagnostics.Models;
+using PsyDiagnostics.Services;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 
 namespace PsyDiagnostics.ViewModels
 {
     public class MainViewModel : BaseViewModel
     {
-        public object CurrentView { get; set; }
+        private DatabaseService _db = new DatabaseService();
 
-        public Participant CurrentParticipant { get; set; }
+        // =========================
+        // ПОИСК
+        // =========================
+        private string _searchId;
+        public string SearchId
+        {
+            get => _searchId;
+            set
+            {
+                _searchId = value;
+                OnPropertyChanged();
+            }
+        }
 
+        // =========================
+        // УЧАСТНИК
+        // =========================
+        private Participant _current;
+        public Participant Current
+        {
+            get => _current;
+            set
+            {
+                if (_current != null)
+                    _current.PropertyChanged -= Current_PropertyChanged;
+
+                _current = value;
+
+                if (_current != null)
+                    _current.PropertyChanged += Current_PropertyChanged;
+
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanSave));
+            }
+        }
+
+        private void Current_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(CanSave));
+        }
+
+        // =========================
+        // ENUM ДЛЯ UI
+        // =========================
+        public Array EducationLevels => Enum.GetValues(typeof(EducationLevel));
+        public Array MaritalStatuses => Enum.GetValues(typeof(MaritalStatus));
+        public Array CrimeTypes => Enum.GetValues(typeof(CrimeType));
+        public Array Recidivisms => Enum.GetValues(typeof(Recidivism));
+        public Array Categories => Enum.GetValues(typeof(Category));
+        public Array Citizenships => Enum.GetValues(typeof(Citizenship));
+
+        // =========================
+        // КОМАНДЫ
+        // =========================
+        public ICommand SearchCommand { get; }
+        public ICommand SaveCommand { get; }
+        public ICommand GoToTestCommand { get; }
         public ICommand CalculateRiskCommand { get; }
 
+        // =========================
+        // НАВИГАЦИЯ
+        // =========================
+        private object _currentView;
+        public object CurrentView
+        {
+            get => _currentView;
+            set
+            {
+                _currentView = value;
+                OnPropertyChanged();
+            }
+        }
+
+        // =========================
+        // СТАТЬИ
+        // =========================
+        public List<Article> AllArticles { get; set; } = new List<Article>();
+
+        private List<Article> _filteredArticles;
+        public List<Article> FilteredArticles
+        {
+            get => _filteredArticles;
+            set
+            {
+                _filteredArticles = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _articleSearch;
+        public string ArticleSearch
+        {
+            get => _articleSearch;
+            set
+            {
+                _articleSearch = value;
+                OnPropertyChanged();
+
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    FilteredArticles = null;
+                }
+                else
+                {
+                    FilteredArticles = AllArticles
+                        .Where(a =>
+                            a.Number.Contains(value) ||
+                            a.Title.ToLower().Contains(value.ToLower()))
+                        .ToList();
+                }
+
+                OnPropertyChanged(nameof(FilteredArticles));
+            }
+        }
+
+        private Article _selectedArticle;
+        public Article SelectedArticle
+        {
+            get => _selectedArticle;
+            set
+            {
+                _selectedArticle = value;
+                OnPropertyChanged();
+
+                if (value != null && Current != null)
+                {
+                    Current.ArticleNumber = value.Number;
+                    Current.ArticlePart = value.Parts?.FirstOrDefault();
+                    Current.ArticlePoint = value.Points?.FirstOrDefault();
+
+                    OnPropertyChanged(nameof(AvailableParts));
+                    OnPropertyChanged(nameof(AvailablePoints));
+                }
+            }
+        }
+
+        public List<string> AvailableParts => SelectedArticle?.Parts;
+        public List<string> AvailablePoints => SelectedArticle?.Points;
+
+        // =========================
+        // КОНСТРУКТОР
+        // =========================
         public MainViewModel()
         {
+            SearchCommand = new RelayCommand(() => Search());
+            SaveCommand = new RelayCommand(() => Save());
+            GoToTestCommand = new RelayCommand(() => GoToTest());
+            CalculateRiskCommand = new RelayCommand(() => CalculateRisk());
+
+            // 🔥 загрузка статей
+            AllArticles = JsonHelper.LoadArticles();
+
             ShowParticipant();
+        }
 
-            CalculateRiskCommand = new RelayCommand(() =>
+        // =========================
+        // ОТКРЫТЬ АНКЕТУ
+        // =========================
+        private void ShowParticipant()
+        {
+            var vm = new ParticipantViewModel();
+
+            vm.CurrentParticipant = Current;
+
+            vm.OnNavigateToTest = (participant) =>
             {
-                System.Windows.MessageBox.Show("ИИ анализ выполнен 🔥");
-            });
+                Current = participant;
+                CurrentView = new TestViewModel(this);
+            };
+
+            CurrentView = vm;
         }
 
-        public void ShowParticipant()
+        // =========================
+        // ПОИСК
+        // =========================
+        private void Search()
         {
-            CurrentView = new ParticipantViewModel(this);
-            OnPropertyChanged(nameof(CurrentView));
+            try
+            {
+                var id = SearchId?.Trim();
+
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    MessageBox.Show("Введите ID");
+                    return;
+                }
+
+                var found = _db.GetParticipant(id);
+
+                if (found != null)
+                {
+                    Current = found;
+
+                    if (CurrentView is ParticipantViewModel vm)
+                        vm.CurrentParticipant = found;
+
+                    MessageBox.Show("Найден ✔");
+                }
+                else
+                {
+                    var newP = new Participant
+                    {
+                        PrisonerId = id,
+                        BirthDate = DateTime.Today
+                    };
+
+                    Current = newP;
+
+                    if (CurrentView is ParticipantViewModel vm)
+                        vm.CurrentParticipant = newP;
+
+                    MessageBox.Show("Не найден");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка:\n" + ex.Message);
+            }
         }
 
-        public void ShowTest()
+        // =========================
+        // СОХРАНЕНИЕ
+        // =========================
+        private void Save()
         {
-            CurrentView = new TestViewModel(this);
-            OnPropertyChanged(nameof(CurrentView));
+            if (string.IsNullOrWhiteSpace(SearchId))
+            {
+                MessageBox.Show("Введите ID");
+                return;
+            }
+
+            if (Current == null)
+            {
+                MessageBox.Show("Сначала нажмите Найти");
+                return;
+            }
+
+            if (!Current.IsValid())
+            {
+                MessageBox.Show("Исправьте ошибки");
+                return;
+            }
+
+            _db.SaveParticipant(Current);
+            MessageBox.Show("Сохранено");
+        }
+
+        // =========================
+        // ТЕСТЫ
+        // =========================
+        private void GoToTest()
+        {
+            if (Current == null)
+            {
+                MessageBox.Show("Сначала найдите участника");
+                return;
+            }
+
+            var selectionVM = new TestSelectionViewModel();
+
+            selectionVM.OnTestSelected += (test) =>
+            {
+                var testVM = new TestViewModel(this);
+
+                testVM.OnFinished += () =>
+                {
+                    CurrentView = this;
+                };
+
+                CurrentView = testVM;
+            };
+
+            CurrentView = selectionVM;
         }
 
         public void ShowResult(Dictionary<string, int> results)
         {
-            CurrentView = new ResultViewModel(this, results);
-            OnPropertyChanged(nameof(CurrentView));
+            MessageBox.Show("Все тесты пройдены");
         }
 
         public void ShowHistory()
         {
-            CurrentView = new HistoryViewModel();
-            OnPropertyChanged(nameof(CurrentView));
+            CurrentView = new ParticipantViewModel();
         }
+
+        // =========================
+        // ИИ (заглушка)
+        // =========================
+        private void CalculateRisk()
+        {
+            if (Current == null)
+            {
+                MessageBox.Show("Нет участника");
+                return;
+            }
+
+            MessageBox.Show("Расчёт риска пока не реализован");
+        }
+
+        public bool CanSave =>
+            Current != null &&
+            Current.IsValid();
     }
 }

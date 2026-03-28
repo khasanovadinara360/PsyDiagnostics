@@ -7,7 +7,6 @@ namespace PsyDiagnostics.Views
         public HistoryView()
         {
             InitializeComponent();
-            DataContext = new HistoryViewModel();
         }
     }
 }

@@ -19,7 +19,7 @@ namespace PsyDiagnostics.Services
                     {
                         col.Item().Text("ПСИХОЛОГИЧЕСКИЙ ОТЧЁТ").FontSize(20).Bold();
 
-                        col.Item().Text($"ФИО: {p.Name}");
+                        col.Item().Text($"ФИО: {p.FullName}");
                         col.Item().Text($"Возраст: {p.Age}");
 
                         foreach (var r in res)
