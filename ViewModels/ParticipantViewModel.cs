@@ -20,12 +20,27 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        // 🔥 чтобы биндинг работал нормально
+        private string _searchId;
+        public string SearchId
+        {
+            get => _searchId;
+            set
+            {
+                _searchId = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ICommand GoToTestCommand { get; }
         public ICommand SearchCommand { get; set; }
-        public string SearchId { get; set; }
 
         public Action<Participant> OnNavigateToTest;
 
+        public ParticipantViewModel()
+        {
+            GoToTestCommand = new RelayCommand(GoToTest);
+        }
 
         private void GoToTest()
         {
@@ -35,11 +50,8 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
+            // 🔥 ключевой момент — вызываем MainViewModel
             OnNavigateToTest?.Invoke(CurrentParticipant);
-        }
-        public ParticipantViewModel()
-        {
-            GoToTestCommand = new RelayCommand(() => GoToTest());
         }
     }
 }

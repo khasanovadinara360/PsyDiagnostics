@@ -9,6 +9,17 @@ namespace PsyDiagnostics.Models
         public int LowMax { get; set; }
         public int MediumMax { get; set; }
 
-        public List<Question> Questions { get; set; }
+        public List<Question> Questions { get; set; } = new();
+
+        public string GetLevel(int score)
+        {
+            if (score <= LowMax)
+                return "Низкий уровень";
+
+            if (score <= MediumMax)
+                return "Средний уровень";
+
+            return "Высокий уровень";
+        }
     }
 }

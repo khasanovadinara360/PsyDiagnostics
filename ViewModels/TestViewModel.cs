@@ -1,12 +1,12 @@
-﻿using PsyDiagnostics.Models;
+﻿using PsyDiagnostics.Helpers;
+using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using PsyDiagnostics.Helpers;
-using System;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -15,86 +15,78 @@ namespace PsyDiagnostics.ViewModels
         private readonly MainViewModel _main;
         private readonly DatabaseService db = new DatabaseService();
 
-        private int _currentIndex;
-        private int _currentTestIndex;
-
-        public ObservableCollection<Test> Tests { get; set; }
         public ObservableCollection<Question> Questions { get; set; }
+
+        private int _currentIndex;
+
+        public Action OnFinished { get; set; }
 
         private Question _currentQuestion;
         public Question CurrentQuestion
         {
             get => _currentQuestion;
-            set { _currentQuestion = value; OnPropertyChanged(); }
+            set
+            {
+                _currentQuestion = value;
+                OnPropertyChanged();
+            }
         }
 
-        public string TestName => Tests[_currentTestIndex].Name;
+        public string TestTitle => _test.Name;
+        public int CurrentIndex => _currentIndex;
+        public int TotalQuestions => Questions?.Count ?? 0;
+        public string QuestionNumber => $"{_currentIndex + 1}/{TotalQuestions}";
 
-        public int Progress => Questions.Count == 0 ? 0 :
-            (_currentIndex + 1) * 100 / Questions.Count;
+        public string NextButtonText =>
+            _currentIndex == TotalQuestions - 1 ? "Завершить" : "Далее";
 
-        public ICommand AnswerCommand { get; }
-        public ICommand NextTestCommand { get; }
-        public ICommand FinishCommand { get; }
+        public ICommand NextCommand { get; }
+        public ICommand PrevCommand { get; }
 
-        public event Action OnFinished;
+        private Dictionary<string, int> results = new();
+        private Test _test;
 
-        // 👉 ВСЕ РЕЗУЛЬТАТЫ
-        private Dictionary<string, int> allResults = new();
-
-        // =========================
-        // КОНСТРУКТОР (ОДИН!)
-        // =========================
-        public TestViewModel(MainViewModel main)
+        // 🔥 КОНСТРУКТОР С ВЫБРАННЫМ ТЕСТОМ
+        public TestViewModel(MainViewModel main, TestDefinition selectedTest)
         {
             _main = main;
 
             var service = new TestService();
-            Tests = new ObservableCollection<Test>(service.LoadTests());
+            var allTests = service.LoadTests();
 
-            LoadTest(0);
+            _test = allTests.First(t => t.Name == selectedTest.Name);
 
-            AnswerCommand = new RelayCommand<int>(Answer);
-            NextTestCommand = new RelayCommand(() => NextTest());
-
-            FinishCommand = new RelayCommand(() =>
-            {
-                OnFinished?.Invoke();
-            });
-        }
-
-        // =========================
-        // ЗАГРУЗКА ТЕСТА
-        // =========================
-        private void LoadTest(int index)
-        {
-            _currentTestIndex = index;
-            _currentIndex = 0;
-
-            Questions = new ObservableCollection<Question>(Tests[index].Questions);
-
+            Questions = new ObservableCollection<Question>(_test.Questions);
             CurrentQuestion = Questions.FirstOrDefault();
 
-            OnPropertyChanged(nameof(TestName));
-            OnPropertyChanged(nameof(Progress));
+            NextCommand = new RelayCommand(Next);
+            PrevCommand = new RelayCommand(Prev, () => _currentIndex > 0);
         }
 
-        // =========================
-        // ОТВЕТ
-        // =========================
-        private void Answer(int value)
+        private void Next()
         {
-            if (CurrentQuestion == null)
-                return;
+            var selected = CurrentQuestion.Answers
+                .FirstOrDefault(a => a.IsSelected);
 
-            CurrentQuestion.Answer = value;
+            if (selected == null)
+            {
+                MessageBox.Show("Выберите ответ");
+                return;
+            }
+
+            CurrentQuestion.Answer = selected.Value;
 
             _currentIndex++;
 
             if (_currentIndex < Questions.Count)
             {
                 CurrentQuestion = Questions[_currentIndex];
-                OnPropertyChanged(nameof(Progress));
+
+                // 🔥 восстановление выбора
+                foreach (var a in CurrentQuestion.Answers)
+                    a.IsSelected = a.Value == CurrentQuestion.Answer;
+
+                RaiseAll();
             }
             else
             {
@@ -102,56 +94,59 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-        // =========================
-        // ЗАВЕРШЕНИЕ ТЕСТА
-        // =========================
+        private void Prev()
+        {
+            if (_currentIndex <= 0)
+                return;
+
+            _currentIndex--;
+
+            CurrentQuestion = Questions[_currentIndex];
+
+            foreach (var a in CurrentQuestion.Answers)
+                a.IsSelected = a.Value == CurrentQuestion.Answer;
+
+            RaiseAll();
+        }
+
         private void FinishTest()
         {
-            var test = Tests[_currentTestIndex];
-
             int sum = Questions.Sum(q => q.Answer);
 
-            string result;
+            int maxPerQuestion = Questions
+                .SelectMany(q => q.Answers ?? new List<Answer>())
+                .Max(a => a.Value);
 
-            if (sum <= test.LowMax)
-                result = "Низкий";
-            else if (sum <= test.MediumMax)
-                result = "Средний";
-            else
-                result = "Высокий";
+            double normalized = (double)sum / (Questions.Count * maxPerQuestion) * 100;
+            int finalScore = (int)normalized;
 
-            // 💾 Сохраняем в БД
+            string level = _test.GetLevel(finalScore);
+
             if (_main.Current != null)
             {
                 db.SaveResult(
                     _main.Current.PrisonerId,
-                    test.Name,
-                    sum
+                    _test.Name,
+                    finalScore
                 );
             }
 
-            // сохраняем результат
-            allResults[test.Name] = sum;
+            results[_test.Name] = finalScore;
 
-            MessageBox.Show($"{test.Name}\nБаллы: {sum}\n{result}");
+            MessageBox.Show($"{_test.Name}\nБаллы: {finalScore}\nУровень: {level}");
+
+            OnFinished?.Invoke();
         }
 
-        // =========================
-        // СЛЕДУЮЩИЙ ТЕСТ
-        // =========================
-        private void NextTest()
-        {
-            if (_currentTestIndex < Tests.Count - 1)
-            {
-                LoadTest(_currentTestIndex + 1);
-            }
-            else
-            {
-                // 👉 ВСЕ ТЕСТЫ ПРОЙДЕНЫ
-                _main.ShowResult(allResults);
+        public Dictionary<string, int> GetResults() => results;
 
-                OnFinished?.Invoke();
-            }
+        private void RaiseAll()
+        {
+            OnPropertyChanged(nameof(CurrentQuestion));
+            OnPropertyChanged(nameof(CurrentIndex));
+            OnPropertyChanged(nameof(TotalQuestions));
+            OnPropertyChanged(nameof(QuestionNumber));
+            OnPropertyChanged(nameof(NextButtonText));
         }
     }
 }

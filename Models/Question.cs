@@ -1,10 +1,13 @@
-﻿namespace PsyDiagnostics.Models
+﻿using System.Collections.Generic;
+
+namespace PsyDiagnostics.Models
 {
     public class Question
     {
         public string Text { get; set; }
 
-        // ответ пользователя (0–3)
-        public int Answer { get; set; }
+        public List<Answer> Answers { get; set; } = new();
+
+        public int Answer { get; set; } // выбранный ответ
     }
 }

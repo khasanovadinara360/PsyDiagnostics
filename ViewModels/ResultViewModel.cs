@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using PsyDiagnostics.Helpers;
 using PsyDiagnostics.Services;
@@ -24,7 +21,8 @@ namespace PsyDiagnostics.ViewModels
             var ml = new MLPredictor();
             Risk = ml.Predict(results);
 
-            ToHistoryCommand = new RelayCommand<object>(_ => _main.ShowHistory());
+            // ✅ исправлено
+            ToHistoryCommand = new RelayCommand(_ => _main.ShowHistory());
         }
     }
 }
