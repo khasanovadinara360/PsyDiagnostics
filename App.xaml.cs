@@ -11,7 +11,7 @@ namespace PsyDiagnostics
             base.OnStartup(e);
 
             // ВРЕМЕННО (один запуск)
-            ModelTrainer.Train();
+           // ModelTrainer.Train();
         }
     }
 }

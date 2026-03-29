@@ -11,8 +11,6 @@ namespace PsyDiagnostics.Services
     {
         private string _conn = "Data Source=psy.db";
 
-        // ===================== INIT DB =====================
-
         private void InitializeDatabase(SqliteConnection db)
         {
             var cmd = db.CreateCommand();
@@ -56,8 +54,6 @@ namespace PsyDiagnostics.Services
 
             cmd.ExecuteNonQuery();
         }
-
-        // ===================== PARTICIPANT =====================
 
         public Participant GetParticipant(string id)
         {
@@ -155,8 +151,6 @@ namespace PsyDiagnostics.Services
             cmd.ExecuteNonQuery();
         }
 
-        // ===================== NEW AI RESULTS =====================
-
         public void SaveTestResult(string prisonerId, string testName, int score, int prediction, double probability)
         {
             using var db = new SqliteConnection(_conn);
@@ -167,8 +161,8 @@ namespace PsyDiagnostics.Services
 
             cmd.CommandText =
             @"INSERT INTO TestResults 
-      (PrisonerId, TestName, Score, Prediction, Probability, CreatedAt)
-      VALUES ($id,$test,$score,$pred,$prob,$date)";
+            (PrisonerId, TestName, Score, Prediction, Probability, CreatedAt)
+            VALUES ($id,$test,$score,$pred,$prob,$date)";
 
             cmd.Parameters.AddWithValue("$id", prisonerId);
             cmd.Parameters.AddWithValue("$test", testName);
@@ -179,8 +173,6 @@ namespace PsyDiagnostics.Services
 
             cmd.ExecuteNonQuery();
         }
-
-        // ===================== FULL REPORT =====================
 
         public (Participant participant, List<ResultRecord> results, List<TestResultRecord> aiResults)
             GetFullReport(string id)
@@ -223,7 +215,7 @@ namespace PsyDiagnostics.Services
                         TestName = r["TestName"].ToString(),
                         Score = Convert.ToInt32(r["Score"]),
                         Prediction = Convert.ToInt32(r["Prediction"]),
-                        Probability = r["Probability"] != DBNull.Value ? Convert.ToDouble(r["Probability"]): 0,
+                        Probability = r["Probability"] != DBNull.Value ? Convert.ToDouble(r["Probability"]) : 0,
                         Date = r["CreatedAt"].ToString()
                     });
                 }

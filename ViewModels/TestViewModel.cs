@@ -14,7 +14,8 @@ namespace PsyDiagnostics.ViewModels
     {
         private readonly MainViewModel _main;
         private readonly DatabaseService db = new DatabaseService();
-        private readonly MlService _ml = new MlService();
+        //private readonly MlService _ml = new MlService();
+        private readonly ApiService _api = new ApiService();
 
         public ObservableCollection<Question> Questions { get; set; }
 
@@ -63,7 +64,7 @@ namespace PsyDiagnostics.ViewModels
             PrevCommand = new RelayCommand(Prev, () => _currentIndex > 0);
 
             // обучение из БД (если есть данные)
-            _ml.TrainFromDatabase(db);
+           // _ml.TrainFromDatabase(db);
         }
 
         private void Next()
@@ -111,7 +112,7 @@ namespace PsyDiagnostics.ViewModels
             RaiseAll();
         }
 
-        private void FinishTest()
+        private async void FinishTest()
         {
             int sum = Questions.Sum(q => q.Answer);
 
@@ -137,18 +138,21 @@ namespace PsyDiagnostics.ViewModels
                 Resilience = results.GetValueOrDefault("Resilience", 50),
                 Hostility = results.GetValueOrDefault("Hostility", 50)
             };
-
-            var pred = _ml.Predict(aiInput);
-
-            if (pred == null)
+            var request = new PredictionRequest
             {
-                MessageBox.Show("Недостаточно данных для ИИ");
-                return;
-            }
+                Aggression = aiInput.Aggression,
+                Impulsivity = aiInput.Impulsivity,
+                Depression = aiInput.Depression,
+                Stress = aiInput.Stress,
+                Adaptation = aiInput.Adaptation,
+                Anxiety = aiInput.Anxiety,
+                Resilience = aiInput.Resilience,
+                Hostility = aiInput.Hostility
+            };
 
-            // 🔥 нормальная вероятность
-            double probability = Math.Clamp(pred.Probability, 0, 1);
-            int percent = (int)(probability * 100);
+            int result = await _api.GetPrediction(request);
+
+            int percent = result == 1 ? 80 : 20;
 
             string levelRisk =
                 percent < 40 ? "Низкий" :
@@ -159,12 +163,12 @@ namespace PsyDiagnostics.ViewModels
             if (_main.Current != null)
             {
                 db.SaveTestResult(
-                    _main.Current.PrisonerId,
-                    _test.Name,
-                    finalScore,
-                    percent >= 50 ? 1 : 0,
-                    probability
-                );
+                _main.Current.PrisonerId,
+                _test.Name,
+                finalScore,
+                result, // вместо percent >= 50
+                percent / 100.0
+);
             }
 
             string level = _test.GetLevel(finalScore);
