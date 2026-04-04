@@ -23,16 +23,13 @@ namespace PsyDiagnostics.Helpers
         {
             _execute = execute;
         }
-
         public RelayCommand(Action<object> execute, Predicate<object> canExecute)
         {
             _execute = execute;
             _canExecute = canExecute;
         }
-
         public bool CanExecute(object parameter)
             => _canExecute == null || _canExecute(parameter);
-
         public void Execute(object parameter)
             => _execute(parameter);
 

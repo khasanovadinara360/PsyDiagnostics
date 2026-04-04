@@ -14,13 +14,11 @@ namespace PsyDiagnostics.ViewModels
     {
         private readonly MainViewModel _main;
         private readonly DatabaseService db = new DatabaseService();
-        //private readonly MlService _ml = new MlService();
         private readonly ApiService _api = new ApiService();
 
         public ObservableCollection<Question> Questions { get; set; }
 
         private int _currentIndex;
-
         public Action OnFinished { get; set; }
 
         private Question _currentQuestion;
@@ -34,21 +32,34 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-        public string TestTitle => _test.Name;
+        private Test _test;
+        private Dictionary<string, int> results = new();
+
+        public string TestTitle => _test.DisplayName ?? _test.Name;
+
+        private string _modeTitle;
+        public string ModeTitle
+        {
+            get => _modeTitle;
+            set { _modeTitle = value; OnPropertyChanged(); }
+        }
+
         public int CurrentIndex => _currentIndex;
         public int TotalQuestions => Questions?.Count ?? 0;
         public string QuestionNumber => $"{_currentIndex + 1}/{TotalQuestions}";
-
         public string NextButtonText =>
             _currentIndex == TotalQuestions - 1 ? "Завершить" : "Далее";
 
+        public System.Windows.Visibility FinishButtonVisibility =>
+            _currentIndex == TotalQuestions - 1
+                ? System.Windows.Visibility.Visible
+                : System.Windows.Visibility.Collapsed;
+
         public ICommand NextCommand { get; }
         public ICommand PrevCommand { get; }
+        public ICommand FinishCommand { get; }
 
-        private Dictionary<string, int> results = new();
-        private Test _test;
-
-        public TestViewModel(MainViewModel main, TestDefinition selectedTest)
+        public TestViewModel(MainViewModel main, TestDefinition selectedTest, TestMode mode)
         {
             _main = main;
 
@@ -57,14 +68,31 @@ namespace PsyDiagnostics.ViewModels
 
             _test = allTests.First(t => t.Name == selectedTest.Name);
 
+            ModeTitle = mode switch
+            {
+                TestMode.Express => "Формат: экспресс‑тест",
+                TestMode.Normal => "Формат: обычный тест",
+                TestMode.Full => "Формат: расширенный тест",
+                _ => "Формат: неизвестный"
+            };
+
+            foreach (var q in _test.Questions)
+            {
+                q.TestViewModel = this;
+
+                foreach (var a in q.Answers)
+                {
+                    a.Question = q;
+                    a.TestViewModel = this;
+                }
+            }
+
             Questions = new ObservableCollection<Question>(_test.Questions);
             CurrentQuestion = Questions.FirstOrDefault();
 
             NextCommand = new RelayCommand(Next);
             PrevCommand = new RelayCommand(Prev, () => _currentIndex > 0);
-
-            // обучение из БД (если есть данные)
-           // _ml.TrainFromDatabase(db);
+            FinishCommand = new RelayCommand(() => FinishTest());
         }
 
         private void Next()
@@ -125,6 +153,7 @@ namespace PsyDiagnostics.ViewModels
 
             int finalScore = (int)((rawScore / (double)maxScore) * 100);
 
+            // сохраняем результат по конкретному тесту в словарь
             results[_test.Name] = finalScore;
 
             var aiInput = new AiData
@@ -138,6 +167,7 @@ namespace PsyDiagnostics.ViewModels
                 Resilience = results.GetValueOrDefault("Resilience", 50),
                 Hostility = results.GetValueOrDefault("Hostility", 50)
             };
+
             var request = new PredictionRequest
             {
                 Aggression = aiInput.Aggression,
@@ -154,67 +184,20 @@ namespace PsyDiagnostics.ViewModels
 
             int percent = result == 1 ? 80 : 20;
 
-            string levelRisk =
-                percent < 40 ? "Низкий" :
-                percent < 70 ? "Средний" : "Высокий";
-
-            string explanation = BuildExplanation(aiInput);
-
             if (_main.Current != null)
             {
                 db.SaveTestResult(
-                _main.Current.PrisonerId,
-                _test.Name,
-                finalScore,
-                result, // вместо percent >= 50
-                percent / 100.0
-);
+                    _main.Current.PrisonerId,
+                    _test.Name,
+                    finalScore,
+                    result,
+                    percent / 100.0
+                );
             }
 
-            string level = _test.GetLevel(finalScore);
-
-            MessageBox.Show(
-                $"{_test.Name}\n" +
-                $"Баллы: {finalScore}\n" +
-                $"Уровень: {level}\n\n" +
-
-                $"ИИ вероятность: {percent}%\n" +
-                $"Риск: {levelRisk}\n\n" +
-
-                $"Причины:\n{explanation}"
-            );
-
+            // здесь больше не показываем общий MessageBox,
+            // только даём сигнал MultiTestViewModel / MainViewModel
             OnFinished?.Invoke();
-        }
-
-        private string BuildExplanation(AiData d)
-        {
-            var reasons = new List<string>();
-
-            if (d.Aggression > 70)
-                reasons.Add("Высокая агрессивность");
-
-            if (d.Impulsivity > 70)
-                reasons.Add("Высокая импульсивность");
-
-            if (d.Stress < 40)
-                reasons.Add("Низкая стрессоустойчивость");
-
-            if (d.Adaptation < 40)
-                reasons.Add("Плохая социальная адаптация");
-
-            if (d.Anxiety > 70)
-                reasons.Add("Высокая тревожность");
-
-            if (d.Resilience < 40)
-                reasons.Add("Низкая психологическая устойчивость");
-
-            if (d.Hostility > 70)
-                reasons.Add("Выраженная враждебность");
-
-            return reasons.Count == 0
-                ? "Факторы риска не выражены"
-                : string.Join("\n", reasons);
         }
 
         public Dictionary<string, int> GetResults() => results;
@@ -226,6 +209,28 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(TotalQuestions));
             OnPropertyChanged(nameof(QuestionNumber));
             OnPropertyChanged(nameof(NextButtonText));
+            OnPropertyChanged(nameof(FinishButtonVisibility));
+        }
+
+        public void OnAnswerSelected()
+        {
+            if (_currentIndex >= Questions.Count - 1)
+            {
+                RaiseAll();
+                return;
+            }
+
+            _currentIndex++;
+
+            if (_currentIndex < Questions.Count)
+            {
+                CurrentQuestion = Questions[_currentIndex];
+
+                foreach (var a in CurrentQuestion.Answers)
+                    a.IsSelected = a.Value == CurrentQuestion.Answer;
+
+                RaiseAll();
+            }
         }
     }
 }

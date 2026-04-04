@@ -1,57 +1,473 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace PsyDiagnostics.Models
 {
     public enum Citizenship
     {
+        [Description("Не выбрано")]
         НеВыбрано = 0,
+
+        [Description("РФ")]
         РФ,
+
+        [Description("Беларусь")]
         Беларусь,
+
+        [Description("Казахстан")]
         Казахстан,
+
+        [Description("Украина")]
         Украина,
+
+        [Description("Другое")]
         Другое
     }
+
     public enum EducationLevel
     {
+        [Description("Не выбрано")]
         НеВыбрано = 0,
+
+        [Description("Нет образования")]
         Нет,
+
+        [Description("Среднее образование")]
         Среднее,
+
+        [Description("Среднее специальное образование")]
         СреднееСпециальное,
+
+        [Description("Высшее образование")]
         Высшее
     }
 
     public enum MaritalStatus
     {
+        [Description("Не выбрано")]
         НеВыбрано = 0,
+
+        [Description("Не женат / не замужем")]
         НеЖенат,
+
+        [Description("Женат / замужем")]
         Женат,
+
+        [Description("Разведен(а)")]
         Разведен
     }
 
     public enum CrimeType
     {
+        [Description("Не выбрано")]
         НеВыбрано = 0,
+
+        [Description("Кража")]
         Кража,
+
+        [Description("Мошенничество")]
         Мошенничество,
+
+        [Description("Разбой")]
         Разбой,
+
+        [Description("Убийство")]
         Убийство
     }
 
     public enum Recidivism
     {
+        [Description("Не выбрано")]
         НеВыбрано = 0,
+
+        [Description("Нет рецидива")]
         Нет,
+
+        [Description("Есть рецидив")]
         Да
     }
 
     public enum Category
     {
+        [Description("Не выбрано")]
         НеВыбрано = 0,
+
+        [Description("Первоход")]
         Первоход,
+
+        [Description("Второход")]
         Второход
+    }
+
+    public enum Gender
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Мужской")]
+        Мужской,
+
+        [Description("Женский")]
+        Женский
+    }
+
+    public enum FamilyUpbringing
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("В полной семье")]
+        ПолнаяСемья,
+
+        [Description("Сирота")]
+        Сирота,
+
+        [Description("Воспитывала только мать")]
+        ТолькоМать,
+
+        [Description("Воспитывал только отец")]
+        ТолькоОтец,
+
+        [Description("Воспитывали бабушка и дедушка")]
+        БабушкаИДедушка,
+
+        [Description("В детском доме")]
+        ДетскийДом,
+
+        [Description("Иное")]
+        Иное
+    }
+
+    public enum YesNo
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Да")]
+        Да,
+
+        [Description("Нет")]
+        Нет
+    }
+
+    public enum ChildrenPresence
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Детей нет")]
+        Нет,
+
+        [Description("Есть дети")]
+        Да
+    }
+
+    public enum EducationSurvey
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Начальное общее образование")]
+        НачальноеОбщее,
+
+        [Description("Основное общее образование")]
+        ОсновноеОбщее,
+
+        [Description("Среднее общее образование")]
+        СреднееОбщее,
+
+        [Description("Среднее профессиональное образование")]
+        СреднееПрофессиональное,
+
+        [Description("Высшее образование")]
+        Высшее,
+
+        [Description("Нет образования")]
+        НетОбразования
+    }
+
+    public enum ProfessionPresence
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Имею профессию")]
+        Да,
+
+        [Description("Не имею профессии")]
+        Нет
+    }
+
+    public enum Religion
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Не верю в Бога (атеист)")]
+        Атеист,
+
+        [Description("Православие")]
+        Православие,
+
+        [Description("Ислам")]
+        Ислам,
+
+        [Description("Буддизм")]
+        Буддизм,
+
+        [Description("Иудаизм")]
+        Иудаизм,
+
+        [Description("Иное")]
+        Иное
+    }
+
+    public enum ArmyService
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Служил(а) в армии")]
+        Да,
+
+        [Description("Не служил(а) в армии")]
+        Нет
+    }
+
+    public enum CombatParticipation
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Участвовал(а) в боевых действиях")]
+        Да,
+
+        [Description("Не участвовал(а) в боевых действиях")]
+        Нет
+    }
+
+    public enum SomaticDiseases
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Нет тяжелых соматических заболеваний")]
+        Нет,
+
+        [Description("Туберкулез")]
+        Туберкулез,
+
+        [Description("ВИЧ")]
+        ВИЧ,
+
+        [Description("Гепатит")]
+        Гепатит,
+
+        [Description("Иное")]
+        Иное
+    }
+
+    public enum Disability
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Есть инвалидность")]
+        Да,
+
+        [Description("Инвалидности нет")]
+        Нет
+    }
+
+    public enum MentalDiseases
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Есть психические заболевания")]
+        Да,
+
+        [Description("Психических заболеваний нет")]
+        Нет
+    }
+
+    public enum PsychiatristRegistry
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Состоял(а) на учете у психиатра")]
+        Да,
+
+        [Description("Не состоял(а) на учете у психиатра")]
+        Нет
+    }
+
+    public enum Gambling
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Принимал(а) участие в азартных играх")]
+        Да,
+
+        [Description("Не принимал(а) участия в азартных играх")]
+        Нет
+    }
+
+    public enum Obligations
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Нет обязательств")]
+        Нет,
+
+        [Description("Потребительский кредит")]
+        ПотребительскийКредит,
+
+        [Description("Ипотечный кредит")]
+        ИпотечныйКредит,
+
+        [Description("Микрозайм в МФО")]
+        МикрозаймВМФО,
+
+        [Description("Кредитная карта")]
+        КредитнаяКарта,
+
+        [Description("Долг физическому лицу (займ)")]
+        ДолгФизическомуЛицу,
+
+        [Description("Иное")]
+        Иное
+    }
+
+    public enum NarcologistRegistry
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Состоял(а) на учете у нарколога")]
+        Да,
+
+        [Description("Не состоял(а) на учете у нарколога")]
+        Нет
+    }
+
+    public enum DrugUse
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Употреблял(а) наркотические средства")]
+        Да,
+
+        [Description("Пробовал(а) наркотические средства")]
+        Пробовал,
+
+        [Description("Не употреблял(а) наркотические средства")]
+        Нет
+    }
+
+    public enum SuicideAttempts
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Да, в ИУ")]
+        ДаВИУ,
+
+        [Description("Да, на свободе")]
+        ДаНаСвободе,
+
+        [Description("Да, в СИЗО")]
+        ДаВСИЗО,
+
+        [Description("Нет попыток суицида")]
+        Нет
+    }
+
+    public enum SelfHarmScars
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Есть шрамы от самопорезов")]
+        Да,
+
+        [Description("Нет шрамов от самопорезов")]
+        Нет
+    }
+
+    public enum RelativesSuicide
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Были суициды/попытки у родственников")]
+        Да,
+
+        [Description("Не было суицидов/попыток у родственников")]
+        Нет
+    }
+
+    public enum CurrentFeelings
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Одиночество, тоска")]
+        ОдиночествоТоска,
+
+        [Description("Раздражение, напряжение, агрессия")]
+        РаздражениеНапряжениеАгрессия,
+
+        [Description("Оптимизм, надежда на будущее")]
+        ОптимизмНадежда,
+
+        [Description("Решимость улучшить свою жизнь")]
+        РешимостьУлучшитьЖизнь,
+
+        [Description("Подавленность, безысходность")]
+        ПодавленностьБезысходность,
+
+        [Description("Спокойствие")]
+        Спокойствие,
+
+        [Description("Готовность постоять за себя")]
+        ГотовностьПостоятьЗаСебя,
+
+        [Description("Тревога, страх, растерянность")]
+        ТревогаСтрахРастерянность,
+
+        [Description("Иное")]
+        Иное
+    }
+
+    public enum AttitudeToUIS
+    {
+        [Description("Не выбрано")]
+        НеВыбрано = 0,
+
+        [Description("Отношусь спокойно")]
+        ОтношусьСпокойно,
+
+        [Description("Думаю, что зря я вновь сюда попал")]
+        ЗряВновьПопал,
+
+        [Description("Сожалею о совершенном преступлении")]
+        СожалеюОПреступлении,
+
+        [Description("Мне здесь лучше, чем на свободе")]
+        ЗдесьЛучшеЧемНаСвободе,
+
+        [Description("Думаю, что здесь я не в последний раз")]
+        НеВПоследнийРаз,
+
+        [Description("Думаю, что это просто стечение обстоятельств")]
+        СтечениеОбстоятельств,
+
+        [Description("Другое")]
+        Другое
     }
 }

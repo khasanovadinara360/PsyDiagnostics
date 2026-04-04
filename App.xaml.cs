@@ -9,9 +9,6 @@ namespace PsyDiagnostics
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-
-            // ВРЕМЕННО (один запуск)
-           // ModelTrainer.Train();
         }
     }
 }

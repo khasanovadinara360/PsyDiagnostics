@@ -3,7 +3,6 @@ using PsyDiagnostics.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows;
 
 namespace PsyDiagnostics.Services
 {
@@ -17,21 +16,61 @@ namespace PsyDiagnostics.Services
 
             cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS Participants (
-                PrisonerId TEXT PRIMARY KEY,
-                FullName TEXT,
-                BirthDate TEXT,
-                BirthPlace TEXT,
-                Citizenship TEXT,
-                EducationLevel TEXT,
-                MaritalStatus TEXT,
-                HasChildren INTEGER,
-                ProfessionBeforeConviction TEXT,
-                CriminalArticle TEXT,
-                SentenceTerm TEXT,
-                CrimeType TEXT,
-                Recidivism TEXT,
-                Unit TEXT,
-                Category TEXT
+                Id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                PrisonerId          TEXT    NOT NULL UNIQUE,
+                FullName            TEXT,
+                Gender              INTEGER,
+                BirthDate           TEXT,
+                BirthPlace          TEXT,
+                Nationality         TEXT,
+                Residence           TEXT,
+                FamilyUpbringing    INTEGER,
+                MaritalStatus       INTEGER,
+                HasCloseRelatives   INTEGER,
+                HasChildren         INTEGER,
+                ChildrenCount       INTEGER,
+                WillKeepContact     INTEGER,
+                EducationLevel      INTEGER,
+                HasProfession       INTEGER,
+                Profession          TEXT,
+                Religion            INTEGER,
+
+                ArmyService         INTEGER,
+                ArmyBranch          TEXT,
+                CombatParticipation INTEGER,
+                SomaticDiseases     INTEGER,
+                Disability          INTEGER,
+                MentalDiseases      INTEGER,
+                PsychiatristRegistry INTEGER,
+                Gambling            INTEGER,
+                Obligations         INTEGER,
+                NarcologistRegistry INTEGER,
+                DrugUse             INTEGER,
+
+                ArticleNumber       TEXT,
+                ArticlePart         TEXT,
+                ArticlePoint        TEXT,
+                SentenceTerm        INTEGER,
+                CrimeType           INTEGER,
+                Recidivism          INTEGER,
+                Unit                TEXT,
+                Category            INTEGER,
+
+                CurrentFeelings     INTEGER,
+                AttitudeToUIS       INTEGER,
+                SuicideAttempts     INTEGER,
+                SelfHarmScars       INTEGER,
+                RelativesSuicide    INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS AiResults (
+                Id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                PrisonerId   TEXT    NOT NULL,
+                TestName     TEXT    NOT NULL,
+                Score        INTEGER NOT NULL,
+                Prediction   INTEGER NOT NULL,
+                Probability  REAL,
+                Date         TEXT    NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS Results (
@@ -41,17 +80,7 @@ namespace PsyDiagnostics.Services
                 Score INTEGER,
                 Date TEXT
             );
-
-            CREATE TABLE IF NOT EXISTS TestResults (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                PrisonerId TEXT,
-                TestName TEXT,
-                Score INTEGER,
-                Prediction INTEGER,
-                CreatedAt TEXT
-            );
             ";
-
             cmd.ExecuteNonQuery();
         }
 
@@ -63,52 +92,69 @@ namespace PsyDiagnostics.Services
 
             var cmd = db.CreateCommand();
             cmd.CommandText = "SELECT * FROM Participants WHERE TRIM(PrisonerId)=TRIM($id)";
-            cmd.Parameters.AddWithValue("$id", id?.Trim());
+            cmd.Parameters.AddWithValue("$id", id?.Trim() ?? "");
 
             using var r = cmd.ExecuteReader();
 
-            if (r.Read())
+            if (!r.Read())
+                return null;
+
+            var p = new Participant
             {
-                return new Participant
-                {
-                    PrisonerId = r["PrisonerId"].ToString(),
-                    FullName = r["FullName"].ToString(),
+                PrisonerId = r["PrisonerId"]?.ToString(),
+                FullName = r["FullName"]?.ToString(),
 
-                    BirthDate = DateTime.TryParse(r["BirthDate"]?.ToString(), out var d)
-                        ? d : DateTime.Now,
+                BirthDate = DateTime.TryParse(r["BirthDate"]?.ToString(), out var d)
+                    ? d : DateTime.Today,
 
-                    BirthPlace = r["BirthPlace"].ToString(),
+                BirthPlace = r["BirthPlace"]?.ToString(),
+                Nationality = r["Nationality"]?.ToString(),
+                Residence = r["Residence"]?.ToString(),
 
-                    Citizenship = Enum.TryParse<Citizenship>(r["Citizenship"]?.ToString(), out var c)
-                        ? c : Citizenship.РФ,
+                FamilyUpbringing = EnumTry(r["FamilyUpbringing"], FamilyUpbringing.НеВыбрано),
+                MaritalStatus = EnumTry(r["MaritalStatus"], MaritalStatus.НеЖенат),
 
-                    EducationLevel = Enum.TryParse<EducationLevel>(r["EducationLevel"]?.ToString(), out var e)
-                        ? e : EducationLevel.Среднее,
+                HasCloseRelatives = ToBool(r["HasCloseRelatives"]) ? YesNo.Да : YesNo.Нет,
+                HasChildren = ToBool(r["HasChildren"]) ? ChildrenPresence.Да : ChildrenPresence.Нет,
+                ChildrenCount = TryInt(r["ChildrenCount"]),
 
-                    MaritalStatus = Enum.TryParse<MaritalStatus>(r["MaritalStatus"]?.ToString(), out var m)
-                        ? m : MaritalStatus.НеЖенат,
+                WillKeepContact = ToBool(r["WillKeepContact"]) ? YesNo.Да : YesNo.Нет,
 
-                    HasChildren = Convert.ToInt32(r["HasChildren"]) == 1,
+                EducationLevel = EnumTry(r["EducationLevel"], EducationLevel.Среднее),
+                HasProfession = EnumTry(r["HasProfession"], ProfessionPresence.Нет),
+                Profession = r["Profession"]?.ToString(),
+                Religion = EnumTry(r["Religion"], Religion.НеВыбрано),
 
-                    ProfessionBeforeConviction = r["ProfessionBeforeConviction"].ToString(),
+                ArmyService = EnumTry(r["ArmyService"], default(ArmyService)),
+                ArmyBranch = r["ArmyBranch"]?.ToString(),
+                CombatParticipation = EnumTry(r["CombatParticipation"], CombatParticipation.Нет),
+                SomaticDiseases = EnumTry(r["SomaticDiseases"], SomaticDiseases.Нет),
+                Disability = EnumTry(r["Disability"], Disability.Нет),
+                MentalDiseases = EnumTry(r["MentalDiseases"], MentalDiseases.Нет),
+                PsychiatristRegistry = EnumTry(r["PsychiatristRegistry"], PsychiatristRegistry.Нет),
+                Gambling = EnumTry(r["Gambling"], Gambling.Нет),
+                Obligations = EnumTry(r["Obligations"], Obligations.Нет),
+                NarcologistRegistry = EnumTry(r["NarcologistRegistry"], NarcologistRegistry.Нет),
+                DrugUse = EnumTry(r["DrugUse"], DrugUse.Нет),
 
-                    ArticleNumber = r["CriminalArticle"]?.ToString(),
-                    SentenceTerm = r["SentenceTerm"]?.ToString(),
+                ArticleNumber = r["ArticleNumber"]?.ToString(),
+                ArticlePart = r["ArticlePart"]?.ToString(),
+                ArticlePoint = r["ArticlePoint"]?.ToString(),
+                SentenceTerm = TryInt(r["SentenceTerm"]),
 
-                    CrimeType = Enum.TryParse<CrimeType>(r["CrimeType"]?.ToString(), out var ct)
-                        ? ct : CrimeType.НеВыбрано,
+                CrimeType = EnumTry(r["CrimeType"], CrimeType.НеВыбрано),
+                Recidivism = EnumTry(r["Recidivism"], Recidivism.Нет),
+                Unit = r["Unit"]?.ToString(),
+                Category = EnumTry(r["Category"], Category.НеВыбрано),
 
-                    Recidivism = Enum.TryParse<Recidivism>(r["Recidivism"]?.ToString(), out var rec)
-                        ? rec : Recidivism.Нет,
+                CurrentFeelings = EnumTry(r["CurrentFeelings"], CurrentFeelings.НеВыбрано),
+                AttitudeToUIS = EnumTry(r["AttitudeToUIS"], AttitudeToUIS.НеВыбрано),
+                SuicideAttempts = EnumTry(r["SuicideAttempts"], SuicideAttempts.Нет),
+                SelfHarmScars = EnumTry(r["SelfHarmScars"], SelfHarmScars.Нет),
+                RelativesSuicide = EnumTry(r["RelativesSuicide"], RelativesSuicide.Нет)
+            };
 
-                    Unit = r["Unit"].ToString(),
-
-                    Category = Enum.TryParse<Category>(r["Category"]?.ToString(), out var cat)
-                        ? cat : Category.НеВыбрано
-                };
-            }
-
-            return null;
+            return p;
         }
 
         public void SaveParticipant(Participant p)
@@ -121,32 +167,68 @@ namespace PsyDiagnostics.Services
 
             cmd.CommandText =
             @"INSERT OR REPLACE INTO Participants
-            (PrisonerId, FullName, BirthDate, BirthPlace, Citizenship,
-             EducationLevel, MaritalStatus, HasChildren, ProfessionBeforeConviction,
-             CriminalArticle, SentenceTerm, CrimeType, Recidivism, Unit, Category)
+            (PrisonerId, FullName, Gender, BirthDate, BirthPlace, Nationality, Residence,
+             FamilyUpbringing, MaritalStatus, HasCloseRelatives, HasChildren, ChildrenCount,
+             WillKeepContact, EducationLevel, HasProfession, Profession, Religion,
+             ArmyService, ArmyBranch, CombatParticipation, SomaticDiseases, Disability,
+             MentalDiseases, PsychiatristRegistry, Gambling, Obligations, NarcologistRegistry, DrugUse,
+             ArticleNumber, ArticlePart, ArticlePoint, SentenceTerm, CrimeType, Recidivism, Unit, Category,
+             CurrentFeelings, AttitudeToUIS, SuicideAttempts, SelfHarmScars, RelativesSuicide)
             VALUES
-            ($id,$name,$birth,$place,$cit,$edu,$mar,$child,$prof,$art,$term,$crime,$rec,$unit,$cat)";
+            ($id,$name,$gender,$birth,$place,$nat,$res,
+             $fam,$mar,$rel,$hasChild,$childCount,
+             $keep,$edu,$hasProf,$prof,$relg,
+             $army,$armyBranch,$combat,$som,$dis,
+             $ment,$psyc,$gamb,$obl,$narc,$drug,
+             $artNum,$artPart,$artPoint,$term,$crime,$rec,$unit,$cat,
+             $cf,$att,$suic,$scar,$relSuic)";
 
-            cmd.Parameters.AddWithValue("$id", p.PrisonerId?.Trim());
-            cmd.Parameters.AddWithValue("$name", p.FullName);
+            cmd.Parameters.AddWithValue("$id", p.PrisonerId?.Trim() ?? "");
+            cmd.Parameters.AddWithValue("$name", p.FullName ?? "");
+            cmd.Parameters.AddWithValue("$gender", (int)p.Gender);
             cmd.Parameters.AddWithValue("$birth", p.BirthDate.ToString("yyyy-MM-dd"));
-            cmd.Parameters.AddWithValue("$place", p.BirthPlace);
+            cmd.Parameters.AddWithValue("$place", p.BirthPlace ?? "");
+            cmd.Parameters.AddWithValue("$nat", p.Nationality ?? "");
+            cmd.Parameters.AddWithValue("$res", p.Residence ?? "");
 
-            cmd.Parameters.AddWithValue("$cit", p.Citizenship.ToString());
-            cmd.Parameters.AddWithValue("$edu", p.EducationLevel.ToString());
-            cmd.Parameters.AddWithValue("$mar", p.MaritalStatus.ToString());
+            cmd.Parameters.AddWithValue("$fam", (int)p.FamilyUpbringing);
+            cmd.Parameters.AddWithValue("$mar", (int)p.MaritalStatus);
+            cmd.Parameters.AddWithValue("$rel", p.HasCloseRelatives == YesNo.Да ? 1 : 0);
+            cmd.Parameters.AddWithValue("$hasChild", p.HasChildren == ChildrenPresence.Да ? 1 : 0);
+            cmd.Parameters.AddWithValue("$childCount", p.ChildrenCount);
 
-            cmd.Parameters.AddWithValue("$child", p.HasChildren ? 1 : 0);
-            cmd.Parameters.AddWithValue("$prof", p.ProfessionBeforeConviction);
+            cmd.Parameters.AddWithValue("$keep", p.WillKeepContact == YesNo.Да ? 1 : 0);
+            cmd.Parameters.AddWithValue("$edu", (int)p.EducationLevel);
+            cmd.Parameters.AddWithValue("$hasProf", (int)p.HasProfession);
+            cmd.Parameters.AddWithValue("$prof", p.Profession ?? "");
+            cmd.Parameters.AddWithValue("$relg", (int)p.Religion);
 
-            cmd.Parameters.AddWithValue("$art", p.CriminalArticle);
+            cmd.Parameters.AddWithValue("$army", (int)p.ArmyService);
+            cmd.Parameters.AddWithValue("$armyBranch", p.ArmyBranch ?? "");
+            cmd.Parameters.AddWithValue("$combat", (int)p.CombatParticipation);
+            cmd.Parameters.AddWithValue("$som", (int)p.SomaticDiseases);
+            cmd.Parameters.AddWithValue("$dis", (int)p.Disability);
+            cmd.Parameters.AddWithValue("$ment", (int)p.MentalDiseases);
+            cmd.Parameters.AddWithValue("$psyc", (int)p.PsychiatristRegistry);
+            cmd.Parameters.AddWithValue("$gamb", (int)p.Gambling);
+            cmd.Parameters.AddWithValue("$obl", (int)p.Obligations);
+            cmd.Parameters.AddWithValue("$narc", (int)p.NarcologistRegistry);
+            cmd.Parameters.AddWithValue("$drug", (int)p.DrugUse);
+
+            cmd.Parameters.AddWithValue("$artNum", p.ArticleNumber ?? "");
+            cmd.Parameters.AddWithValue("$artPart", p.ArticlePart ?? "");
+            cmd.Parameters.AddWithValue("$artPoint", p.ArticlePoint ?? "");
             cmd.Parameters.AddWithValue("$term", p.SentenceTerm);
+            cmd.Parameters.AddWithValue("$crime", (int)p.CrimeType);
+            cmd.Parameters.AddWithValue("$rec", (int)p.Recidivism);
+            cmd.Parameters.AddWithValue("$unit", p.Unit ?? "");
+            cmd.Parameters.AddWithValue("$cat", (int)p.Category);
 
-            cmd.Parameters.AddWithValue("$crime", p.CrimeType.ToString());
-            cmd.Parameters.AddWithValue("$rec", p.Recidivism.ToString());
-
-            cmd.Parameters.AddWithValue("$unit", p.Unit);
-            cmd.Parameters.AddWithValue("$cat", p.Category.ToString());
+            cmd.Parameters.AddWithValue("$cf", (int)p.CurrentFeelings);
+            cmd.Parameters.AddWithValue("$att", (int)p.AttitudeToUIS);
+            cmd.Parameters.AddWithValue("$suic", (int)p.SuicideAttempts);
+            cmd.Parameters.AddWithValue("$scar", (int)p.SelfHarmScars);
+            cmd.Parameters.AddWithValue("$relSuic", (int)p.RelativesSuicide);
 
             cmd.ExecuteNonQuery();
         }
@@ -160,8 +242,8 @@ namespace PsyDiagnostics.Services
             var cmd = db.CreateCommand();
 
             cmd.CommandText =
-            @"INSERT INTO TestResults 
-            (PrisonerId, TestName, Score, Prediction, Probability, CreatedAt)
+            @"INSERT INTO AiResults 
+            (PrisonerId, TestName, Score, Prediction, Probability, Date)
             VALUES ($id,$test,$score,$pred,$prob,$date)";
 
             cmd.Parameters.AddWithValue("$id", prisonerId);
@@ -185,25 +267,31 @@ namespace PsyDiagnostics.Services
             db.Open();
             InitializeDatabase(db);
 
-            var cmd1 = db.CreateCommand();
-            cmd1.CommandText = "SELECT * FROM Results WHERE PrisonerId=$id";
-            cmd1.Parameters.AddWithValue("$id", id);
-
-            using (var r = cmd1.ExecuteReader())
+            try
             {
-                while (r.Read())
+                var cmd1 = db.CreateCommand();
+                cmd1.CommandText = "SELECT * FROM Results WHERE PrisonerId=$id";
+                cmd1.Parameters.AddWithValue("$id", id);
+
+                using (var r = cmd1.ExecuteReader())
                 {
-                    results.Add(new ResultRecord
+                    while (r.Read())
                     {
-                        TestName = r["TestName"].ToString(),
-                        Score = Convert.ToInt32(r["Score"]),
-                        Date = r["Date"].ToString()
-                    });
+                        results.Add(new ResultRecord
+                        {
+                            TestName = r["TestName"].ToString(),
+                            Score = Convert.ToInt32(r["Score"]),
+                            Date = r["Date"].ToString()
+                        });
+                    }
                 }
+            }
+            catch
+            {
             }
 
             var cmd2 = db.CreateCommand();
-            cmd2.CommandText = "SELECT * FROM TestResults WHERE PrisonerId=$id";
+            cmd2.CommandText = "SELECT * FROM AiResults WHERE PrisonerId=$id";
             cmd2.Parameters.AddWithValue("$id", id);
 
             using (var r = cmd2.ExecuteReader())
@@ -216,7 +304,7 @@ namespace PsyDiagnostics.Services
                         Score = Convert.ToInt32(r["Score"]),
                         Prediction = Convert.ToInt32(r["Prediction"]),
                         Probability = r["Probability"] != DBNull.Value ? Convert.ToDouble(r["Probability"]) : 0,
-                        Date = r["CreatedAt"].ToString()
+                        Date = r["Date"].ToString()
                     });
                 }
             }
@@ -226,13 +314,12 @@ namespace PsyDiagnostics.Services
 
         public List<AiData> GetAiTrainingData()
         {
-            var list = new List<AiData>();
-
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
-            cmd.CommandText = "SELECT * FROM TestResults";
+            cmd.CommandText = "SELECT * FROM AiResults";
 
             using var r = cmd.ExecuteReader();
 
@@ -266,6 +353,156 @@ namespace PsyDiagnostics.Services
             }
 
             return temp.Values.ToList();
+        }
+
+        public void SeedTestParticipants(int count = 50)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var rnd = new Random();
+            using var tx = db.BeginTransaction();
+
+            for (int i = 1; i <= count; i++)
+            {
+                string prisonerId = $"TEST-{i:000}";
+                string fullName = $"Иванов Иван Иванович {i}";
+                var birthDate = DateTime.Today.AddYears(-rnd.Next(20, 60)).AddDays(rnd.Next(0, 365));
+                string birthPlace = "Оренбург";
+                string nationality = "Русский";
+                string residence = "Оренбургская область";
+
+                int gender = rnd.Next(0, 2);
+                int familyUpbringing = rnd.Next(0, 3);
+                int maritalStatus = rnd.Next(0, 4);
+                int hasCloseRelatives = rnd.Next(0, 2);
+                int hasChildren = rnd.Next(0, 2);
+                int childrenCount = hasChildren == 1 ? rnd.Next(1, 4) : 0;
+                int willKeepContact = rnd.Next(0, 2);
+                int educationLevel = rnd.Next(0, 4);
+                int hasProfession = rnd.Next(0, 2);
+                string profession = hasProfession == 1 ? "Слесарь" : "";
+                int religion = rnd.Next(0, 4);
+
+                int armyService = rnd.Next(0, 3);
+                string armyBranch = armyService == 0 ? "" : "ВС РФ";
+                int combatParticipation = rnd.Next(0, 2);
+                int somaticDiseases = rnd.Next(0, 2);
+                int disability = rnd.Next(0, 2);
+                int mentalDiseases = rnd.Next(0, 2);
+                int psychiatristRegistry = rnd.Next(0, 2);
+                int gambling = rnd.Next(0, 2);
+                int obligations = rnd.Next(0, 2);
+                int narcologistRegistry = rnd.Next(0, 2);
+                int drugUse = rnd.Next(0, 2);
+
+                string articleNumber = rnd.Next(105, 162).ToString();
+                string articlePart = rnd.Next(0, 2) == 1 ? "1" : "";
+                string articlePoint = rnd.Next(0, 2) == 1 ? "а" : "";
+                int sentenceTerm = rnd.Next(1, 15);
+
+                int crimeType = rnd.Next(0, 4);
+                int recidivism = rnd.Next(0, 2);
+                string unit = rnd.Next(1, 10).ToString();
+                int category = rnd.Next(0, 4);
+
+                int currentFeelings = rnd.Next(0, 4);
+                int attitudeToUIS = rnd.Next(0, 4);
+                int suicideAttempts = rnd.Next(0, 2);
+                int selfHarmScars = rnd.Next(0, 2);
+                int relativesSuicide = rnd.Next(0, 2);
+
+                var cmd = db.CreateCommand();
+                cmd.CommandText = @"
+                INSERT OR REPLACE INTO Participants
+                (PrisonerId, FullName, Gender, BirthDate, BirthPlace, Nationality, Residence,
+                 FamilyUpbringing, MaritalStatus, HasCloseRelatives, HasChildren, ChildrenCount,
+                 WillKeepContact, EducationLevel, HasProfession, Profession, Religion,
+                 ArmyService, ArmyBranch, CombatParticipation, SomaticDiseases, Disability,
+                 MentalDiseases, PsychiatristRegistry, Gambling, Obligations, NarcologistRegistry, DrugUse,
+                 ArticleNumber, ArticlePart, ArticlePoint, SentenceTerm, CrimeType, Recidivism, Unit, Category,
+                 CurrentFeelings, AttitudeToUIS, SuicideAttempts, SelfHarmScars, RelativesSuicide)
+                VALUES
+                ($id,$name,$gender,$birth,$place,$nat,$res,
+                 $fam,$mar,$rel,$hasChild,$childCount,
+                 $keep,$edu,$hasProf,$prof,$relg,
+                 $army,$armyBranch,$combat,$som,$dis,
+                 $ment,$psyc,$gamb,$obl,$narc,$drug,
+                 $artNum,$artPart,$artPoint,$term,$crime,$rec,$unit,$cat,
+                 $cf,$att,$suic,$scar,$relSuic)";
+
+                cmd.Parameters.AddWithValue("$id", prisonerId);
+                cmd.Parameters.AddWithValue("$name", fullName);
+                cmd.Parameters.AddWithValue("$gender", gender);
+                cmd.Parameters.AddWithValue("$birth", birthDate.ToString("yyyy-MM-dd"));
+                cmd.Parameters.AddWithValue("$place", birthPlace);
+                cmd.Parameters.AddWithValue("$nat", nationality);
+                cmd.Parameters.AddWithValue("$res", residence);
+
+                cmd.Parameters.AddWithValue("$fam", familyUpbringing);
+                cmd.Parameters.AddWithValue("$mar", maritalStatus);
+                cmd.Parameters.AddWithValue("$rel", hasCloseRelatives);
+                cmd.Parameters.AddWithValue("$hasChild", hasChildren);
+                cmd.Parameters.AddWithValue("$childCount", childrenCount);
+
+                cmd.Parameters.AddWithValue("$keep", willKeepContact);
+                cmd.Parameters.AddWithValue("$edu", educationLevel);
+                cmd.Parameters.AddWithValue("$hasProf", hasProfession);
+                cmd.Parameters.AddWithValue("$prof", profession);
+                cmd.Parameters.AddWithValue("$relg", religion);
+
+                cmd.Parameters.AddWithValue("$army", armyService);
+                cmd.Parameters.AddWithValue("$armyBranch", armyBranch);
+                cmd.Parameters.AddWithValue("$combat", combatParticipation);
+                cmd.Parameters.AddWithValue("$som", somaticDiseases);
+                cmd.Parameters.AddWithValue("$dis", disability);
+                cmd.Parameters.AddWithValue("$ment", mentalDiseases);
+                cmd.Parameters.AddWithValue("$psyc", psychiatristRegistry);
+                cmd.Parameters.AddWithValue("$gamb", gambling);
+                cmd.Parameters.AddWithValue("$obl", obligations);
+                cmd.Parameters.AddWithValue("$narc", narcologistRegistry);
+                cmd.Parameters.AddWithValue("$drug", drugUse);
+
+                cmd.Parameters.AddWithValue("$artNum", articleNumber);
+                cmd.Parameters.AddWithValue("$artPart", articlePart);
+                cmd.Parameters.AddWithValue("$artPoint", articlePoint);
+                cmd.Parameters.AddWithValue("$term", sentenceTerm);
+                cmd.Parameters.AddWithValue("$crime", crimeType);
+                cmd.Parameters.AddWithValue("$rec", recidivism);
+                cmd.Parameters.AddWithValue("$unit", unit);
+                cmd.Parameters.AddWithValue("$cat", category);
+
+                cmd.Parameters.AddWithValue("$cf", currentFeelings);
+                cmd.Parameters.AddWithValue("$att", attitudeToUIS);
+                cmd.Parameters.AddWithValue("$suic", suicideAttempts);
+                cmd.Parameters.AddWithValue("$scar", selfHarmScars);
+                cmd.Parameters.AddWithValue("$relSuic", relativesSuicide);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            tx.Commit();
+        }
+
+        private static int TryInt(object val)
+        {
+            if (val == null || val == DBNull.Value) return 0;
+            return int.TryParse(val.ToString(), out var i) ? i : 0;
+        }
+
+        private static bool ToBool(object val)
+        {
+            if (val == null || val == DBNull.Value) return false;
+            try { return Convert.ToInt32(val) == 1; }
+            catch { return false; }
+        }
+
+        private static TEnum EnumTry<TEnum>(object dbVal, TEnum @default) where TEnum : struct
+        {
+            if (dbVal == null || dbVal == DBNull.Value) return @default;
+            var s = dbVal.ToString();
+            return Enum.TryParse<TEnum>(s, out var res) ? res : @default;
         }
     }
 }

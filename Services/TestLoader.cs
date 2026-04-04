@@ -1,32 +1,45 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System;
 using PsyDiagnostics.Models;
 
 public static class TestLoader
 {
     public static List<TestDefinition> LoadAll()
     {
-        var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Tests");
+        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "tests.json");
 
-        if (!Directory.Exists(folder))
+        if (!File.Exists(path))
             return new List<TestDefinition>();
 
-        var files = Directory.GetFiles(folder, "*.json");
-
-        var tests = new List<TestDefinition>();
-
-        foreach (var file in files)
+        try
         {
-            var json = File.ReadAllText(file);
+            var json = File.ReadAllText(path);
 
-            var test = JsonConvert.DeserializeObject<TestDefinition>(json);
+            var tests = JsonConvert.DeserializeObject<List<Test>>(json);
+            if (tests == null)
+                return new List<TestDefinition>();
 
-            if (test != null)
-                tests.Add(test);
+            var defs = new List<TestDefinition>();
+
+            foreach (var t in tests)
+            {
+                if (string.IsNullOrWhiteSpace(t.Name))
+                    continue;
+
+                defs.Add(new TestDefinition
+                {
+                    Name = t.Name
+                    // DisplayName берётся из switch в самом TestDefinition
+                });
+            }
+
+            return defs;
         }
-
-        return tests;
+        catch
+        {
+            return new List<TestDefinition>();
+        }
     }
 }

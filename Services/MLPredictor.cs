@@ -26,7 +26,6 @@ namespace PsyDiagnostics.Services
                 Adaptation = r.GetValueOrDefault("Социальная адаптация") / 30f,
                 Depression = r.GetValueOrDefault("Эмоциональное состояние") / 30f,
 
-                // безопасные заглушки
                 Anxiety = 0.5f,
                 Resilience = 0.5f,
                 Hostility = 0.5f

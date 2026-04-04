@@ -6,11 +6,9 @@
     <Grid>
         <DataGrid ItemsSource="{Binding Results}" AutoGenerateColumns="False">
             <DataGrid.Columns>
-
                 <DataGridTextColumn Header="Тест" Binding="{Binding TestName}" />
                 <DataGridTextColumn Header="Баллы" Binding="{Binding Score}" />
                 <DataGridTextColumn Header="Дата" Binding="{Binding Date}" />
-
                 <DataGridTextColumn Header="Прогноз">
                     <DataGridTextColumn.Binding>
                         <Binding Path="Prediction">
@@ -20,7 +18,6 @@
                         </Binding>
                     </DataGridTextColumn.Binding>
                 </DataGridTextColumn>
-
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

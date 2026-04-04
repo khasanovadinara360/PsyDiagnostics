@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 
 namespace PsyDiagnostics.Helpers
 {
-    public class PredictionConverter : IValueConverter
+    [ValueConversion(typeof(bool), typeof(Visibility))]
+    public class BoolToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null) return "";
-            int v = (int)value;
-            return v == 1 ? "Высокий риск" : "Низкий риск";
+            if (value is bool b && b)
+                return Visibility.Visible;
+
+            return Visibility.Collapsed;
         }
+
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return null;
+            throw new NotImplementedException();
         }
     }
 }

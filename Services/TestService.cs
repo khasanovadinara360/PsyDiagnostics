@@ -12,8 +12,23 @@ namespace PsyDiagnostics.Services
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "tests.json");
             var json = File.ReadAllText(path);
-            return JsonConvert.DeserializeObject<List<Test>>(json);
+            var tests = JsonConvert.DeserializeObject<List<Test>>(json);
 
+            foreach (var test in tests)
+            {
+                foreach (var question in test.Questions)
+                {
+                    question.TestViewModel = null; // будет привязан позже
+
+                    foreach (var answer in question.Answers)
+                    {
+                        answer.Question = question;
+                        answer.TestViewModel = null;
+                    }
+                }
+            }
+
+            return tests;
         }
     }
 }

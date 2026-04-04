@@ -24,9 +24,8 @@
             <views:HistoryView/>
         </DataTemplate>
 
-
         <helpers:RadioConverter x:Key="RadioConverter"/>
+        <helpers:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
 
     </Application.Resources>
-
 </Application>

@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-using System.Windows.Controls;
-using System.Windows.Input;
+﻿using System.Windows.Controls;
 
 namespace PsyDiagnostics.Views
 {
@@ -9,16 +7,7 @@ namespace PsyDiagnostics.Views
         public ParticipantView()
         {
             InitializeComponent();
-        }
-
-        private void OnlyNumbers(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = !Regex.IsMatch(e.Text, @"^\d+$");
-        }
-
-        private void OnlyLetters(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = !Regex.IsMatch(e.Text, @"^[а-яА-Я]+$");
+            // НЕ устанавливаем DataContext здесь
         }
     }
 }

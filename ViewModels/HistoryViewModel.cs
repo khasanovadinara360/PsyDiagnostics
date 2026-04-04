@@ -11,10 +11,6 @@ namespace PsyDiagnostics.ViewModels
     {
         private readonly MainViewModel _main;
         private readonly DatabaseService _db = new DatabaseService();
-
-        // =========================
-        // ДАННЫЕ
-        // =========================
         private Participant _participant;
         public Participant Participant
         {
@@ -29,9 +25,6 @@ namespace PsyDiagnostics.ViewModels
         public ObservableCollection<ResultRecord> Results { get; set; }
             = new ObservableCollection<ResultRecord>();
 
-        // =========================
-        // КОМАНДЫ
-        // =========================
         public ICommand LoadCommand { get; }
         public ICommand BackCommand { get; }
 
@@ -45,10 +38,6 @@ namespace PsyDiagnostics.ViewModels
                 OnPropertyChanged();
             }
         }
-
-        // =========================
-        // КОНСТРУКТОР
-        // =========================
         public HistoryViewModel(MainViewModel main)
         {
             _main = main;
@@ -56,10 +45,6 @@ namespace PsyDiagnostics.ViewModels
             LoadCommand = new RelayCommand(() => Load());
             BackCommand = new RelayCommand(() => GoBack());
         }
-
-        // =========================
-        // ЗАГРУЗКА ИСТОРИИ
-        // =========================
         private void Load()
         {
             if (string.IsNullOrWhiteSpace(SearchId))
@@ -82,10 +67,6 @@ namespace PsyDiagnostics.ViewModels
             foreach (var r in report.results)
                 Results.Add(r);
         }
-
-        // =========================
-        // НАЗАД
-        // =========================
         private void GoBack()
         {
             _main.CurrentView = _main;

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using PsyDiagnostics.Helpers;
@@ -7,48 +9,129 @@ using PsyDiagnostics.Models;
 
 namespace PsyDiagnostics.ViewModels
 {
-    public class TestSelectionViewModel : BaseViewModel
+    public class SelectableTestDefinition : BaseViewModel
     {
-        public ObservableCollection<TestDefinition> Tests { get; set; }
+        public TestDefinition Definition { get; }
 
-        private TestDefinition _selectedTest;
-        public TestDefinition SelectedTest
+        private bool _isSelected;
+        public bool IsSelected
         {
-            get => _selectedTest;
+            get => _isSelected;
             set
             {
-                _selectedTest = value;
+                if (_isSelected == value)
+                    return;
+
+                _isSelected = value;
                 OnPropertyChanged();
+
+                OnSelectionChanged?.Invoke(this, value);
             }
         }
 
-        public ICommand SelectCommand { get; }
+        public string DisplayName => Definition.DisplayName;
 
-        public event Action<TestDefinition> OnTestSelected;
+        public event Action<SelectableTestDefinition, bool> OnSelectionChanged;
 
-        public TestSelectionViewModel()
+        public SelectableTestDefinition(TestDefinition def)
         {
-            // 🔥 Русские названия (должны совпадать с JSON!)
-            Tests = new ObservableCollection<TestDefinition>
-            {
-                new TestDefinition { Name = "Aggression" },
-                new TestDefinition { Name = "Impulsivity" },
-                new TestDefinition { Name = "Depression" },
-                new TestDefinition { Name = "Stress" },
-                new TestDefinition { Name = "Adaptation" },
-                new TestDefinition { Name = "Anxiety" },
-                new TestDefinition { Name = "Resilience" },
-                new TestDefinition { Name = "Hostility" }
-            };
+            Definition = def;
+        }
+    }
 
-            SelectCommand = new RelayCommand(obj =>
+    public class TestSelectionViewModel : BaseViewModel
+    {
+        public ObservableCollection<SelectableTestDefinition> Tests { get; }
+
+        public ICommand StartCommand { get; }
+        public ICommand BackCommand { get; }
+
+        public TestMode Mode { get; }
+
+        public Action<IList<TestDefinition>, TestMode> OnStart { get; set; }
+        public Action OnBack { get; set; }
+
+        public TestSelectionViewModel(IEnumerable<TestDefinition> defs, TestMode mode)
+        {
+            Mode = mode;
+            Tests = new ObservableCollection<SelectableTestDefinition>(
+                defs.Select(d => new SelectableTestDefinition(d)));
+
+            foreach (var t in Tests)
+                t.OnSelectionChanged += OnTestSelectionChanged;
+
+            StartCommand = new RelayCommand(Start);
+            BackCommand = new RelayCommand(() => OnBack?.Invoke());
+        }
+
+        private void OnTestSelectionChanged(SelectableTestDefinition changed, bool isSelected)
+        {
+            if (!isSelected)
+                return;
+
+            if (Mode == TestMode.Express)
             {
-                if (obj is TestDefinition test)
+                var alreadySelected = Tests.Where(t => t.IsSelected).ToList();
+
+                if (alreadySelected.Count > 1)
                 {
-                   
-                    OnTestSelected?.Invoke(test);
+                    changed.OnSelectionChanged -= OnTestSelectionChanged;
+                    changed.IsSelected = false;
+                    changed.OnSelectionChanged += OnTestSelectionChanged;
+
+                    MessageBox.Show("В режиме экспресс можно выбрать только один тест.");
                 }
-            });
+                else
+                {
+                    foreach (var t in Tests)
+                    {
+                        if (t != changed && t.IsSelected)
+                        {
+                            t.OnSelectionChanged -= OnTestSelectionChanged;
+                            t.IsSelected = false;
+                            t.OnSelectionChanged += OnTestSelectionChanged;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void Start()
+        {
+            var selectedDefs = Tests
+                .Where(t => t.IsSelected)
+                .Select(t => t.Definition)
+                .ToList();
+
+            if (Mode == TestMode.Express)
+            {
+                if (selectedDefs.Count == 0)
+                {
+                    MessageBox.Show("Выберите один тест для экспресс‑режима.");
+                    return;
+                }
+
+                if (selectedDefs.Count > 1)
+                {
+                    MessageBox.Show("В режиме экспресс можно выбрать только один тест.");
+                    return;
+                }
+            }
+            else if (Mode == TestMode.Normal)
+            {
+                // обычный режим: минимум 2 теста
+                if (selectedDefs.Count < 2)
+                {
+                    MessageBox.Show("В обычном режиме нужно выбрать минимум два теста.");
+                    return;
+                }
+            }
+            // Full (расширенный) — без ограничений по количеству
+
+            if (selectedDefs.Count == 0)
+                return;
+
+            OnStart?.Invoke(selectedDefs, Mode);
         }
     }
 }

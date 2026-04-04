@@ -4,9 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PsyDiagnostics.Services
+namespace PsyDiagnostics.ViewModels
 {
-    internal class ChartService
+    public enum TestMode
     {
+        Express,
+        Normal,
+        Full
     }
+
 }

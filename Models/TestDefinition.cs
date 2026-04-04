@@ -10,7 +10,6 @@ namespace PsyDiagnostics.Models
     public class TestDefinition
     {
         public string Name { get; set; } // ID (из JSON)
-
         public string DisplayName => Name switch
         {
             "Aggression" => "Уровень агрессивности",

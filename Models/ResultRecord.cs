@@ -1,4 +1,3 @@
-
 namespace PsyDiagnostics.Models
 {
     public class ResultRecord
