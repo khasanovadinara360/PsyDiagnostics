@@ -123,19 +123,21 @@
                                     </Grid.ColumnDefinitions>
 
                                     <ContentPresenter Grid.Column="0"
-                                                      Margin="{TemplateBinding Padding}"
-                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                      VerticalAlignment="Center"/>
-
+                  Margin="{TemplateBinding Padding}"
+                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                  VerticalAlignment="Center"
+                  Content="{TemplateBinding SelectionBoxItem}"
+                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"/>
                                     <ToggleButton Grid.Column="1"
-                                                  x:Name="DropDownToggle"
-                                                  Focusable="False"
-                                                  Background="{TemplateBinding Background}"
-                                                  BorderBrush="{TemplateBinding BorderBrush}">
+              x:Name="DropDownToggle"
+              Focusable="False"
+              Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                                         <Path HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Data="M 0 0 L 4 4 L 8 0 Z"
-                                              Fill="{StaticResource TextPrimaryColor}"/>
+          VerticalAlignment="Center"
+          Data="M 0 0 L 4 4 L 8 0 Z"
+          Fill="{StaticResource TextPrimaryColor}"/>
                                     </ToggleButton>
                                 </Grid>
                             </Border>
@@ -233,7 +235,27 @@
                             <TextBlock Text="Дата рождения" Style="{StaticResource SectionHeader}"/>
                             <DatePicker SelectedDate="{Binding ParticipantVm.CurrentParticipant.BirthDate, UpdateSourceTrigger=PropertyChanged}"
                                         Margin="0,3"
-                                        Height="32"/>
+                                        Height="32">
+                                <DatePicker.Resources>
+                                    <Style TargetType="DatePickerTextBox">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Background" Value="#2B2B3A"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="DatePickerTextBox">
+                                                    <TextBox
+                            Text="{Binding Path=SelectedDate, RelativeSource={RelativeSource AncestorType=DatePicker}, StringFormat=d}"
+                            Background="{TemplateBinding Background}"
+                            Foreground="{TemplateBinding Foreground}"
+                            BorderThickness="0"/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </DatePicker.Resources>
+                            </DatePicker>
 
                             <TextBlock Text="Возраст (полных лет)" Style="{StaticResource SectionHeader}"/>
                             <TextBox Text="{Binding ParticipantVm.CurrentParticipant.Age, Mode=OneWay}"

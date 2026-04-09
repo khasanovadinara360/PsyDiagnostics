@@ -20,6 +20,18 @@ namespace PsyDiagnostics.ViewModels
                 OnPropertyChanged();
             }
         }
+        public DateTime BirthDate
+        {
+            get => CurrentParticipant?.BirthDate ?? DateTime.Today;
+            set
+            {
+                if (CurrentParticipant != null)
+                    CurrentParticipant.BirthDate = value;
+
+                OnPropertyChanged();
+            }
+        }
+
 
         // Поиск теперь живёт в MainViewModel, поэтому здесь он не нужен.
         // Оставляем только то, что относится к анкете и переходу к тестам.

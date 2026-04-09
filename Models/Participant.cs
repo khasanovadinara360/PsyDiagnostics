@@ -57,7 +57,6 @@ namespace PsyDiagnostics.Models
         public string Residence { get; set; }
 
         public Citizenship Citizenship { get; set; }
-        public EducationLevel EducationLevel { get; set; }
 
         private MaritalStatus _maritalStatus;
         public MaritalStatus MaritalStatus
@@ -97,7 +96,7 @@ namespace PsyDiagnostics.Models
             set { _willKeepContact = value; OnPropertyChanged(); }
         }
 
-        public string Education { get; set; }
+        //public string Education { get; set; }
         public string ProfessionBeforeConviction { get; set; }
 
         private ProfessionPresence _hasProfession;
@@ -200,6 +199,13 @@ namespace PsyDiagnostics.Models
         {
             get => _obligations;
             set { _obligations = value; OnPropertyChanged(); }
+        }
+
+        private EducationSurvey _educationLevel;
+        public EducationSurvey EducationLevel
+        {
+            get => _educationLevel;
+            set { _educationLevel = value; OnPropertyChanged(); }
         }
 
         private Religion _religion;

@@ -3,6 +3,7 @@ using PsyDiagnostics.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 
 namespace PsyDiagnostics.Services
 {
@@ -98,7 +99,10 @@ namespace PsyDiagnostics.Services
 
             if (!r.Read())
                 return null;
+            //var temp = r["blabla"];
+            var count = Convert.ToInt32(r["ChildrenCount"]);
 
+            
             var p = new Participant
             {
                 // В БД INTEGER, в модели пока string -> оставляем ToString()
@@ -111,27 +115,29 @@ namespace PsyDiagnostics.Services
                 Gender = EnumTry(r["Gender"], Gender.НеВыбрано),
 
                 BirthDate = DateTime.TryParse(r["BirthDate"]?.ToString(), out var d)
-        ? d
-        : DateTime.Today,
+                    ? d
+                    : DateTime.Today,
 
                 BirthPlace = r["BirthPlace"]?.ToString(),
                 Nationality = r["Nationality"]?.ToString(),
                 Residence = r["Residence"]?.ToString(),
 
                 Citizenship = EnumTry(r["Citizenship"], Citizenship.НеВыбрано),
-                EducationLevel = EnumTry(r["EducationLevel"], EducationLevel.Среднее),
+
+                EducationLevel = EnumTry(r["EducationLevel"], EducationSurvey.НеВыбрано),
 
                 FamilyUpbringing = EnumTry(r["FamilyUpbringing"], FamilyUpbringing.НеВыбрано),
                 MaritalStatus = EnumTry(r["MaritalStatus"], MaritalStatus.НеЖенат),
 
-                // Теперь не через ToBool, а напрямую как enum
                 HasCloseRelatives = EnumTry(r["HasCloseRelatives"], YesNo.Нет),
-                HasChildren = EnumTry(r["HasChildren"], ChildrenPresence.Нет),
-                ChildrenCount = TryInt(r["ChildrenCount"]),
+                ChildrenCount = count,
+
+                HasChildren = count > 0
+                ? ChildrenPresence.Да
+                : ChildrenPresence.Нет,
 
                 WillKeepContact = EnumTry(r["WillKeepContact"], YesNo.Нет),
 
-                Education = r["Education"]?.ToString(),
                 ProfessionBeforeConviction = r["ProfessionBeforeConviction"]?.ToString(),
 
                 HasProfession = EnumTry(r["HasProfession"], ProfessionPresence.Нет),
@@ -227,6 +233,7 @@ namespace PsyDiagnostics.Services
             //    SelfHarmScars = EnumTry(r["SelfHarmScars"], SelfHarmScars.Нет),
             //    RelativesSuicide = EnumTry(r["RelativesSuicide"], RelativesSuicide.Нет)
             //};
+            MessageBox.Show(p.BirthDate.ToString());
 
             return p;
         }
