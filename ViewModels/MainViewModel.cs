@@ -2,7 +2,6 @@
 using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
 using PsyDiagnostics.Views;
-using PsyDiagnostics.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -23,10 +22,7 @@ namespace PsyDiagnostics.ViewModels
 
     public class MainViewModel : BaseViewModel
     {
-        private readonly DatabaseService _db = new DatabaseService();
-
-        // VM анкеты участника
-        public ParticipantViewModel ParticipantVm { get; }
+        private DatabaseService _db = new DatabaseService();
 
         private string _searchId;
         public string SearchId
@@ -48,9 +44,6 @@ namespace PsyDiagnostics.ViewModels
 
                 if (_current != null)
                     _current.PropertyChanged += Current_PropertyChanged;
-
-                // ключевая строка – прокидываем в VM формы
-                ParticipantVm.CurrentParticipant = _current;
 
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(CanSave));
@@ -140,8 +133,11 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-        public List<string> AvailableParts => SelectedArticle?.Parts ?? new List<string>();
-        public List<string> AvailablePoints => SelectedArticle?.Points ?? new List<string>();
+        public List<string> AvailableParts =>
+            SelectedArticle?.Parts ?? new List<string>();
+
+        public List<string> AvailablePoints =>
+            SelectedArticle?.Points ?? new List<string>();
 
         private ObservableCollection<TestHistoryItem> _testHistory =
             new ObservableCollection<TestHistoryItem>();
@@ -163,14 +159,12 @@ namespace PsyDiagnostics.ViewModels
 
         public MainViewModel()
         {
-            ParticipantVm = new ParticipantViewModel();
-
-            SearchCommand = new RelayCommand(_ => Search());
-            SaveCommand = new RelayCommand(_ => Save());
-            GoToTestCommand = new RelayCommand(_ => GoToTest());
-            CalculateRiskCommand = new RelayCommand(_ => CalculateRisk());
-            GoHomeCommand = new RelayCommand(_ => GoHome());
-            ExportPdfCommand = new RelayCommand(_ => ExportPdf());
+            SearchCommand = new RelayCommand(Search);
+            SaveCommand = new RelayCommand(Save);
+            GoToTestCommand = new RelayCommand(GoToTest);
+            CalculateRiskCommand = new RelayCommand(CalculateRisk);
+            GoHomeCommand = new RelayCommand(GoHome);
+            ExportPdfCommand = new RelayCommand(ExportPdf);
 
             AllArticles = JsonHelper.LoadArticles();
 
@@ -179,13 +173,18 @@ namespace PsyDiagnostics.ViewModels
 
         private void ShowParticipant()
         {
-            ParticipantVm.OnNavigateToTest = participant =>
+            var vm = new ParticipantViewModel
+            {
+                CurrentParticipant = Current
+            };
+
+            vm.OnNavigateToTest = participant =>
             {
                 Current = participant;
                 GoToTest();
             };
 
-            CurrentView = new ParticipantView { DataContext = this };
+            CurrentView = new ParticipantView { DataContext = vm };
         }
 
         private void GoToTest()
@@ -221,6 +220,7 @@ namespace PsyDiagnostics.ViewModels
 
                 selectVm.OnBack = () =>
                 {
+                    // Возврат к выбору режима (без ModeSelectionView, можно сразу к участнику)
                     ShowParticipant();
                 };
 
@@ -251,7 +251,8 @@ namespace PsyDiagnostics.ViewModels
                 CurrentView = new TestSelectionView { DataContext = selectVm };
             };
 
-            CurrentView = new TestSelectionView { DataContext = modeVm };
+            // Стартовый экран выбора режима тестирования
+            CurrentView = new TestingView { DataContext = modeVm }; // или отдельный View под режимы
         }
 
         private void ShowTesting()
@@ -334,11 +335,17 @@ namespace PsyDiagnostics.ViewModels
             MessageBox.Show("Выгрузка PDF пока не реализована.");
         }
 
+        public void ShowHistory()
+        {
+            CurrentView = new ParticipantViewModel();
+        }
+
         private void Search()
         {
             try
             {
                 var id = SearchId?.Trim();
+
                 if (string.IsNullOrWhiteSpace(id))
                 {
                     MessageBox.Show("Введите ID");
@@ -349,7 +356,14 @@ namespace PsyDiagnostics.ViewModels
 
                 if (found != null)
                 {
-                    Current = found;     
+                    Current = found;
+
+                    if (CurrentView is ParticipantView participantView &&
+                        participantView.DataContext is ParticipantViewModel vm)
+                    {
+                        vm.CurrentParticipant = found;
+                    }
+
                     MessageBox.Show("Найден ✔");
                 }
                 else
@@ -359,7 +373,15 @@ namespace PsyDiagnostics.ViewModels
                         PrisonerId = id,
                         BirthDate = DateTime.Today
                     };
-                    Current = newP;     
+
+                    Current = newP;
+
+                    if (CurrentView is ParticipantView participantView &&
+                        participantView.DataContext is ParticipantViewModel vm)
+                    {
+                        vm.CurrentParticipant = newP;
+                    }
+
                     MessageBox.Show("Не найден");
                 }
             }
