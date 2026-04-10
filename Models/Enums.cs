@@ -167,6 +167,9 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
+        [Description("Нет образования")]
+        НетОбразования,
+
         [Description("Начальное общее образование")]
         НачальноеОбщее,
 
@@ -180,10 +183,7 @@ namespace PsyDiagnostics.Models
         СреднееПрофессиональное,
 
         [Description("Высшее образование")]
-        Высшее,
-
-        [Description("Нет образования")]
-        НетОбразования
+        Высшее
     }
 
     public enum ProfessionPresence
@@ -227,11 +227,11 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
+        [Description("Не служил(а) в армии")]
+        Нет,
+
         [Description("Служил(а) в армии")]
         Да,
-
-        [Description("Не служил(а) в армии")]
-        Нет
     }
 
     public enum CombatParticipation
@@ -239,11 +239,11 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
+        [Description("Не участвовал(а) в боевых действиях")]
+        Нет,
+
         [Description("Участвовал(а) в боевых действиях")]
         Да,
-
-        [Description("Не участвовал(а) в боевых действиях")]
-        Нет
     }
 
     public enum SomaticDiseases
@@ -272,11 +272,12 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Есть инвалидность")]
-        Да,
 
         [Description("Инвалидности нет")]
-        Нет
+        Нет,
+
+        [Description("Есть инвалидность")]
+        Да,
     }
 
     public enum MentalDiseases
@@ -284,11 +285,12 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Есть психические заболевания")]
-        Да,
 
         [Description("Психических заболеваний нет")]
-        Нет
+        Нет,
+
+        [Description("Есть психические заболевания")]
+        Да,
     }
 
     public enum PsychiatristRegistry
@@ -296,11 +298,12 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Состоял(а) на учете у психиатра")]
-        Да,
 
         [Description("Не состоял(а) на учете у психиатра")]
-        Нет
+        Нет,
+
+        [Description("Состоял(а) на учете у психиатра")]
+        Да
     }
 
     public enum Gambling
@@ -308,11 +311,12 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Принимал(а) участие в азартных играх")]
-        Да,
 
         [Description("Не принимал(а) участия в азартных играх")]
-        Нет
+        Нет,
+
+        [Description("Принимал(а) участие в азартных играх")]
+        Да,
     }
 
     public enum Obligations
@@ -347,11 +351,12 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Состоял(а) на учете у нарколога")]
-        Да,
 
         [Description("Не состоял(а) на учете у нарколога")]
-        Нет
+        Нет,
+
+        [Description("Состоял(а) на учете у нарколога")]
+        Да,
     }
 
     public enum DrugUse
@@ -359,20 +364,24 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
+
+        [Description("Не употреблял(а) наркотические средства")]
+        Нет,
+
         [Description("Употреблял(а) наркотические средства")]
         Да,
 
         [Description("Пробовал(а) наркотические средства")]
         Пробовал,
-
-        [Description("Не употреблял(а) наркотические средства")]
-        Нет
     }
 
     public enum SuicideAttempts
     {
         [Description("Не выбрано")]
         НеВыбрано = 0,
+
+        [Description("Нет попыток суицида")]
+        Нет,
 
         [Description("Да, в ИУ")]
         ДаВИУ,
@@ -382,9 +391,6 @@ namespace PsyDiagnostics.Models
 
         [Description("Да, в СИЗО")]
         ДаВСИЗО,
-
-        [Description("Нет попыток суицида")]
-        Нет
     }
 
     public enum SelfHarmScars
@@ -392,11 +398,11 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
+        [Description("Нет шрамов от самопорезов")]
+        Нет,
+
         [Description("Есть шрамы от самопорезов")]
         Да,
-
-        [Description("Нет шрамов от самопорезов")]
-        Нет
     }
 
     public enum RelativesSuicide
@@ -404,11 +410,12 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Были суициды/попытки у родственников")]
-        Да,
 
         [Description("Не было суицидов/попыток у родственников")]
-        Нет
+        Нет,
+
+        [Description("Были суициды/попытки у родственников")]
+        Да,
     }
 
     public enum CurrentFeelings

@@ -15,7 +15,7 @@
             <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="44"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Padding" Value="12,0"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
@@ -35,6 +35,13 @@
             <Setter Property="TextAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,0,24"/>
         </Style>
+
+        <Style x:Key="ModeDescription" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid Background="{StaticResource BgMainColor}" Margin="20">
@@ -48,25 +55,49 @@
                 Width="420">
 
             <StackPanel>
+
                 <TextBlock Text="Выбор режима тестирования"
                            Style="{StaticResource TitleText}"/>
 
                 <TextBlock Text="Выберите формат прохождения тестов"
                            Style="{StaticResource SubtitleText}"/>
 
+                <!-- Экспресс -->
                 <Button Content="Экспресс режим"
-                        Command="{Binding SelectExpressCommand}"
+                        Command="{Binding ExpressCommand}"
                         Background="{StaticResource AccentColor}"
                         BorderBrush="Transparent"/>
+                <TextBlock Text="Быстрое прохождение, минимальный набор тестов"
+                           Style="{StaticResource ModeDescription}"/>
 
-                <Button Content="Полный режим"
-                        Command="{Binding SelectFullCommand}"/>
+                <!-- Обычный -->
+                <Button Content="Базовый режим"
+                        Command="{Binding NormalCommand}"/>
+                <TextBlock Text="Стандартный набор тестов"
+                           Style="{StaticResource ModeDescription}"/>
+
+                <!-- Полный -->
+                <Button Content="Комплексный режим"
+                        Command="{Binding FullCommand}"/>
+                <TextBlock Text="Максимальная диагностика, все тесты"
+                           Style="{StaticResource ModeDescription}"/>
 
                 <Separator Margin="0,8,0,16"
                            Background="{StaticResource BorderColor}"/>
 
-                <Button Content="Назад"
-                        Command="{Binding BackCommand}"/>
+                <!-- Навигация -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Назад"
+                            Command="{Binding BackCommand}"
+                            Width="100"
+                            Margin="5,0"/>
+
+                    <Button Content="Главная"
+                            Command="{Binding HomeCommand}"
+                            Width="100"
+                            Margin="5,0"/>
+                </StackPanel>
+
             </StackPanel>
         </Border>
     </Grid>

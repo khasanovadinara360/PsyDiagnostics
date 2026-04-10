@@ -37,6 +37,10 @@ namespace PsyDiagnostics.ViewModels
             get => _current;
             set
             {
+                SelectedArticle = AllArticles
+                .FirstOrDefault(a =>
+                    a.Number != null &&
+                    a.Number.Trim() == _current?.ArticleNumber?.Trim());
                 if (_current != null)
                     _current.PropertyChanged -= Current_PropertyChanged;
 
@@ -45,10 +49,19 @@ namespace PsyDiagnostics.ViewModels
                 if (_current != null)
                     _current.PropertyChanged += Current_PropertyChanged;
 
+                ParticipantVm.CurrentParticipant = _current;
+                SelectedArticle = AllArticles
+        .FirstOrDefault(a => a.Number?.Trim() == _current?.ArticleNumber?.Trim());
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(CanSave));
 
                 LoadTestHistory();
+
+                //OnPropertyChanged();
+                //OnPropertyChanged(nameof(CanSave));
+
+                //LoadTestHistory();
             }
         }
 
@@ -121,15 +134,19 @@ namespace PsyDiagnostics.ViewModels
                 _selectedArticle = value;
                 OnPropertyChanged();
 
-                if (Current != null && value != null)
+                if (value == null)
+                    return;
+
+                if (Current != null)
                 {
                     Current.ArticleNumber = value.Number;
+
                     Current.ArticlePart = value.Parts?.FirstOrDefault();
                     Current.ArticlePoint = value.Points?.FirstOrDefault();
-
-                    OnPropertyChanged(nameof(AvailableParts));
-                    OnPropertyChanged(nameof(AvailablePoints));
                 }
+
+                OnPropertyChanged(nameof(AvailableParts));
+                OnPropertyChanged(nameof(AvailablePoints));
             }
         }
 
@@ -167,6 +184,7 @@ namespace PsyDiagnostics.ViewModels
             ExportPdfCommand = new RelayCommand(ExportPdf);
 
             AllArticles = JsonHelper.LoadArticles();
+            FilteredArticles = AllArticles;
 
             ShowParticipant();
         }
@@ -251,8 +269,7 @@ namespace PsyDiagnostics.ViewModels
                 CurrentView = new TestSelectionView { DataContext = selectVm };
             };
 
-            // Стартовый экран выбора режима тестирования
-            CurrentView = new TestingView { DataContext = modeVm }; // или отдельный View под режимы
+            CurrentView = new ModeSelectionView { DataContext = modeVm };
         }
 
         private void ShowTesting()
@@ -354,36 +371,29 @@ namespace PsyDiagnostics.ViewModels
 
                 var found = _db.GetParticipant(id);
 
-                if (found != null)
+                if (found == null)
                 {
-                    Current = found;
-
-                    if (CurrentView is ParticipantView participantView &&
-                        participantView.DataContext is ParticipantViewModel vm)
-                    {
-                        vm.CurrentParticipant = found;
-                    }
-
-                    MessageBox.Show("Найден ✔");
-                }
-                else
-                {
-                    var newP = new Participant
+                    Current = new Participant
                     {
                         PrisonerId = id,
                         BirthDate = DateTime.Today
                     };
 
-                    Current = newP;
-
-                    if (CurrentView is ParticipantView participantView &&
-                        participantView.DataContext is ParticipantViewModel vm)
-                    {
-                        vm.CurrentParticipant = newP;
-                    }
-
                     MessageBox.Show("Не найден");
+                    return;
                 }
+
+                Current = found;
+
+                FilteredArticles = AllArticles;
+
+                var article = AllArticles
+                    .FirstOrDefault(a =>
+                        a.Number?.Trim() == Current.ArticleNumber?.Trim());
+
+                SelectedArticle = article;
+
+                OnPropertyChanged(nameof(SelectedArticle));
             }
             catch (Exception ex)
             {

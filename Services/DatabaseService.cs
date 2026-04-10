@@ -99,6 +99,12 @@ namespace PsyDiagnostics.Services
             if (!r.Read())
                 return null;
             var count = Convert.ToInt32(r["ChildrenCount"]);
+
+            var articleNumber = r["ArticleNumber"]?.ToString();
+            var articlePart = r["ArticlePart"]?.ToString();
+            var articlePoint = r["ArticlePoint"]?.ToString();
+
+            articlePart = articlePart.Remove(0, 2);
             
             var p = new Participant
             {
@@ -118,60 +124,61 @@ namespace PsyDiagnostics.Services
 
                 Citizenship = EnumTry(r["Citizenship"], Citizenship.НеВыбрано),
 
-                EducationLevel = EnumTry(r["EducationLevel"], EducationSurvey.НеВыбрано),
+                EducationLevel = EnumTryUnchecked(r["EducationLevel"], EducationSurvey.НеВыбрано),
 
-                FamilyUpbringing = EnumTry(r["FamilyUpbringing"], FamilyUpbringing.НеВыбрано),
-                MaritalStatus = EnumTry(r["MaritalStatus"], MaritalStatus.НеЖенат),
+                FamilyUpbringing = EnumTryUnchecked(r["FamilyUpbringing"], FamilyUpbringing.НеВыбрано),
+                MaritalStatus = EnumTryUnchecked(r["MaritalStatus"], MaritalStatus.НеЖенат),
 
-                HasCloseRelatives = EnumTry(r["HasCloseRelatives"], YesNo.Нет),
+                HasCloseRelatives = EnumTryUnchecked(r["HasCloseRelatives"], YesNo.Нет),
                 ChildrenCount = count,
 
                 HasChildren = count > 0
                 ? ChildrenPresence.Да
                 : ChildrenPresence.Нет,
 
-                WillKeepContact = EnumTry(r["WillKeepContact"], YesNo.Нет),
+                WillKeepContact = EnumTryUnchecked(r["WillKeepContact"], YesNo.Нет),
 
-                ProfessionBeforeConviction = r["ProfessionBeforeConviction"]?.ToString(),
+                //ProfessionBeforeConviction = r["ProfessionBeforeConviction"]?.ToString(),
 
                 HasProfession = EnumTry(r["HasProfession"], ProfessionPresence.Нет),
                 Profession = r["Profession"]?.ToString(),
 
-                Religion = EnumTry(r["Religion"], Religion.НеВыбрано),
+                Religion = EnumTryUnchecked(r["Religion"], Religion.НеВыбрано),
 
-                ArmyService = EnumTry(r["ArmyService"], default(ArmyService)),
+                ArmyService = EnumTryUnchecked(r["ArmyService"], default(ArmyService)),
                 ArmyBranch = r["ArmyBranch"]?.ToString(),
-                CombatParticipation = EnumTry(r["CombatParticipation"], CombatParticipation.Нет),
+                CombatParticipation = EnumTryUnchecked(r["CombatParticipation"], CombatParticipation.Нет),
 
-                SomaticDiseases = EnumTry(r["SomaticDiseases"], SomaticDiseases.Нет),
-                Disability = EnumTry(r["Disability"], Disability.Нет),
-                MentalDiseases = EnumTry(r["MentalDiseases"], MentalDiseases.Нет),
-                PsychiatristRegistry = EnumTry(r["PsychiatristRegistry"], PsychiatristRegistry.Нет),
-                Gambling = EnumTry(r["Gambling"], Gambling.Нет),
+                SomaticDiseases = EnumTryUnchecked(r["SomaticDiseases"], SomaticDiseases.Нет),
+                Disability = EnumTryUnchecked(r["Disability"], Disability.Нет),
+                MentalDiseases = EnumTryUnchecked(r["MentalDiseases"], MentalDiseases.Нет),
+                PsychiatristRegistry = EnumTryUnchecked(r["PsychiatristRegistry"], PsychiatristRegistry.Нет),
+                Gambling = EnumTryUnchecked(r["Gambling"], Gambling.Нет),
 
-                Obligations = EnumTry(r["Obligations"], Obligations.Нет),
-                NarcologistRegistry = EnumTry(r["NarcologistRegistry"], NarcologistRegistry.Нет),
-                DrugUse = EnumTry(r["DrugUse"], DrugUse.Нет),
+                Obligations = EnumTryUnchecked(r["Obligations"], Obligations.Нет),
+                NarcologistRegistry = EnumTryUnchecked(r["NarcologistRegistry"], NarcologistRegistry.Нет),
+                DrugUse = EnumTryUnchecked(r["DrugUse"], DrugUse.Нет),
 
-                ArticleNumber = r["ArticleNumber"]?.ToString(),
-                ArticlePart = r["ArticlePart"]?.ToString(),
-                ArticlePoint = r["ArticlePoint"]?.ToString(),
+                ArticleNumber = articleNumber,
+                ArticlePart = articlePart,
+                ArticlePoint = articlePoint,
 
                 SentenceTerm = TryInt(r["SentenceTerm"]),
 
-                CrimeType = EnumTry(r["CrimeType"], CrimeType.НеВыбрано),
-                Recidivism = EnumTry(r["Recidivism"], Recidivism.Нет),
+                CrimeType = EnumTryUnchecked(r["CrimeType"], CrimeType.НеВыбрано),
+                Recidivism = EnumTryUnchecked(r["Recidivism"], Recidivism.Нет),
                 PreviousConvictions = TryInt(r["PreviousConvictions"]),
 
                 Unit = r["Unit"]?.ToString(),
-                Category = EnumTry(r["Category"], Category.НеВыбрано),
+                Category = EnumTryUnchecked(r["Category"], Category.НеВыбрано),
 
                 CurrentFeelings = EnumTry(r["CurrentFeelings"], CurrentFeelings.НеВыбрано),
-                AttitudeToUIS = EnumTry(r["AttitudeToUIS"], AttitudeToUIS.НеВыбрано),
-                SuicideAttempts = EnumTry(r["SuicideAttempts"], SuicideAttempts.Нет),
-                SelfHarmScars = EnumTry(r["SelfHarmScars"], SelfHarmScars.Нет),
-                RelativesSuicide = EnumTry(r["RelativesSuicide"], RelativesSuicide.Нет)
+                AttitudeToUIS = EnumTryUnchecked(r["AttitudeToUIS"], AttitudeToUIS.НеВыбрано),
+                SuicideAttempts = EnumTryUnchecked(r["SuicideAttempts"], SuicideAttempts.Нет),
+                SelfHarmScars = EnumTryUnchecked(r["SelfHarmScars"], SelfHarmScars.Нет),
+                RelativesSuicide = EnumTryUnchecked(r["RelativesSuicide"], RelativesSuicide.Нет)
             };
+            //MessageBox.Show(articleNumber + articlePart + articlePoint);
             return p;
         }
 
@@ -515,6 +522,27 @@ namespace PsyDiagnostics.Services
             try { return Convert.ToInt32(val) == 1; }
             catch { return false; }
         }
+        private static TEnum EnumTryUnchecked<TEnum>(object dbVal, TEnum @default) where TEnum : struct
+        {
+            if (dbVal == null || dbVal == DBNull.Value)
+                return @default;
+
+            // если число
+            if (int.TryParse(dbVal.ToString(), out var intVal))
+            {
+                intVal += 1; // 🔥 СДВИГ
+
+                if (Enum.IsDefined(typeof(TEnum), intVal))
+                    return (TEnum)Enum.ToObject(typeof(TEnum), intVal);
+            }
+
+            // если строка (на всякий случай)
+            if (Enum.TryParse<TEnum>(dbVal.ToString(), out var res))
+                return res;
+
+            return @default;
+        }
+
 
         private static TEnum EnumTry<TEnum>(object dbVal, TEnum @default) where TEnum : struct
         {
