@@ -187,7 +187,7 @@
                 BorderThickness="1">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter"
-                                Command="{Binding SearchCommand}"/>
+                    Command="{Binding SearchCommand}"/>
                 </TextBox.InputBindings>
             </TextBox>
 

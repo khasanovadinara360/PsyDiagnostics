@@ -153,7 +153,6 @@ namespace PsyDiagnostics.ViewModels
 
             int finalScore = (int)((rawScore / (double)maxScore) * 100);
 
-            // сохраняем результат по конкретному тесту в словарь
             results[_test.Name] = finalScore;
 
             var aiInput = new AiData

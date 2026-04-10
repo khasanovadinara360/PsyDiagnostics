@@ -119,15 +119,12 @@ namespace PsyDiagnostics.ViewModels
             }
             else if (Mode == TestMode.Normal)
             {
-                // обычный режим: минимум 2 теста
                 if (selectedDefs.Count < 2)
                 {
                     MessageBox.Show("В обычном режиме нужно выбрать минимум два теста.");
                     return;
                 }
             }
-            // Full (расширенный) — без ограничений по количеству
-
             if (selectedDefs.Count == 0)
                 return;
 

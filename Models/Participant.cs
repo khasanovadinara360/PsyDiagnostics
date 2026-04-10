@@ -12,7 +12,6 @@ namespace PsyDiagnostics.Models
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-
         public string PrisonerId { get; set; }
 
         private string _fullName;
@@ -59,10 +58,10 @@ namespace PsyDiagnostics.Models
         public Citizenship Citizenship { get; set; }
 
         private MaritalStatus _maritalStatus;
-        public MaritalStatus MaritalStatus
+        public Gender Gender
         {
-            get => _maritalStatus;
-            set { _maritalStatus = value; OnPropertyChanged(); }
+            get => _gender;
+            set { _gender = value; OnPropertyChanged(); }
         }
 
         // Есть ли дети – enum, а не bool

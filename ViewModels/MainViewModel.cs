@@ -179,14 +179,12 @@ namespace PsyDiagnostics.ViewModels
 
         private void ShowParticipant()
         {
-            // настраиваем колбэк перехода к тестам
             ParticipantVm.OnNavigateToTest = participant =>
             {
                 Current = participant;
                 GoToTest();
             };
 
-            // важно: DataContext = this, чтобы в XAML был доступ к ParticipantVm, SearchId, командам и т.д.
             CurrentView = new ParticipantView { DataContext = this };
         }
 
@@ -253,7 +251,7 @@ namespace PsyDiagnostics.ViewModels
                 CurrentView = new TestSelectionView { DataContext = selectVm };
             };
 
-            CurrentView = new TestingView { DataContext = modeVm };
+            CurrentView = new TestSelectionView { DataContext = modeVm };
         }
 
         private void ShowTesting()
@@ -341,7 +339,6 @@ namespace PsyDiagnostics.ViewModels
             try
             {
                 var id = SearchId?.Trim();
-
                 if (string.IsNullOrWhiteSpace(id))
                 {
                     MessageBox.Show("Введите ID");
@@ -352,7 +349,7 @@ namespace PsyDiagnostics.ViewModels
 
                 if (found != null)
                 {
-                    Current = found;     // этого достаточно
+                    Current = found;     
                     MessageBox.Show("Найден ✔");
                 }
                 else
@@ -362,9 +359,7 @@ namespace PsyDiagnostics.ViewModels
                         PrisonerId = id,
                         BirthDate = DateTime.Today
                     };
-
-                    Current = newP;      // и здесь тоже
-
+                    Current = newP;     
                     MessageBox.Show("Не найден");
                 }
             }

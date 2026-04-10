@@ -10,7 +10,6 @@ namespace PsyDiagnostics.Services
     public class DatabaseService
     {
         private string _conn = "Data Source=psy.db";
-
         private void InitializeDatabase(SqliteConnection db)
         {
             var cmd = db.CreateCommand();
@@ -99,19 +98,14 @@ namespace PsyDiagnostics.Services
 
             if (!r.Read())
                 return null;
-            //var temp = r["blabla"];
             var count = Convert.ToInt32(r["ChildrenCount"]);
-
             
             var p = new Participant
             {
-                // В БД INTEGER, в модели пока string -> оставляем ToString()
                 PrisonerId = r["PrisonerId"]?.ToString(),
 
                 FullName = r["FullName"]?.ToString(),
 
-                // Gender теперь TEXT: "Мужской" / "Женский"
-                //Gender = r["Gender"]?.ToString(),
                 Gender = EnumTry(r["Gender"], Gender.НеВыбрано),
 
                 BirthDate = DateTime.TryParse(r["BirthDate"]?.ToString(), out var d)
@@ -178,63 +172,6 @@ namespace PsyDiagnostics.Services
                 SelfHarmScars = EnumTry(r["SelfHarmScars"], SelfHarmScars.Нет),
                 RelativesSuicide = EnumTry(r["RelativesSuicide"], RelativesSuicide.Нет)
             };
-
-            //var p = new Participant
-            //{
-            //    PrisonerId = r["PrisonerId"]?.ToString(),
-            //    FullName = r["FullName"]?.ToString(),
-
-            //    BirthDate = DateTime.TryParse(r["BirthDate"]?.ToString(), out var d)
-            //        ? d : DateTime.Today,
-
-            //    BirthPlace = r["BirthPlace"]?.ToString(),
-            //    Nationality = r["Nationality"]?.ToString(),
-            //    Residence = r["Residence"]?.ToString(),
-
-            //    FamilyUpbringing = EnumTry(r["FamilyUpbringing"], FamilyUpbringing.НеВыбрано),
-            //    MaritalStatus = EnumTry(r["MaritalStatus"], MaritalStatus.НеЖенат),
-
-            //    HasCloseRelatives = ToBool(r["HasCloseRelatives"]) ? YesNo.Да : YesNo.Нет,
-            //    HasChildren = ToBool(r["HasChildren"]) ? ChildrenPresence.Да : ChildrenPresence.Нет,
-            //    ChildrenCount = TryInt(r["ChildrenCount"]),
-
-            //    WillKeepContact = ToBool(r["WillKeepContact"]) ? YesNo.Да : YesNo.Нет,
-
-            //    EducationLevel = EnumTry(r["EducationLevel"], EducationLevel.Среднее),
-            //    HasProfession = EnumTry(r["HasProfession"], ProfessionPresence.Нет),
-            //    Profession = r["Profession"]?.ToString(),
-            //    Religion = EnumTry(r["Religion"], Religion.НеВыбрано),
-
-            //    ArmyService = EnumTry(r["ArmyService"], default(ArmyService)),
-            //    ArmyBranch = r["ArmyBranch"]?.ToString(),
-            //    CombatParticipation = EnumTry(r["CombatParticipation"], CombatParticipation.Нет),
-            //    SomaticDiseases = EnumTry(r["SomaticDiseases"], SomaticDiseases.Нет),
-            //    Disability = EnumTry(r["Disability"], Disability.Нет),
-            //    MentalDiseases = EnumTry(r["MentalDiseases"], MentalDiseases.Нет),
-            //    PsychiatristRegistry = EnumTry(r["PsychiatristRegistry"], PsychiatristRegistry.Нет),
-            //    Gambling = EnumTry(r["Gambling"], Gambling.Нет),
-            //    Obligations = EnumTry(r["Obligations"], Obligations.Нет),
-            //    NarcologistRegistry = EnumTry(r["NarcologistRegistry"], NarcologistRegistry.Нет),
-            //    DrugUse = EnumTry(r["DrugUse"], DrugUse.Нет),
-
-            //    ArticleNumber = r["ArticleNumber"]?.ToString(),
-            //    ArticlePart = r["ArticlePart"]?.ToString(),
-            //    ArticlePoint = r["ArticlePoint"]?.ToString(),
-            //    SentenceTerm = TryInt(r["SentenceTerm"]),
-
-            //    CrimeType = EnumTry(r["CrimeType"], CrimeType.НеВыбрано),
-            //    Recidivism = EnumTry(r["Recidivism"], Recidivism.Нет),
-            //    Unit = r["Unit"]?.ToString(),
-            //    Category = EnumTry(r["Category"], Category.НеВыбрано),
-
-            //    CurrentFeelings = EnumTry(r["CurrentFeelings"], CurrentFeelings.НеВыбрано),
-            //    AttitudeToUIS = EnumTry(r["AttitudeToUIS"], AttitudeToUIS.НеВыбрано),
-            //    SuicideAttempts = EnumTry(r["SuicideAttempts"], SuicideAttempts.Нет),
-            //    SelfHarmScars = EnumTry(r["SelfHarmScars"], SelfHarmScars.Нет),
-            //    RelativesSuicide = EnumTry(r["RelativesSuicide"], RelativesSuicide.Нет)
-            //};
-            MessageBox.Show(p.BirthDate.ToString());
-
             return p;
         }
 

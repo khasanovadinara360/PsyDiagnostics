@@ -63,7 +63,6 @@ namespace PsyDiagnostics.ViewModels
 
         private void OnSingleTestFinished(TestViewModel finished)
         {
-            // забираем результат конкретного теста
             var res = finished.GetResults();
             foreach (var kv in res)
                 _allResults[kv.Key] = kv.Value;
@@ -73,13 +72,10 @@ namespace PsyDiagnostics.ViewModels
                 var idx = TestViewModels.IndexOf(finished);
                 if (idx >= 0 && idx < TestViewModels.Count - 1)
                 {
-                    // переходим к следующему тесту
                     CurrentTest = TestViewModels[idx + 1];
                     return;
                 }
             }
-
-            // проверяем, все ли выбранные тесты имеют результат
             bool allFinished = TestViewModels.All(vm =>
             {
                 var r = vm.GetResults();
@@ -88,18 +84,14 @@ namespace PsyDiagnostics.ViewModels
 
             if (allFinished)
             {
-                // все тесты пройдены — показываем общий результат
                 _main.ShowResult(_allResults);
             }
             else
             {
-                // есть ещё непройденные тесты
-                // запрещаем "завершение" и говорим пользователю
                 System.Windows.MessageBox.Show(
                     "Вы выбрали несколько тестов. " +
                     "Чтобы получить результат, нужно пройти все выбранные тесты."
                 );
-                // остаёмся на MultiTestView, пользователь может переключиться на другой тест
             }
         }
     }
