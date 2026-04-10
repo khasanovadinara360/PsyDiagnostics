@@ -450,11 +450,21 @@
                                      Text="{Binding ArticleSearch, UpdateSourceTrigger=PropertyChanged}"/>
 
                             <ListBox ItemsSource="{Binding FilteredArticles}"
-                                     SelectedItem="{Binding SelectedArticle, Mode=TwoWay}"
-                                     MaxHeight="150"
-                                     BorderThickness="1"
-                                     Margin="0,5"
-                                     DisplayMemberPath="Display"/>
+         SelectedItem="{Binding SelectedArticle, Mode=TwoWay}"
+         MaxHeight="150"
+         BorderThickness="1"
+         Margin="0,5">
+
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Display}" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+
+                            </ListBox>
+
+                            <TextBlock Text="{Binding SelectedArticle.Display}" Foreground="Yellow"/>
+                            <TextBlock Text="{Binding SelectedArticle.Parts.Count}" Foreground="Green"/>
 
                             <TextBlock Text="Часть" Style="{StaticResource SectionHeader}"/>
                             <ComboBox ItemsSource="{Binding AvailableParts}"
@@ -574,15 +584,33 @@
                                        Margin="0,0,0,10"/>
 
                             <DataGrid Grid.Row="1"
-                                      ItemsSource="{Binding TestHistory}"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      IsReadOnly="True"
-                                      HeadersVisibility="Column"
-                                      Margin="0,0,0,10"
-                                      BorderThickness="1"
-                                      GridLinesVisibility="None">
+          ItemsSource="{Binding TestHistory}"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          IsReadOnly="True"
+          HeadersVisibility="Column"
+          Margin="0,0,0,10"
+          BorderThickness="1"
+          GridLinesVisibility="None"
+          Background="{StaticResource BgCardColor}"
+          Foreground="{StaticResource TextPrimaryColor}"
+          BorderBrush="{StaticResource BorderColor}"
+          AlternatingRowBackground="#FF2A2A38"
+          AlternationCount="2">
+
+                                <!-- Ресурсы -->
+                                <DataGrid.Resources>
+
+                                    <!-- Центрирование текста -->
+                                    <Style x:Key="CenterCellText" TargetType="TextBlock">
+                                        <Setter Property="TextAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    </Style>
+
+                                </DataGrid.Resources>
+
+                                <!-- Заголовки -->
                                 <DataGrid.ColumnHeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
                                         <Setter Property="Background" Value="#FF2B2B3A"/>
@@ -594,25 +622,70 @@
                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                     </Style>
                                 </DataGrid.ColumnHeaderStyle>
+
+                                <!-- Строки -->
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">
                                         <Setter Property="Height" Value="32"/>
+                                        <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+
+                                        <Style.Triggers>
+                                            <!-- Hover -->
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#FF2F2F40"/>
+                                            </Trigger>
+
+                                            <!-- Выделение -->
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </DataGrid.RowStyle>
+
+                                <!-- Ячейки -->
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Padding" Value="6,0"/>
+
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.CellStyle>
+
+                                <!-- Колонки -->
                                 <DataGrid.Columns>
+
                                     <DataGridTextColumn Header="Тест"
-                                                        Binding="{Binding TestName}"
-                                                        Width="*"/>
+                            Binding="{Binding TestName}"
+                            Width="*"
+                            ElementStyle="{StaticResource CenterCellText}"/>
+
                                     <DataGridTextColumn Header="Баллы"
-                                                        Binding="{Binding Score}"
-                                                        Width="80"/>
+                            Binding="{Binding Score}"
+                            Width="80"
+                            ElementStyle="{StaticResource CenterCellText}"/>
+
                                     <DataGridTextColumn Header="Риск"
-                                                        Binding="{Binding Risk}"
-                                                        Width="120"/>
+                            Binding="{Binding Risk}"
+                            Width="120"
+                            ElementStyle="{StaticResource CenterCellText}"/>
+
                                     <DataGridTextColumn Header="Дата"
-                                                        Binding="{Binding Date}"
-                                                        Width="150"/>
+                            Binding="{Binding Date}"
+                            Width="150"
+                            ElementStyle="{StaticResource CenterCellText}"/>
+
                                 </DataGrid.Columns>
+
                             </DataGrid>
 
                             <StackPanel Grid.Row="2"

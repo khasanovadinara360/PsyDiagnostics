@@ -58,10 +58,14 @@ namespace PsyDiagnostics.Models
         public Citizenship Citizenship { get; set; }
 
         private MaritalStatus _maritalStatus;
-        public Gender Gender
+        public MaritalStatus MaritalStatus
         {
-            get => _gender;
-            set { _gender = value; OnPropertyChanged(); }
+            get => _maritalStatus;
+            set
+            {
+                _maritalStatus = value;
+                OnPropertyChanged();
+            }
         }
 
         // Есть ли дети – enum, а не bool
@@ -96,7 +100,7 @@ namespace PsyDiagnostics.Models
         }
 
         //public string Education { get; set; }
-        public string ProfessionBeforeConviction { get; set; }
+        //public string ProfessionBeforeConviction { get; set; }
 
         private ProfessionPresence _hasProfession;
         public ProfessionPresence HasProfession
@@ -297,7 +301,7 @@ namespace PsyDiagnostics.Models
                 this[nameof(FullName)] == null &&
                 this[nameof(BirthDate)] == null &&
                 this[nameof(BirthPlace)] == null &&
-                this[nameof(ProfessionBeforeConviction)] == null &&
+                this[nameof(Profession)] == null &&
                 this[nameof(ArticleNumber)] == null &&
                 this[nameof(SentenceTerm)] == null &&
                 this[nameof(Unit)] == null &&
@@ -334,8 +338,8 @@ namespace PsyDiagnostics.Models
                             return "Введите национальность";
                         break;
 
-                    case nameof(ProfessionBeforeConviction):
-                        if (string.IsNullOrWhiteSpace(ProfessionBeforeConviction))
+                    case nameof(Profession):
+                        if (string.IsNullOrWhiteSpace(Profession))
                             return "Введите профессию";
                         break;
 
@@ -351,10 +355,10 @@ namespace PsyDiagnostics.Models
                             return "Срок должен быть больше 0";
                         break;
 
-                    case nameof(Unit):
-                        if (!Regex.IsMatch(Unit ?? "", @"^\d+$"))
-                            return "Только цифры";
-                        break;
+                    //case nameof(Unit):
+                    //    if (!Regex.IsMatch(Unit ?? "", @"^\d+$"))
+                    //        return "Только цифры";
+                    //    break;
 
                     case nameof(PreviousConvictions):
                         if (PreviousConvictions < 0)
