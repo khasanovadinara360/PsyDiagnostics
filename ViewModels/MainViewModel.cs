@@ -188,6 +188,7 @@ namespace PsyDiagnostics.ViewModels
 
             AllArticles = JsonHelper.LoadArticles();
             FilteredArticles = AllArticles;
+            //changes
 
             ShowParticipant();
         }
