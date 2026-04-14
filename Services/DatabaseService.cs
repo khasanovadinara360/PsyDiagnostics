@@ -16,8 +16,7 @@ namespace PsyDiagnostics.Services
 
             cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS Participants (
-                Id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-                PrisonerId          TEXT    NOT NULL UNIQUE,
+                PrisonerId                  INTEGER PRIMARY KEY AUTOINCREMENT,
                 FullName            TEXT,
                 Gender              INTEGER,
                 BirthDate           TEXT,
@@ -103,9 +102,16 @@ namespace PsyDiagnostics.Services
             var articleNumber = r["ArticleNumber"]?.ToString();
             var articlePart = r["ArticlePart"]?.ToString();
             var articlePoint = r["ArticlePoint"]?.ToString();
+            if (articlePart.Length > 1)
+            {
+                articlePart = articlePart.Remove(0, 2);
+            }
+            if (articlePoint.Length > 1)
+            {
+                articlePoint = articlePoint.Remove(0, 2);
 
-            articlePart = articlePart.Remove(0, 2);
-            
+            }
+
             var p = new Participant
             {
                 PrisonerId = r["PrisonerId"]?.ToString(),

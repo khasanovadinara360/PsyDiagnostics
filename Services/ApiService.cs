@@ -18,7 +18,7 @@ namespace PsyDiagnostics.Services
             var json = JsonSerializer.Serialize(data);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _http.PostAsync("http://192.168.1.103:8000/predict", content);
+            var response = await _http.PostAsync("http://127.0.0.1:8000/predict", content);
 
             response.EnsureSuccessStatusCode();
 

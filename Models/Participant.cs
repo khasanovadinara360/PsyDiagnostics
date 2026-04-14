@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -297,16 +298,20 @@ namespace PsyDiagnostics.Models
 
         public bool IsValid()
         {
+
             return
                 this[nameof(FullName)] == null &&
                 this[nameof(BirthDate)] == null &&
                 this[nameof(BirthPlace)] == null &&
                 this[nameof(Profession)] == null &&
                 this[nameof(ArticleNumber)] == null &&
+                this[nameof(ArticlePart)] == null &&
                 this[nameof(SentenceTerm)] == null &&
                 this[nameof(Unit)] == null &&
                 this[nameof(PreviousConvictions)] == null;
         }
+
+
 
         public string this[string columnName]
         {
@@ -317,9 +322,9 @@ namespace PsyDiagnostics.Models
                     case nameof(FullName):
                         if (string.IsNullOrWhiteSpace(FullName))
                             return "Введите ФИО";
-                        var parts = FullName.Split(' ');
-                        if (parts.Length < 2)
-                            return "Минимум фамилия и имя";
+                        var parts = FullName.Trim().Split(' ');
+                        if (parts.Length < 3)
+                            return "Минимум фамилия, имя и отчество";
                         break;
 
                     case nameof(BirthDate):
@@ -360,14 +365,37 @@ namespace PsyDiagnostics.Models
                     //        return "Только цифры";
                     //    break;
 
-                    case nameof(PreviousConvictions):
-                        if (PreviousConvictions < 0)
-                            return "Не может быть меньше 0";
-                        break;
                 }
 
                 return null;
             }
+        }
+        public List<string> GetErrors()
+        {
+            var errors = new List<string>();
+
+            var props = new[]
+            {
+        nameof(FullName),
+        nameof(BirthDate),
+        nameof(BirthPlace),
+        nameof(Nationality),
+        nameof(Profession),
+        nameof(ArticleNumber),
+        nameof(ArticlePart),
+        nameof(SentenceTerm),
+        nameof(Unit),
+        nameof(PreviousConvictions)
+    };
+
+            foreach (var prop in props)
+            {
+                var error = this[prop];
+                if (!string.IsNullOrEmpty(error))
+                    errors.Add(error);
+            }
+
+            return errors;
         }
 
         public string Error => null;

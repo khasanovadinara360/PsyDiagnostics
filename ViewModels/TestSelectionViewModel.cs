@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
 using PsyDiagnostics.Helpers;
@@ -124,7 +125,14 @@ namespace PsyDiagnostics.ViewModels
                     MessageBox.Show("В обычном режиме нужно выбрать минимум два теста.");
                     return;
                 }
+                if (selectedDefs.Count > 7)
+                {
+                    MessageBox.Show("В обычном режиме нужно выбрать максимум 7 тестов.");
+                    return;
+
+                }
             }
+
             if (selectedDefs.Count == 0)
                 return;
 

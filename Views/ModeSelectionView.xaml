@@ -64,9 +64,7 @@
 
                 <!-- Экспресс -->
                 <Button Content="Экспресс режим"
-                        Command="{Binding ExpressCommand}"
-                        Background="{StaticResource AccentColor}"
-                        BorderBrush="Transparent"/>
+                        Command="{Binding ExpressCommand}"/>
                 <TextBlock Text="Быстрое прохождение, минимальный набор тестов"
                            Style="{StaticResource ModeDescription}"/>
 
@@ -94,6 +92,8 @@
 
                     <Button Content="Главная"
                             Command="{Binding HomeCommand}"
+                        Background="{StaticResource AccentColor}"
+                        BorderBrush="Transparent"
                             Width="100"
                             Margin="5,0"/>
                 </StackPanel>
