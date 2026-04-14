@@ -173,7 +173,7 @@ namespace PsyDiagnostics.Services
 
                 CrimeType = EnumTryUnchecked(r["CrimeType"], CrimeType.НеВыбрано),
                 Recidivism = EnumTryUnchecked(r["Recidivism"], Recidivism.Нет),
-                PreviousConvictions = TryInt(r["PreviousConvictions"]),
+                //PreviousConvictions = TryInt(r["PreviousConvictions"]),
 
                 Unit = r["Unit"]?.ToString(),
                 Category = EnumTryUnchecked(r["Category"], Category.НеВыбрано),
