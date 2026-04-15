@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="PsyDiagnostics.Views.ParticipantView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:lvc="http://schemas.livecharts.com/2.0/wpf">
 
     <UserControl.Resources>
 
@@ -267,18 +268,26 @@
                                      BorderBrush="{StaticResource BorderColor}"
                                      BorderThickness="1"/>
 
-                            <TextBlock Text="Место рождения (город, область, страна)" Style="{StaticResource SectionHeader}"/>
+                            <TextBlock Text="Гражданство" Style="{StaticResource SectionHeader}"/>
+                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                                    Text="{Binding ParticipantVm.CurrentParticipant.Citizenship, UpdateSourceTrigger=PropertyChanged}"/>
+    
+
+                            <TextBlock Text="Место рождения (регион)" Style="{StaticResource SectionHeader}"/>
                             <TextBox Style="{StaticResource ValidatedTextBox}"
                                      Text="{Binding ParticipantVm.CurrentParticipant.BirthPlace, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Text="Место проживания (населенный пункт)" Style="{StaticResource SectionHeader}"/>
+                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                            Text="{Binding ParticipantVm.CurrentParticipant.Residence, UpdateSourceTrigger=PropertyChanged}"/>
+                            
+                            
 
                             <TextBlock Text="Национальность" Style="{StaticResource SectionHeader}"/>
                             <TextBox Style="{StaticResource ValidatedTextBox}"
                                      Text="{Binding ParticipantVm.CurrentParticipant.Nationality, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
-                            <TextBlock Text="Место проживания (населенный пункт)" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
-                                     Text="{Binding ParticipantVm.CurrentParticipant.Residence, UpdateSourceTrigger=PropertyChanged}"/>
-
+                            
                             <TextBlock Text="Воспитывались ли Вы в полной семье?" Style="{StaticResource SectionHeader}"/>
                             <ComboBox Margin="0,3"
                                       Height="32"
@@ -700,6 +709,158 @@
                             </StackPanel>
                         </Grid>
                     </TabItem>
+
+                    <!-- Аналитика -->
+                    <TabItem Header="Аналитика">
+                        <Grid Margin="10">
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 🔹 ФИЛЬТРЫ -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+
+                                <StackPanel Margin="0,0,20,0">
+                                    <TextBlock Text="Отряд" Style="{StaticResource SectionHeader}"/>
+                                    <ComboBox Width="150"
+                          Style="{StaticResource DarkComboBox}"
+                          ItemsSource="{Binding Units}"
+                          SelectedItem="{Binding SelectedUnit}"/>
+                                </StackPanel>
+
+                                <StackPanel Margin="0,0,20,0">
+                                    <TextBlock Text="Тип" Style="{StaticResource SectionHeader}"/>
+                                    <ComboBox Width="150"
+                          Style="{StaticResource DarkComboBox}"
+                          SelectedItem="{Binding SelectedType}">
+                                        <ComboBoxItem Content="Все"/>
+                                        <ComboBoxItem Content="Первоходы"/>
+                                        <ComboBoxItem Content="Рецидивисты"/>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <StackPanel>
+                                    <TextBlock Text="Период" Style="{StaticResource SectionHeader}"/>
+                                    <ComboBox Width="150"
+                          Style="{StaticResource DarkComboBox}"
+                          ItemsSource="{Binding Periods}"
+                          SelectedItem="{Binding SelectedPeriod}"/>
+                                </StackPanel>
+
+                            </StackPanel>
+
+                            <!-- 🔹 ГРАФИКИ -->
+                            <ScrollViewer Grid.Row="1">
+                                <StackPanel>
+
+                                    <!-- Риск по отрядам -->
+                                    <Border Background="{StaticResource BgCardColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,0,10">
+
+                                        <StackPanel>
+                                            <TextBlock Text="Риск по отрядам"
+                                   Foreground="{StaticResource TextPrimaryColor}"
+                                   Margin="0,0,0,10"/>
+
+                                            <lvc:CartesianChart Series="{Binding RiskByUnitSeries}"
+                                            XAxes="{Binding UnitXAxes}"
+                                            YAxes="{Binding YAxes}"
+                                            Height="250"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Сравнение -->
+                                    <Border Background="{StaticResource BgCardColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,0,10">
+
+                                        <StackPanel>
+                                            <TextBlock Text="Первоходы vs Рецидивисты"
+                                   Foreground="{StaticResource TextPrimaryColor}"
+                                   Margin="0,0,0,10"/>
+
+                                            <lvc:CartesianChart Series="{Binding RecidivismSeries}"
+                                            XAxes="{Binding RecidivismXAxes}"
+                                            YAxes="{Binding YAxes}"
+                                            Height="250"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Динамика -->
+                                    <Border Background="{StaticResource BgCardColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,0,10">
+
+                                        <StackPanel>
+                                            <TextBlock Text="Динамика по кварталам"
+                                   Foreground="{StaticResource TextPrimaryColor}"
+                                   Margin="0,0,0,10"/>
+
+                                            <lvc:CartesianChart Series="{Binding TrendSeries}"
+                                            XAxes="{Binding TimeXAxes}"
+                                            YAxes="{Binding YAxes}"
+                                            Height="250"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Индивидуальная динамика -->
+                                    <Border Background="{StaticResource BgCardColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,0,10">
+
+                                        <StackPanel>
+                                            <TextBlock Text="Динамика заключённого"
+                                   Foreground="{StaticResource TextPrimaryColor}"
+                                   Margin="0,0,0,10"/>
+
+                                            <lvc:CartesianChart Series="{Binding IndividualSeries}"
+                                            XAxes="{Binding TimeXAxes}"
+                                            YAxes="{Binding YAxes}"
+                                            Height="250"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- ТОП -->
+                                    <Border Background="{StaticResource BgCardColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="10"
+                        Margin="0,0,0,10">
+
+                                        <StackPanel>
+                                            <TextBlock Text="ТОП улучшений"
+                                   Foreground="{StaticResource TextPrimaryColor}"
+                                   Margin="0,0,0,10"/>
+
+                                            <lvc:CartesianChart Series="{Binding TopImprovementSeries}"
+                                            XAxes="{Binding UnitXAxes}"
+                                            YAxes="{Binding YAxes}"
+                                            Height="250"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
+
+                        </Grid>
+                    </TabItem>
+
 
                 </TabControl>
             </Border>
