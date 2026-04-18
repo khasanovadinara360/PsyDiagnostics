@@ -581,6 +581,44 @@ namespace PsyDiagnostics.Services
 
             return Convert.ToDouble(result);
         }
+        public (int count, double low, double mid, double high) GetUnitStats(string unit)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+        SELECT 
+            COUNT(DISTINCT p.PrisonerId),
+
+            AVG(CASE WHEN ar.Probability <= 0.32 THEN 1.0 ELSE 0 END),
+            AVG(CASE WHEN ar.Probability > 0.32 AND ar.Probability <= 0.66 THEN 1.0 ELSE 0 END),
+            AVG(CASE WHEN ar.Probability > 0.66 THEN 1.0 ELSE 0 END)
+
+        FROM Participants p
+        LEFT JOIN AiResults ar 
+            ON CAST(p.PrisonerId AS TEXT) = ar.PrisonerId
+        WHERE p.Unit = $unit
+    ";
+
+            cmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            using var r = cmd.ExecuteReader();
+
+            if (r.Read())
+            {
+                int count = r.IsDBNull(0) ? 0 : r.GetInt32(0);
+                double low = r.IsDBNull(1) ? 0 : r.GetDouble(1);
+                double mid = r.IsDBNull(2) ? 0 : r.GetDouble(2);
+                double high = r.IsDBNull(3) ? 0 : r.GetDouble(3);
+
+                return (count, low, mid, high);
+            }
+
+            return (0, 0, 0, 0);
+        }
 
     }
 }

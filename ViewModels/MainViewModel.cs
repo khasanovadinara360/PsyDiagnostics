@@ -401,14 +401,66 @@ namespace PsyDiagnostics.ViewModels
 
             double avg = db.GetAverageRiskByUnit(Current.Unit);
 
+            // 🔴 цвет
             if (avg > 0.7)
+            {
                 UnitRisk = $"Высокий ({avg:P0})";
+                UnitRiskColor = "#FF5252";
+            }
             else if (avg > 0.4)
+            {
                 UnitRisk = $"Средний ({avg:P0})";
+                UnitRiskColor = "#FFC107";
+            }
             else
+            {
                 UnitRisk = $"Низкий ({avg:P0})";
+                UnitRiskColor = "#4CAF50";
+            }
+            var stats = db.GetUnitStats(Current.Unit);
 
-            UnitStats = $"Отряд: {Current.Unit}";
+            UnitCount = stats.count;
+
+            int low = (int)(stats.low * 100);
+            int mid = (int)(stats.mid * 100);
+            int high = (int)(stats.high * 100);
+
+            UnitStats = $"Отряд: {Current.Unit} | Человек: {UnitCount}";
+
+
+        }
+
+        private string _unitRiskColor;
+        public string UnitRiskColor
+        {
+            get => _unitRiskColor;
+            set
+            {
+                _unitRiskColor = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int _unitCount;
+        public int UnitCount
+        {
+            get => _unitCount;
+            set
+            {
+                _unitCount = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private int _highRiskPercent;
+        public int HighRiskPercent
+        {
+            get => _highRiskPercent;
+            set
+            {
+                _highRiskPercent = value;
+                OnPropertyChanged();
+            }
         }
 
         private void Search()
