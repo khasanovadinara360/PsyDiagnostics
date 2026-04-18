@@ -59,7 +59,7 @@ namespace PsyDiagnostics.ViewModels
 
                 OnPropertyChanged(nameof(SelectedArticle));
                 OnPropertyChanged(nameof(CanSave));
-
+                UpdateUnitRisk();
                 LoadTestHistory();
 
                 //OnPropertyChanged();
@@ -355,6 +355,7 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+
         private void ExportPdf()
         {
             if (Current == null)
@@ -364,6 +365,50 @@ namespace PsyDiagnostics.ViewModels
             }
 
             MessageBox.Show("Выгрузка PDF пока не реализована.");
+        }
+
+        private string _unitRisk;
+        public string UnitRisk
+        {
+            get => _unitRisk;
+            set
+            {
+                _unitRisk = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private readonly DatabaseService db = new DatabaseService();
+
+        private string _unitStats;
+        public string UnitStats
+        {
+            get => _unitStats;
+            set
+            {
+                _unitStats = value;
+                OnPropertyChanged();
+            }
+        }
+        public void UpdateUnitRisk()
+        {
+            if (Current == null || string.IsNullOrEmpty(Current.Unit))
+            {
+                UnitRisk = "Нет данных";
+                UnitStats = "";
+                return;
+            }
+
+            double avg = db.GetAverageRiskByUnit(Current.Unit);
+
+            if (avg > 0.7)
+                UnitRisk = $"Высокий ({avg:P0})";
+            else if (avg > 0.4)
+                UnitRisk = $"Средний ({avg:P0})";
+            else
+                UnitRisk = $"Низкий ({avg:P0})";
+
+            UnitStats = $"Отряд: {Current.Unit}";
         }
 
         private void Search()

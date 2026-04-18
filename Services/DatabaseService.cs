@@ -556,5 +556,31 @@ namespace PsyDiagnostics.Services
             var s = dbVal.ToString();
             return Enum.TryParse<TEnum>(s, out var res) ? res : @default;
         }
+
+        public double GetAverageRiskByUnit(string unit)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+        SELECT AVG(Probability)
+        FROM AiResults ar
+        JOIN Participants p ON p.PrisonerId = ar.PrisonerId
+        WHERE p.Unit = $unit
+    ";
+
+            cmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            var result = cmd.ExecuteScalar();
+
+            if (result == null || result == DBNull.Value)
+                return 0;
+
+            return Convert.ToDouble(result);
+        }
+
     }
 }

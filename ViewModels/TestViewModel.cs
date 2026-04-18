@@ -197,6 +197,7 @@ namespace PsyDiagnostics.ViewModels
             // здесь больше не показываем общий MessageBox,
             // только даём сигнал MultiTestViewModel / MainViewModel
             OnFinished?.Invoke();
+            _main.UpdateUnitRisk();
         }
 
         public Dictionary<string, int> GetResults() => results;

@@ -21,6 +21,7 @@ namespace PsyDiagnostics.Models
         public class PredictionResponse
         {
             public int prediction { get; set; }
+            public double probability { get; set; }
         }
     }
     
