@@ -10,6 +10,7 @@ namespace PsyDiagnostics.Services
     public class DatabaseService
     {
         private string _conn = "Data Source=psy.db";
+
         private void InitializeDatabase(SqliteConnection db)
         {
             var cmd = db.CreateCommand();
@@ -33,7 +34,6 @@ namespace PsyDiagnostics.Services
         HasProfession INTEGER,
         Profession TEXT,
         Religion INTEGER,
-
         ArmyService INTEGER,
         ArmyBranch TEXT,
         CombatParticipation INTEGER,
@@ -45,7 +45,6 @@ namespace PsyDiagnostics.Services
         Obligations INTEGER,
         NarcologistRegistry INTEGER,
         DrugUse INTEGER,
-
         ArticleNumber TEXT,
         ArticlePart TEXT,
         ArticlePoint TEXT,
@@ -54,7 +53,6 @@ namespace PsyDiagnostics.Services
         Recidivism INTEGER,
         Unit TEXT,
         Category INTEGER,
-
         CurrentFeelings INTEGER,
         AttitudeToUIS INTEGER,
         SuicideAttempts INTEGER,
@@ -66,14 +64,11 @@ namespace PsyDiagnostics.Services
         Id INTEGER PRIMARY KEY AUTOINCREMENT,
         PrisonerId TEXT,
         Unit TEXT,
-
         TestName TEXT,
         Score INTEGER,
-
         Prediction INTEGER,
         Probability REAL,
         RiskScore REAL,
-
         Date TEXT
     );
 
@@ -107,25 +102,22 @@ namespace PsyDiagnostics.Services
 
             if (!r.Read())
                 return null;
+
             var count = Convert.ToInt32(r["ChildrenCount"]);
 
             var articleNumber = r["ArticleNumber"]?.ToString();
-            var articlePart = r["ArticlePart"]?.ToString();
-            var articlePoint = r["ArticlePoint"]?.ToString();
-            if (articlePart.Length > 1)
-            {
-                articlePart = articlePart.Remove(0, 2);
-            }
-            if (articlePoint.Length > 1)
-            {
-                articlePoint = articlePoint.Remove(0, 2);
+            var articlePart = r["ArticlePart"]?.ToString() ?? "";
+            var articlePoint = r["ArticlePoint"]?.ToString() ?? "";
 
-            }
+            if (articlePart.Length > 1)
+                articlePart = articlePart.Remove(0, 2);
+
+            if (articlePoint.Length > 1)
+                articlePoint = articlePoint.Remove(0, 2);
 
             var p = new Participant
             {
                 PrisonerId = r["PrisonerId"]?.ToString(),
-
                 FullName = r["FullName"]?.ToString(),
 
                 Gender = EnumTry(r["Gender"], Gender.НеВыбрано),
@@ -149,12 +141,10 @@ namespace PsyDiagnostics.Services
                 ChildrenCount = count,
 
                 HasChildren = count > 0
-                ? ChildrenPresence.Да
-                : ChildrenPresence.Нет,
+                    ? ChildrenPresence.Да
+                    : ChildrenPresence.Нет,
 
                 WillKeepContact = EnumTryUnchecked(r["WillKeepContact"], YesNo.Нет),
-
-                //ProfessionBeforeConviction = r["ProfessionBeforeConviction"]?.ToString(),
 
                 HasProfession = EnumTry(r["HasProfession"], ProfessionPresence.Нет),
                 Profession = r["Profession"]?.ToString(),
@@ -180,10 +170,8 @@ namespace PsyDiagnostics.Services
                 ArticlePoint = articlePoint,
 
                 SentenceTerm = TryInt(r["SentenceTerm"]),
-
                 CrimeType = EnumTryUnchecked(r["CrimeType"], CrimeType.НеВыбрано),
                 Recidivism = EnumTryUnchecked(r["Recidivism"], Recidivism.Нет),
-                //PreviousConvictions = TryInt(r["PreviousConvictions"]),
 
                 Unit = r["Unit"]?.ToString(),
                 Category = EnumTryUnchecked(r["Category"], Category.НеВыбрано),
@@ -194,7 +182,7 @@ namespace PsyDiagnostics.Services
                 SelfHarmScars = EnumTryUnchecked(r["SelfHarmScars"], SelfHarmScars.Нет),
                 RelativesSuicide = EnumTryUnchecked(r["RelativesSuicide"], RelativesSuicide.Нет)
             };
-            //MessageBox.Show(articleNumber + articlePart + articlePoint);
+
             return p;
         }
 
@@ -301,8 +289,7 @@ namespace PsyDiagnostics.Services
             cmd.ExecuteNonQuery();
         }
 
-        public (Participant participant, List<TestResultRecord> aiResults)
-    GetFullReport(string id)
+        public (Participant participant, List<TestResultRecord> aiResults) GetFullReport(string id)
         {
             var participant = GetParticipant(id);
             var aiResults = new List<TestResultRecord>();
@@ -520,27 +507,25 @@ namespace PsyDiagnostics.Services
             try { return Convert.ToInt32(val) == 1; }
             catch { return false; }
         }
+
         private static TEnum EnumTryUnchecked<TEnum>(object dbVal, TEnum @default) where TEnum : struct
         {
             if (dbVal == null || dbVal == DBNull.Value)
                 return @default;
 
-            // если число
             if (int.TryParse(dbVal.ToString(), out var intVal))
             {
-                intVal += 1; // 🔥 СДВИГ
+                intVal += 1;
 
                 if (Enum.IsDefined(typeof(TEnum), intVal))
                     return (TEnum)Enum.ToObject(typeof(TEnum), intVal);
             }
 
-            // если строка (на всякий случай)
             if (Enum.TryParse<TEnum>(dbVal.ToString(), out var res))
                 return res;
 
             return @default;
         }
-
 
         private static TEnum EnumTry<TEnum>(object dbVal, TEnum @default) where TEnum : struct
         {
@@ -553,15 +538,21 @@ namespace PsyDiagnostics.Services
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
-
             cmd.CommandText = @"
-        SELECT AVG(RiskScore)
-        FROM AiResults
-        WHERE Unit = $unit
-    ";
-
+        SELECT AVG(t.RiskScore)
+        FROM (
+            SELECT a.PrisonerId, a.RiskScore
+            FROM AiResults a
+            WHERE TRIM(a.Unit) = TRIM($unit)
+              AND a.Date = (
+                  SELECT MAX(a2.Date)
+                  FROM AiResults a2
+                  WHERE a2.PrisonerId = a.PrisonerId
+              )
+        ) t";
             cmd.Parameters.AddWithValue("$unit", unit ?? "");
 
             var result = cmd.ExecuteScalar();
@@ -571,65 +562,143 @@ namespace PsyDiagnostics.Services
                 : Convert.ToDouble(result);
         }
 
-        public (int count, double low, double mid, double high) GetUnitStats(string unit)
+        public List<(string name, double risk, string unit)> GetTopPeopleFromBestUnit()
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
-            // 👥 ОБЩЕЕ КОЛИЧЕСТВО ЛЮДЕЙ В ОТРЯДЕ
-            var countCmd = db.CreateCommand();
-            countCmd.CommandText = @"
-        SELECT COUNT(*) 
-        FROM Participants 
-        WHERE CAST(TRIM(Unit) AS INTEGER) = CAST(TRIM($unit) AS INTEGER)
-    ";
-            countCmd.Parameters.AddWithValue("$unit", unit ?? "");
+            var bestUnitCmd = db.CreateCommand();
+            bestUnitCmd.CommandText = @"
+        SELECT t.Unit
+        FROM (
+            SELECT a.Unit, a.PrisonerId, a.RiskScore
+            FROM AiResults a
+            WHERE a.Date = (
+                SELECT MAX(a2.Date)
+                FROM AiResults a2
+                WHERE a2.PrisonerId = a.PrisonerId
+            )
+        ) t
+        GROUP BY t.Unit
+        ORDER BY AVG(t.RiskScore) ASC
+        LIMIT 1";
 
-            int count = Convert.ToInt32(countCmd.ExecuteScalar());
+            var bestUnit = bestUnitCmd.ExecuteScalar()?.ToString();
 
-            // 📊 РАСПРЕДЕЛЕНИЕ ПО РИСКУ
-            var statsCmd = db.CreateCommand();
-            statsCmd.CommandText = @"
-        SELECT 
-            COUNT(DISTINCT PrisonerId),
+            if (string.IsNullOrEmpty(bestUnit))
+                return new List<(string, double, string)>();
 
-            COUNT(CASE WHEN RiskScore <= 32 THEN 1 END),
-            COUNT(CASE WHEN RiskScore > 32 AND RiskScore <= 66 THEN 1 END),
-            COUNT(CASE WHEN RiskScore > 66 THEN 1 END)
+            var cmd = db.CreateCommand();
+            cmd.CommandText = @"
+        SELECT p.FullName, a.RiskScore, a.Unit
+        FROM AiResults a
+        JOIN Participants p ON p.PrisonerId = a.PrisonerId
+        WHERE TRIM(a.Unit) = TRIM($unit)
+          AND a.Date = (
+              SELECT MAX(a2.Date)
+              FROM AiResults a2
+              WHERE a2.PrisonerId = a.PrisonerId
+          )
+        ORDER BY a.RiskScore ASC
+        LIMIT 5";
+            cmd.Parameters.AddWithValue("$unit", bestUnit);
 
-        FROM AiResults
-        WHERE CAST(TRIM(Unit) AS INTEGER) = CAST(TRIM($unit) AS INTEGER)
-    ";
-            statsCmd.Parameters.AddWithValue("$unit", unit ?? "");
+            var result = new List<(string, double, string)>();
 
-            using var r = statsCmd.ExecuteReader();
-
-            if (r.Read())
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
             {
-                return (
-                    count, // 👈 ОБЩЕЕ КОЛИЧЕСТВО ИЗ Participants
-                    r.IsDBNull(1) ? 0 : r.GetInt32(1),
-                    r.IsDBNull(2) ? 0 : r.GetInt32(2),
-                    r.IsDBNull(3) ? 0 : r.GetInt32(3)
-                );
+                result.Add((
+                    r["FullName"].ToString(),
+                    Convert.ToDouble(r["RiskScore"]),
+                    r["Unit"].ToString()
+                ));
             }
 
-            return (count, 0, 0, 0);
+            return result;
+        }
+
+        public List<(string name, double risk, string unit)> GetAllPeopleWithRisk(string unit)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd = db.CreateCommand();
+            cmd.CommandText = @"
+        SELECT p.FullName, a.RiskScore, a.Unit
+        FROM AiResults a
+        JOIN Participants p ON p.PrisonerId = a.PrisonerId
+        WHERE TRIM(a.Unit) = TRIM($unit)
+          AND a.Date = (
+              SELECT MAX(a2.Date)
+              FROM AiResults a2
+              WHERE a2.PrisonerId = a.PrisonerId
+          )
+        ORDER BY a.RiskScore DESC, p.FullName ASC";
+            cmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            var list = new List<(string, double, string)>();
+
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                list.Add((
+                    r["FullName"].ToString(),
+                    Convert.ToDouble(r["RiskScore"]),
+                    r["Unit"].ToString()
+                ));
+            }
+
+            return list;
+        }
+
+        public List<string> GetUnits()
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd = db.CreateCommand();
+            cmd.CommandText = @"
+        SELECT DISTINCT Unit 
+        FROM Participants
+        WHERE Unit IS NOT NULL AND Unit != ''
+        ORDER BY CAST(Unit AS INTEGER)";
+
+            var list = new List<string>();
+
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                list.Add(r["Unit"].ToString());
+            }
+
+            return list;
         }
 
         public (double first, double repeat) GetRecidivismStats()
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
             cmd.CommandText = @"
         SELECT 
-            AVG(CASE WHEN p.Recidivism = 0 THEN ar.RiskScore END),
-            AVG(CASE WHEN p.Recidivism = 1 THEN ar.RiskScore END)
+            AVG(CASE WHEN p.Recidivism = 0 THEN t.RiskScore END),
+            AVG(CASE WHEN p.Recidivism = 1 THEN t.RiskScore END)
         FROM Participants p
-        JOIN AiResults ar ON p.PrisonerId = ar.PrisonerId
-    ";
+        JOIN (
+            SELECT a.PrisonerId, a.RiskScore
+            FROM AiResults a
+            WHERE a.Date = (
+                SELECT MAX(a2.Date)
+                FROM AiResults a2
+                WHERE a2.PrisonerId = a.PrisonerId
+            )
+        ) t ON p.PrisonerId = t.PrisonerId";
 
             using var r = cmd.ExecuteReader();
 
@@ -644,10 +713,59 @@ namespace PsyDiagnostics.Services
             return (0, 0);
         }
 
+        public (int count, double low, double mid, double high) GetUnitStats(string unit)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var countCmd = db.CreateCommand();
+            countCmd.CommandText = @"
+        SELECT COUNT(*) 
+        FROM Participants 
+        WHERE TRIM(Unit) = TRIM($unit)";
+            countCmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            int count = Convert.ToInt32(countCmd.ExecuteScalar());
+
+            var statsCmd = db.CreateCommand();
+            statsCmd.CommandText = @"
+        SELECT 
+            COUNT(CASE WHEN t.RiskScore >= 0 AND t.RiskScore <= 32 THEN 1 END),
+            COUNT(CASE WHEN t.RiskScore >= 33 AND t.RiskScore <= 66 THEN 1 END),
+            COUNT(CASE WHEN t.RiskScore >= 67 THEN 1 END)
+        FROM (
+            SELECT a.PrisonerId, a.RiskScore
+            FROM AiResults a
+            WHERE TRIM(a.Unit) = TRIM($unit)
+              AND a.Date = (
+                  SELECT MAX(a2.Date)
+                  FROM AiResults a2
+                  WHERE a2.PrisonerId = a.PrisonerId
+              )
+        ) t";
+            statsCmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            using var r = statsCmd.ExecuteReader();
+
+            if (r.Read())
+            {
+                return (
+                    count,
+                    r.IsDBNull(0) ? 0 : r.GetInt32(0),
+                    r.IsDBNull(1) ? 0 : r.GetInt32(1),
+                    r.IsDBNull(2) ? 0 : r.GetInt32(2)
+                );
+            }
+
+            return (count, 0, 0, 0);
+        }
+
         public List<(string unit, double improvement)> GetTopUnitsImprovement()
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
             cmd.CommandText = @"
@@ -656,8 +774,7 @@ namespace PsyDiagnostics.Services
         FROM AiResults
         GROUP BY Unit
         ORDER BY improvement DESC
-        LIMIT 5
-    ";
+        LIMIT 5";
 
             using var r = cmd.ExecuteReader();
 
@@ -674,19 +791,26 @@ namespace PsyDiagnostics.Services
             return list;
         }
 
-
-
         public List<(string unit, double avgRisk)> GetRiskByUnits()
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
             cmd.CommandText = @"
-        SELECT Unit, AVG(RiskScore)
-        FROM AiResults
-        GROUP BY Unit
-    ";
+        SELECT t.Unit, AVG(t.RiskScore)
+        FROM (
+            SELECT a.Unit, a.PrisonerId, a.RiskScore
+            FROM AiResults a
+            WHERE a.Date = (
+                SELECT MAX(a2.Date)
+                FROM AiResults a2
+                WHERE a2.PrisonerId = a.PrisonerId
+            )
+        ) t
+        GROUP BY t.Unit
+        ORDER BY CAST(t.Unit AS INTEGER)";
 
             using var r = cmd.ExecuteReader();
 

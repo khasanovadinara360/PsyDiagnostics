@@ -9,10 +9,12 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.ComponentModel;
 using System.Windows.Input;
 using LiveChartsCore.SkiaSharpView.WPF;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore;
+using LiveChartsCore.Painting;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using QuestPDF.Infrastructure;
@@ -26,13 +28,28 @@ namespace PsyDiagnostics.ViewModels
         public int Score { get; set; }
         public string Risk { get; set; }
         public string Date { get; set; }
+
+        // добавил для фильтрации по отряду
+        public string FullName { get; set; }
+        public string Unit { get; set; }
+    }
+
+    public enum AnalyticsSection
+    {
+        [Description("Персональная аналитика")]
+        ПерсональнаяАналитика,
+
+        [Description("Аналитика по отрядам")]
+        АналитикаПоОтрядам,
+
+        [Description("Общая аналитика")]
+        ОбщаяАналитика
     }
 
     public class MainViewModel : BaseViewModel
     {
         private readonly DatabaseService _db = new DatabaseService();
 
-        // VM анкеты участника
         public ParticipantViewModel ParticipantVm { get; }
 
         private string _searchId;
@@ -48,10 +65,6 @@ namespace PsyDiagnostics.ViewModels
             get => _current;
             set
             {
-                SelectedArticle = AllArticles
-                .FirstOrDefault(a =>
-                    a.Number != null &&
-                    a.Number.Trim() == _current?.ArticleNumber?.Trim());
                 if (_current != null)
                     _current.PropertyChanged -= Current_PropertyChanged;
 
@@ -61,23 +74,24 @@ namespace PsyDiagnostics.ViewModels
                     _current.PropertyChanged += Current_PropertyChanged;
 
                 ParticipantVm.CurrentParticipant = _current;
-                SelectedArticle = AllArticles
-        .FirstOrDefault(a => a.Number?.Trim() == _current?.ArticleNumber?.Trim());
 
+                SelectedArticle = AllArticles
+                    .FirstOrDefault(a => a.Number?.Trim() == _current?.ArticleNumber?.Trim());
+
+                OnPropertyChanged(nameof(Current));
                 OnPropertyChanged(nameof(SelectedArticle));
                 OnPropertyChanged(nameof(CanSave));
+
                 UpdateUnitRisk();
                 LoadTestHistory();
-
-                //OnPropertyChanged();
-                //OnPropertyChanged(nameof(CanSave));
-
-                //LoadTestHistory();
+                BuildPersonalChart();
+                BuildPersonalAiSummary();
             }
         }
 
         private void Current_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            OnPropertyChanged(nameof(Current));
             OnPropertyChanged(nameof(CanSave));
         }
 
@@ -128,7 +142,6 @@ namespace PsyDiagnostics.ViewModels
                 {
                     var lower = value.ToLower();
 
-
                     FilteredArticles = AllArticles
                         .Where(a => a.Number.Contains(value)
                                  || a.Title.ToLower().Contains(lower))
@@ -152,7 +165,6 @@ namespace PsyDiagnostics.ViewModels
                 if (Current != null)
                 {
                     Current.ArticleNumber = value.Number;
-
                     Current.ArticlePart = value.Parts?.FirstOrDefault();
                     Current.ArticlePoint = value.Points?.FirstOrDefault();
                 }
@@ -173,6 +185,14 @@ namespace PsyDiagnostics.ViewModels
             get => _testHistory;
             set { _testHistory = value; OnPropertyChanged(); }
         }
+        public ObservableCollection<TestHistoryItem> AggressionHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> ImpulsivityHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> DepressionHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> StressHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> AdaptationHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> AnxietyHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> ResilienceHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> HostilityHistory { get; set; } = new();
 
         private bool _canGoHomeAfterTests;
         public bool CanGoHomeAfterTests
@@ -196,10 +216,52 @@ namespace PsyDiagnostics.ViewModels
 
             AllArticles = JsonHelper.LoadArticles();
             FilteredArticles = AllArticles;
-            //changes
+
+
+            Units = _db.GetUnits();
+            OnPropertyChanged(nameof(Units));
+
+            if (Units.Any())
+                SelectedUnit = Units.First();
+
+
 
             ShowParticipant();
+            BuildRiskByUnitsChart();
+            BuildRecidivismChart();
+            BuildTopUnitsChart();
         }
+        public SolidColorPaint PersonalLegendTextPaint { get; set; } = new SolidColorPaint(SKColors.White);
+        public Array AnalyticsSections => Enum.GetValues(typeof(AnalyticsSection));
+
+        private AnalyticsSection _selectedAnalyticsSection = AnalyticsSection.ПерсональнаяАналитика;
+        public AnalyticsSection SelectedAnalyticsSection
+        {
+            get => _selectedAnalyticsSection;
+            set
+            {
+                _selectedAnalyticsSection = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsGeneralAnalyticsVisible));
+                OnPropertyChanged(nameof(IsUnitAnalyticsVisible));
+                OnPropertyChanged(nameof(IsPersonalAnalyticsVisible));
+            }
+        }
+
+        public Visibility IsGeneralAnalyticsVisible =>
+            SelectedAnalyticsSection == AnalyticsSection.ОбщаяАналитика
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        public Visibility IsUnitAnalyticsVisible =>
+            SelectedAnalyticsSection == AnalyticsSection.АналитикаПоОтрядам
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        public Visibility IsPersonalAnalyticsVisible =>
+            SelectedAnalyticsSection == AnalyticsSection.ПерсональнаяАналитика
+                ? Visibility.Visible
+                : Visibility.Collapsed;
 
         private void ShowParticipant()
         {
@@ -240,18 +302,21 @@ namespace PsyDiagnostics.ViewModels
                     MessageBox.Show("Не удалось загрузить тесты.");
                     return;
                 }
+
                 if (mode == TestMode.Full)
                 {
-                        var multiVm = new MultiTestViewModel(this, defs, mode);
-                        CurrentView = new MultiTestView { DataContext = multiVm };
-                        return;
+                    var multiVm = new MultiTestViewModel(this, defs, mode);
+                    CurrentView = new MultiTestView { DataContext = multiVm };
+                    return;
                 }
+
                 var selectVm = new TestSelectionViewModel(defs, mode);
 
                 selectVm.OnBack = () =>
                 {
                     ShowParticipant();
                 };
+
                 switch (mode)
                 {
                     case TestMode.Express:
@@ -265,11 +330,10 @@ namespace PsyDiagnostics.ViewModels
                                 ShowResult(testVm.GetResults());
                             };
 
-
                             CurrentView = new TestView { DataContext = testVm };
                         };
                         break;
-                        
+
                     case TestMode.Normal:
                         selectVm.OnStart = (selectedDefs, m) =>
                         {
@@ -277,15 +341,10 @@ namespace PsyDiagnostics.ViewModels
                             CurrentView = new MultiTestView { DataContext = multiVm };
                         };
                         break;
-                        
+
                     case TestMode.Full:
                         break;
-
-                     
                 }
-                
-                    
-                
 
                 CurrentView = new TestSelectionView { DataContext = selectVm };
             };
@@ -333,12 +392,24 @@ namespace PsyDiagnostics.ViewModels
 
             LoadTestHistory();
 
+            // после теста тоже обновим график/список
+            UpdateChart();
+
             CanGoHomeAfterTests = true;
         }
 
         private void LoadTestHistory()
         {
             TestHistory.Clear();
+
+            AggressionHistory.Clear();
+            ImpulsivityHistory.Clear();
+            DepressionHistory.Clear();
+            StressHistory.Clear();
+            AdaptationHistory.Clear();
+            AnxietyHistory.Clear();
+            ResilienceHistory.Clear();
+            HostilityHistory.Clear();
 
             if (Current == null)
                 return;
@@ -352,16 +423,56 @@ namespace PsyDiagnostics.ViewModels
             {
                 string risk = r.Prediction == 1 ? "Высокий риск" : "Низкий риск";
 
-                TestHistory.Add(new TestHistoryItem
+                var item = new TestHistoryItem
                 {
                     TestName = r.TestName,
                     Score = r.Score,
                     Risk = risk,
-                    Date = r.Date
-                });
-            }
-        }
+                    Date = r.Date,
+                    FullName = Current.FullName,
+                    Unit = Current.Unit
+                };
 
+                TestHistory.Add(item);
+
+                switch (r.TestName)
+                {
+                    case "Aggression":
+                        AggressionHistory.Add(item);
+                        break;
+                    case "Impulsivity":
+                        ImpulsivityHistory.Add(item);
+                        break;
+                    case "Depression":
+                        DepressionHistory.Add(item);
+                        break;
+                    case "Stress":
+                        StressHistory.Add(item);
+                        break;
+                    case "Adaptation":
+                        AdaptationHistory.Add(item);
+                        break;
+                    case "Anxiety":
+                        AnxietyHistory.Add(item);
+                        break;
+                    case "Resilience":
+                        ResilienceHistory.Add(item);
+                        break;
+                    case "Hostility":
+                        HostilityHistory.Add(item);
+                        break;
+                }
+            }
+
+            OnPropertyChanged(nameof(AggressionHistory));
+            OnPropertyChanged(nameof(ImpulsivityHistory));
+            OnPropertyChanged(nameof(DepressionHistory));
+            OnPropertyChanged(nameof(StressHistory));
+            OnPropertyChanged(nameof(AdaptationHistory));
+            OnPropertyChanged(nameof(AnxietyHistory));
+            OnPropertyChanged(nameof(ResilienceHistory));
+            OnPropertyChanged(nameof(HostilityHistory));
+        }
 
         private void ExportPdf()
         {
@@ -395,7 +506,6 @@ namespace PsyDiagnostics.ViewModels
                 OnPropertyChanged();
             }
         }
-
         public void UpdateUnitRisk()
         {
             if (Current == null || string.IsNullOrEmpty(Current.Unit))
@@ -435,48 +545,352 @@ namespace PsyDiagnostics.ViewModels
 
             UnitStats = $"Отряд: {Current.Unit} | Человек: {UnitCount}";
 
-            // 🔥 PIE С ПОДПИСЯМИ
-            int total = UnitCount;
+            var series = new List<ISeries>();
 
-            RiskDistributionSeries = new ISeries[]
+            if (low > 0)
             {
-    new PieSeries<double>
-    {
-        Values = new List<double> { low },
-        Name = "Низкий",
-        DataLabelsFormatter = p =>
-        {
-            double percent = total == 0 ? 0 : (p.Model / total) * 100;
-            return $"{p.Model} чел ({percent:F0}%)";
-        }
-    },
-    new PieSeries<double>
-    {
-        Values = new List<double> { mid },
-        Name = "Средний",
-        DataLabelsFormatter = p =>
-        {
-            double percent = total == 0 ? 0 : (p.Model / total) * 100;
-            return $"{p.Model} чел ({percent:F0}%)";
-        }
-    },
-    new PieSeries<double>
-    {
-        Values = new List<double> { high },
-        Name = "Высокий",
-        DataLabelsFormatter = p =>
-        {
-            double percent = total == 0 ? 0 : (p.Model / total) * 100;
-            return $"{p.Model} чел ({percent:F0}%)";
-        }
-    }
-            };
+                series.Add(new PieSeries<double>
+                {
+                    Values = new List<double> { low },
+                    Name = "Низкий"
+                });
+            }
+
+            if (mid > 0)
+            {
+                series.Add(new PieSeries<double>
+                {
+                    Values = new List<double> { mid },
+                    Name = "Средний"
+                });
+            }
+
+            if (high > 0)
+            {
+                series.Add(new PieSeries<double>
+                {
+                    Values = new List<double> { high },
+                    Name = "Высокий"
+                });
+            }
+
+            RiskDistributionSeries = series.ToArray();
+
+            TopPeople.Clear();
+
+            var top = _db.GetTopPeopleFromBestUnit();
+
+            foreach (var p in top)
+            {
+                TopPeople.Add($"{p.name} {p.unit} отряд - {(int)p.risk} баллов");
+            }
+
+            LoadRiskPeople();
 
             BuildRiskByUnitsChart();
             BuildRecidivismChart();
             BuildTopUnitsChart();
             BuildPersonalChart();
 
+            OnPropertyChanged(nameof(TopPeople));
+            OnPropertyChanged(nameof(RiskPeople));
+            OnPropertyChanged(nameof(RiskDistributionSeries));
+        }
+
+        private string _personalAiConclusion;
+        public string PersonalAiConclusion
+        {
+            get => _personalAiConclusion;
+            set
+            {
+                _personalAiConclusion = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _personalAiRisk;
+        public string PersonalAiRisk
+        {
+            get => _personalAiRisk;
+            set
+            {
+                _personalAiRisk = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _personalAiRecommendations;
+        public string PersonalAiRecommendations
+        {
+            get => _personalAiRecommendations;
+            set
+            {
+                _personalAiRecommendations = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private void BuildPersonalAiSummary()
+        {
+            if (Current == null)
+            {
+                PersonalAiConclusion = "Нет данных для анализа.";
+                PersonalAiRisk = "";
+                PersonalAiRecommendations = "";
+                return;
+            }
+
+            var report = _db.GetFullReport(Current.PrisonerId);
+
+            if (report.aiResults == null || report.aiResults.Count == 0)
+            {
+                PersonalAiConclusion = "Нет результатов тестирования.";
+                PersonalAiRisk = "";
+                PersonalAiRecommendations = "";
+                return;
+            }
+
+            var relevantTests = new[]
+            {
+        "Aggression",
+        "Impulsivity",
+        "Depression",
+        "Stress",
+        "Adaptation",
+        "Anxiety",
+        "Resilience",
+        "Hostility"
+    };
+
+            var grouped = report.aiResults
+                .Where(x => relevantTests.Contains(x.TestName) && !string.IsNullOrWhiteSpace(x.Date))
+                .GroupBy(x => x.TestName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderBy(x => DateTime.Parse(x.Date)).ToList()
+                );
+
+            int improved = 0;
+            int worsened = 0;
+            var improvedTests = new List<string>();
+            var worsenedTests = new List<string>();
+
+            foreach (var pair in grouped)
+            {
+                var testName = pair.Key;
+                var items = pair.Value;
+
+                if (items.Count < 2)
+                    continue;
+
+                var first = items.First().Score;
+                var last = items.Last().Score;
+
+                bool higherIsBetter = testName == "Stress" || testName == "Adaptation" || testName == "Resilience";
+
+                bool isImproved = higherIsBetter ? last > first : last < first;
+                bool isWorsened = higherIsBetter ? last < first : last > first;
+
+                if (isImproved)
+                {
+                    improved++;
+                    improvedTests.Add(GetTestDisplayName(testName));
+                }
+                else if (isWorsened)
+                {
+                    worsened++;
+                    worsenedTests.Add(GetTestDisplayName(testName));
+                }
+            }
+
+            var allResultsOrdered = report.aiResults
+                .Where(x => !string.IsNullOrWhiteSpace(x.Date))
+                .OrderBy(x => DateTime.Parse(x.Date))
+                .ToList();
+
+            var startPeriod = DateTime.Parse(allResultsOrdered.First().Date).ToString("dd.MM.yyyy");
+            var endPeriod = DateTime.Parse(allResultsOrdered.Last().Date).ToString("dd.MM.yyyy");
+
+            var latestRisk = allResultsOrdered
+                .OrderByDescending(x => DateTime.Parse(x.Date))
+                .FirstOrDefault()?.RiskScore ?? 0;
+
+            string riskLevel;
+            if (latestRisk <= 32)
+                riskLevel = "Низкий риск";
+            else if (latestRisk <= 66)
+                riskLevel = "Средний риск";
+            else
+                riskLevel = "Высокий риск";
+
+            string improveText = improvedTests.Count > 0
+                ? $"Улучшения отмечены по шкалам: {string.Join(", ", improvedTests)}."
+                : "Выраженных улучшений по ключевым шкалам не выявлено.";
+
+            string worsenText = worsenedTests.Count > 0
+                ? $"Негативная динамика отмечена по шкалам: {string.Join(", ", worsenedTests)}."
+                : "Негативной динамики по ключевым шкалам не выявлено.";
+
+            PersonalAiConclusion =
+                $"За период с {startPeriod} по {endPeriod} показатели обследуемого были проанализированы по 8 психологическим шкалам. " +
+                $"{improveText} {worsenText} По совокупности последних результатов наблюдается: {riskLevel.ToLower()}.";
+
+            PersonalAiRisk = $"Итоговый прогноз нейросети: {riskLevel}.";
+
+            if (riskLevel == "Низкий риск")
+            {
+                PersonalAiRecommendations =
+                    "Рекомендации: продолжить наблюдение в плановом порядке, поддерживать положительную динамику, " +
+                    "закреплять адаптационные навыки, вовлекать в конструктивные виды деятельности.";
+            }
+            else if (riskLevel == "Средний риск")
+            {
+                PersonalAiRecommendations =
+                    "Рекомендации: усилить индивидуальную профилактическую работу, контролировать эмоциональное состояние, " +
+                    "обратить внимание на проблемные шкалы и провести повторную диагностику в динамике.";
+            }
+            else
+            {
+                PersonalAiRecommendations =
+                    "Рекомендации: требуется повышенное внимание психолога и сотрудников, индивидуальная коррекционная работа, " +
+                    "мониторинг факторов дезадаптации, агрессии, тревожности и иных проблемных показателей.";
+            }
+        }
+        public List<string> Units { get; set; }
+
+        private string _selectedUnit;
+        public string SelectedUnit
+        {
+            get => _selectedUnit;
+            set
+            {
+                if (_selectedUnit != value)
+                {
+                    _selectedUnit = value;
+                    OnPropertyChanged();
+
+                    LoadRiskPeople();
+                    UpdateChart();
+                }
+            }
+        }
+
+        private void LoadRiskPeople()
+        {
+            RiskPeople.Clear();
+            LowRiskPeople.Clear();
+            MediumRiskPeople.Clear();
+            HighRiskPeople.Clear();
+
+            if (string.IsNullOrWhiteSpace(SelectedUnit))
+                return;
+
+            var data = _db.GetAllPeopleWithRisk(SelectedUnit);
+
+            foreach (var p in data)
+            {
+                string text = $"{p.name} — {(int)p.risk} баллов";
+
+                RiskPeople.Add($"{p.name} {p.unit} отряд - {(int)p.risk} баллов");
+
+                if (p.risk >= 0 && p.risk <= 32)
+                    LowRiskPeople.Add(text);
+                else if (p.risk >= 33 && p.risk <= 66)
+                    MediumRiskPeople.Add(text);
+                else
+                    HighRiskPeople.Add(text);
+            }
+
+            OnPropertyChanged(nameof(RiskPeople));
+            OnPropertyChanged(nameof(LowRiskPeople));
+            OnPropertyChanged(nameof(MediumRiskPeople));
+            OnPropertyChanged(nameof(HighRiskPeople));
+        }
+
+        private void LoadFilteredData()
+        {
+            FilteredHistory.Clear();
+
+            var filtered = AllHistory
+                .Where(x => x.Unit == SelectedUnit)
+                .ToList();
+
+            foreach (var item in filtered)
+                FilteredHistory.Add(item);
+
+            OnPropertyChanged(nameof(FilteredHistory));
+        }
+
+        // ГЛАВНОЕ: диаграмма по выбранному отряду
+        private void UpdateChart()
+        {
+            if (string.IsNullOrWhiteSpace(SelectedUnit))
+                return;
+
+            var stats = _db.GetUnitStats(SelectedUnit);
+
+            UnitCount = stats.count;
+            int low = (int)stats.low;
+            int mid = (int)stats.mid;
+            int high = (int)stats.high;
+
+            UnitStats = $"Отряд: {SelectedUnit} | Человек: {UnitCount}";
+
+            double avg = _db.GetAverageRiskByUnit(SelectedUnit);
+
+            string level;
+            if (avg > 66)
+            {
+                level = "Высокий";
+                UnitRiskColor = "#FF5252";
+            }
+            else if (avg > 32)
+            {
+                level = "Средний";
+                UnitRiskColor = "#FFC107";
+            }
+            else
+            {
+                level = "Низкий";
+                UnitRiskColor = "#4CAF50";
+            }
+
+            UnitRisk = $"{level} ({avg:F0}%)";
+
+            var series = new List<ISeries>();
+
+            if (low > 0)
+            {
+                series.Add(new PieSeries<double>
+                {
+                    Values = new List<double> { low },
+                    Name = "Низкий"
+                });
+            }
+
+            if (mid > 0)
+            {
+                series.Add(new PieSeries<double>
+                {
+                    Values = new List<double> { mid },
+                    Name = "Средний"
+                });
+            }
+
+            if (high > 0)
+            {
+                series.Add(new PieSeries<double>
+                {
+                    Values = new List<double> { high },
+                    Name = "Высокий"
+                });
+            }
+
+            RiskDistributionSeries = series.ToArray();
+
+            OnPropertyChanged(nameof(UnitStats));
+            OnPropertyChanged(nameof(UnitRisk));
+            OnPropertyChanged(nameof(UnitRiskColor));
             OnPropertyChanged(nameof(RiskDistributionSeries));
         }
 
@@ -501,17 +915,24 @@ namespace PsyDiagnostics.ViewModels
         }
             };
 
+            RiskYAxis = new Axis[]
+            {
+        new Axis
+        {
+            MinLimit = 0
+        }
+            };
+
             OnPropertyChanged(nameof(RiskByUnitSeries));
             OnPropertyChanged(nameof(UnitXAxis));
+            OnPropertyChanged(nameof(RiskYAxis));
         }
         public void BuildRecidivismChart()
         {
             var data = _db.GetRecidivismStats();
 
-            // 🔥 приводим к double (важно)
             double first = data.first;
             double repeat = data.repeat;
-
             double total = first + repeat;
 
             RecidivismSeries = new ISeries[]
@@ -519,12 +940,11 @@ namespace PsyDiagnostics.ViewModels
         new ColumnSeries<double>
         {
             Values = new double[] { first, repeat },
-
             DataLabelsFormatter = point =>
             {
                 var value = point.Coordinate.PrimaryValue;
                 double percent = total == 0 ? 0 : (value / total) * 100;
-                return $"{(int)value} чел ({percent:F0}%)";
+                return $"{value:F0}%";
             }
         }
             };
@@ -541,18 +961,10 @@ namespace PsyDiagnostics.ViewModels
         }
             };
 
-            RiskYAxis = new Axis[]
-            {
-        new Axis
-        {
-            MinLimit = 0
-        }
-            };
-
             OnPropertyChanged(nameof(RecidivismSeries));
             OnPropertyChanged(nameof(RecidivismXAxis));
-            OnPropertyChanged(nameof(RiskYAxis));
         }
+
         public void BuildTopUnitsChart()
         {
             var data = _db.GetTopUnitsImprovement();
@@ -560,7 +972,6 @@ namespace PsyDiagnostics.ViewModels
             if (data == null || data.Count == 0)
                 return;
 
-            // 🔥 считаем общее значение
             double total = data.Sum(x => x.improvement);
 
             TopUnitsSeries = new ISeries[]
@@ -568,13 +979,10 @@ namespace PsyDiagnostics.ViewModels
         new ColumnSeries<double>
         {
             Values = data.Select(x => (double)x.improvement).ToArray(),
-
             DataLabelsFormatter = point =>
             {
                 double value = point.Coordinate.PrimaryValue;
-                double percent = total == 0 ? 0 : (value / total) * 100;
-
-                return $"{(int)value} чел ({percent:F0}%)";
+                return $"{value:F0}";
             }
         }
             };
@@ -587,49 +995,146 @@ namespace PsyDiagnostics.ViewModels
         }
             };
 
-            RiskYAxis = new Axis[]
-            {
-        new Axis
-        {
-            MinLimit = 0
-        }
-            };
-
             OnPropertyChanged(nameof(TopUnitsSeries));
             OnPropertyChanged(nameof(TopUnitsXAxis));
-            OnPropertyChanged(nameof(RiskYAxis));
         }
         public void BuildPersonalChart()
         {
+            if (Current == null)
+            {
+                PersonalRiskSeries = Array.Empty<ISeries>();
+                DateXAxis = Array.Empty<Axis>();
+                PersonalYAxis = Array.Empty<Axis>();
+
+                OnPropertyChanged(nameof(PersonalRiskSeries));
+                OnPropertyChanged(nameof(DateXAxis));
+                OnPropertyChanged(nameof(PersonalYAxis));
+                return;
+            }
+
             var report = _db.GetFullReport(Current.PrisonerId);
 
+            if (report.aiResults == null || report.aiResults.Count == 0)
+            {
+                PersonalRiskSeries = Array.Empty<ISeries>();
+                DateXAxis = Array.Empty<Axis>();
+                PersonalYAxis = Array.Empty<Axis>();
+
+                OnPropertyChanged(nameof(PersonalRiskSeries));
+                OnPropertyChanged(nameof(DateXAxis));
+                OnPropertyChanged(nameof(PersonalYAxis));
+                return;
+            }
+
             var ordered = report.aiResults
+                .Where(x => !string.IsNullOrWhiteSpace(x.TestName) && !string.IsNullOrWhiteSpace(x.Date))
                 .OrderBy(x => DateTime.Parse(x.Date))
                 .ToList();
 
-            PersonalRiskSeries = new ISeries[]
+            var dates = ordered
+                .Select(x => DateTime.Parse(x.Date).ToString("dd.MM"))
+                .Distinct()
+                .ToArray();
+
+            var testNames = new[]
             {
-        new LineSeries<double>
-        {
-            Values = ordered.Select(x => x.RiskScore).ToArray(),
-            DataLabelsFormatter = p => $"{p.Model:F0}%"
-        }
-            };
+        "Aggression",
+        "Impulsivity",
+        "Depression",
+        "Stress",
+        "Adaptation",
+        "Anxiety",
+        "Resilience",
+        "Hostility"
+    };
+
+            var seriesList = new List<ISeries>();
+
+            foreach (var testName in testNames)
+            {
+                var values = new List<double?>();
+
+                foreach (var date in dates)
+                {
+                    var item = ordered
+                        .Where(x => x.TestName == testName &&
+                                    DateTime.Parse(x.Date).ToString("dd.MM") == date)
+                        .OrderByDescending(x => DateTime.Parse(x.Date))
+                        .FirstOrDefault();
+
+                    values.Add(item != null ? item.Score : null);
+                }
+
+                if (values.Any(v => v.HasValue))
+                {
+                    seriesList.Add(new LineSeries<double?>
+                    {
+                        Name = GetTestDisplayName(testName),
+                        Values = values.ToArray(),
+                        GeometrySize = 5,
+                        LineSmoothness = 0,
+                        Fill = null
+                    });
+                }
+            }
+
+            PersonalRiskSeries = seriesList.ToArray();
 
             DateXAxis = new Axis[]
+ {
+    new Axis
+    {
+        Labels = dates,
+        MinStep = 1,
+        ForceStepToMin = true,
+        TextSize = 11,
+        LabelsRotation = 0,
+        LabelsPaint = new SolidColorPaint(new SKColor(245, 245, 247)),
+        SeparatorsPaint = new SolidColorPaint(new SKColor(120, 120, 140))
+    }
+ };
+
+            PersonalYAxis = new Axis[]
             {
-        new Axis
-        {
-            Labels = ordered
-                .Select(x => DateTime.Parse(x.Date).ToShortDateString())
-                .ToArray()
-        }
+    new Axis
+    {
+        MinLimit = 0,
+        MaxLimit = 100,
+        MinStep = 10,
+        ForceStepToMin = true,
+        TextSize = 11,
+        LabelsPaint = new SolidColorPaint(new SKColor(245, 245, 247)),
+        SeparatorsPaint = new SolidColorPaint(new SKColor(120, 120, 140))
+    }
             };
 
             OnPropertyChanged(nameof(PersonalRiskSeries));
             OnPropertyChanged(nameof(DateXAxis));
+            OnPropertyChanged(nameof(PersonalYAxis));
         }
-
+        private string GetTestDisplayName(string testName)
+        {
+            return testName switch
+            {
+                "Aggression" => "Агрессивность",
+                "Impulsivity" => "Импульсивность",
+                "Depression" => "Депрессия",
+                "Stress" => "Стрессоустойчивость",
+                "Adaptation" => "Адаптация",
+                "Anxiety" => "Тревожность",
+                "Resilience" => "Устойчивость",
+                "Hostility" => "Враждебность",
+                _ => testName
+            };
+        }
+        public Axis[] PersonalYAxis { get; set; }
+        public ObservableCollection<string> TopPeople { get; set; } = new();
+        public ObservableCollection<string> RiskPeople { get; set; } = new();
+        public ObservableCollection<string> LowRiskPeople { get; set; } = new();
+        public ObservableCollection<string> MediumRiskPeople { get; set; } = new();
+        public ObservableCollection<string> HighRiskPeople { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> AllHistory { get; set; } = new();
+        public ObservableCollection<TestHistoryItem> FilteredHistory { get; set; } = new();
 
         private string _unitRiskColor;
         public string UnitRiskColor
@@ -707,8 +1212,6 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-
-
         private void Save()
         {
             if (string.IsNullOrWhiteSpace(SearchId))
@@ -722,20 +1225,20 @@ namespace PsyDiagnostics.ViewModels
                 MessageBox.Show("Сначала нажмите Найти");
                 return;
             }
+
             var errors = Current.GetErrors();
             if (errors.Any())
             {
                 MessageBox.Show(string.Join("\n", errors), "Ошибки");
                 return;
             }
-            //if (!Current.IsValid())
-            //{
-            //    MessageBox.Show("Исправьте ошибки");
-            //    return;
-            //}
 
             _db.SaveParticipant(Current);
             MessageBox.Show("Сохранено");
+
+            // после сохранения обновим визуализацию выбранного отряда
+            LoadRiskPeople();
+            UpdateChart();
         }
 
         private void CalculateRisk()
@@ -757,16 +1260,19 @@ namespace PsyDiagnostics.ViewModels
         public ISeries[] RiskByUnitSeries { get; set; }
         public Axis[] UnitXAxis { get; set; }
         public Axis[] RiskYAxis { get; set; }
+
         public ISeries[] RecidivismSeries { get; set; }
         public Axis[] RecidivismXAxis { get; set; }
+
         public ISeries[] TopUnitsSeries { get; set; }
         public Axis[] TopUnitsXAxis { get; set; }
+
         public ISeries[] RiskDistributionSeries { get; set; }
+
         public ISeries[] PersonalRiskSeries { get; set; }
         public Axis[] DateXAxis { get; set; }
         public ObservableCollection<Participant> Participants { get; set; }
         public Participant SelectedParticipant { get; set; }
-
         public bool CanSave =>
             Current != null &&
             Current.IsValid();

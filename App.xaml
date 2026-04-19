@@ -8,6 +8,8 @@
 
     <Application.Resources>
 
+        <helpers:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
+        
         <DataTemplate DataType="{x:Type vm:ParticipantViewModel}">
             <views:ParticipantView/>
         </DataTemplate>

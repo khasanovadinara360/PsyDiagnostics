@@ -1,6 +1,9 @@
 ﻿<UserControl x:Class="PsyDiagnostics.Views.ParticipantView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:PsyDiagnostics.Helpers"
+             xmlns:paint="clr-namespace:LiveChartsCore.SkiaSharpView.Painting;assembly=LiveChartsCore.SkiaSharpView"
+             xmlns:skia="clr-namespace:SkiaSharp;assembly=SkiaSharp"
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
 
     <UserControl.Resources>
@@ -757,121 +760,523 @@
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="10">
 
-                                <!-- ОБЩАЯ АНАЛИТИКА -->
-                                <TextBlock Text="Общая аналитика"
+                                <TextBlock Text="Аналитика"
                        Style="{StaticResource HeaderTextStyle}"/>
+
+                                <ComboBox ItemsSource="{Binding AnalyticsSections}"
+                      SelectedItem="{Binding SelectedAnalyticsSection, Mode=TwoWay}"
+                      Style="{StaticResource DarkComboBox}"
+                      Width="260"
+                      Height="32"
+                      Margin="0,0,0,15">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <!-- ================= ПЕРСОНАЛЬНАЯ АНАЛИТИКА ================= -->
+                                <StackPanel Visibility="{Binding IsPersonalAnalyticsVisible}">
+
+                                    <!-- КРАТКАЯ ИНФОРМАЦИЯ -->
+                                    <Border Style="{StaticResource CardStyle}">
+                                        <Grid Margin="10">
+
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="180"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                       Text="Краткая информация"
+                       Style="{StaticResource CardTitleStyle}"
+                       Margin="0,0,0,10"/>
+
+                                            <!-- ФИО -->
+                                            <TextBlock Grid.Row="1" Grid.Column="0"
+                       Text="ФИО:"
+                       Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1"
+                       Text="{Binding Current.FullName}"
+                       Foreground="{StaticResource TextPrimaryColor}"/>
+
+                                            <!-- ID -->
+                                            <TextBlock Grid.Row="2" Grid.Column="0"
+                       Text="ID:"
+                       Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <TextBlock Grid.Row="2" Grid.Column="1"
+                       Text="{Binding Current.PrisonerId}"
+                       Foreground="{StaticResource TextPrimaryColor}"/>
+
+                                            <!-- Отряд -->
+                                            <TextBlock Grid.Row="3" Grid.Column="0"
+                       Text="Отряд:"
+                       Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <TextBlock Grid.Row="3" Grid.Column="1"
+                       Text="{Binding Current.Unit}"
+                       Foreground="{StaticResource TextPrimaryColor}"/>
+
+                                            <!-- Статья -->
+                                            <TextBlock Grid.Row="4" Grid.Column="0"
+                       Text="Статья:"
+                       Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <TextBlock Grid.Row="4" Grid.Column="1"
+                       Text="{Binding Current.ArticleNumber}"
+                       Foreground="{StaticResource TextPrimaryColor}"/>
+
+                                            <!-- Категория -->
+                                            <TextBlock Grid.Row="5" Grid.Column="0"
+                       Text="Категория:"
+                       Foreground="{StaticResource TextSecondaryColor}"/>
+                                            <TextBlock Grid.Row="5" Grid.Column="1"
+                       Text="{Binding Current.Category}"
+                       Foreground="{StaticResource TextPrimaryColor}"/>
+
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- ДИНАМИКА РИСКА -->
+                                    <Border Style="{StaticResource CardStyle}"
+        MaxWidth="980"
+        HorizontalAlignment="Left">
+
+                                        <StackPanel>
+                                            <TextBlock Text="Динамика по тестам"
+                   Style="{StaticResource CardTitleStyle}"/>
+
+                                            <lvc:CartesianChart Height="280"
+                            Width="720"
+                            Margin="0,10,0,0"
+                            HorizontalAlignment="Left"
+                            Series="{Binding PersonalRiskSeries}"
+                            XAxes="{Binding DateXAxis}"
+                            YAxes="{Binding PersonalYAxis}"
+                            LegendPosition="Right"
+                            LegendTextPaint="{Binding PersonalLegendTextPaint}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Прогноз и заключение"
+                   Style="{StaticResource CardTitleStyle}"/>
+
+                                            <TextBlock Text="{Binding PersonalAiConclusion}"
+                   TextWrapping="Wrap"
+                   Foreground="{StaticResource TextPrimaryColor}"
+                   Margin="0,6,0,10"/>
+
+                                            <TextBlock Text="{Binding PersonalAiRisk}"
+                   TextWrapping="Wrap"
+                   Foreground="{StaticResource TextPrimaryColor}"
+                   FontWeight="Bold"
+                   Margin="0,0,0,10"/>
+
+                                            <TextBlock Text="{Binding PersonalAiRecommendations}"
+                   TextWrapping="Wrap"
+                   Foreground="{StaticResource TextPrimaryColor}"/>
+                                        </StackPanel>
+                                    </Border>
                                 
+                                    <!-- ИСТОРИЯ ТЕСТОВ -->
+                                    <Border Style="{StaticResource CardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="История тестов"
+                   Style="{StaticResource CardTitleStyle}"/>
 
-                                <!-- Риск по отрядам -->
-                                <Border Style="{StaticResource CardStyle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Риск по отрядам"
-                               Style="{StaticResource CardTitleStyle}"/>
+                                            <Expander Header="Агрессивность"
+                  Margin="0,6,0,6"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding AggressionHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                        <TextBlock TextWrapping="Wrap"
-           Margin="0,5,0,0"
-           Foreground="#B0B0B0">
-    Диаграмма отображает средний уровень риска по каждому отряду в процентах. 
-    Чем выше значение столбца, тем выше вероятность неблагоприятного поведения или дезадаптации среди осуждённых данного отряда. 
-    Используется для выявления проблемных отрядов и принятия управленческих решений.
-                                        </TextBlock>
-                                        <lvc:CartesianChart Height="250"
-                                        Series="{Binding RiskByUnitSeries}"
-                                        XAxes="{Binding UnitXAxis}"
-                                        YAxes="{Binding RiskYAxis}"/>
-                                    </StackPanel>
-                                </Border>
+                                            <Expander Header="Импульсивность"
+                  Margin="0,6,0,6"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding ImpulsivityHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                <!-- Первоходы vs второходы -->
-                                <Border Style="{StaticResource CardStyle}">
-                                    
-                                    <StackPanel>
-                                        <TextBlock Text="Первоходы vs Второходы (средний риск в группе)"
-                               Style="{StaticResource CardTitleStyle}"/>
+                                            <Expander Header="Депрессия"
+                  Margin="0,6,0,6"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding DepressionHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                        <TextBlock TextWrapping="Wrap"
-           Margin="0,5,0,0"
-           Foreground="#B0B0B0">
-    Диаграмма демонстрирует различия среднего уровня риска между первично осуждёнными и рецидивистами.
-Более высокий столбец указывает на большую вероятность девиантного поведения в данной группе.  Первоходы выше → проблемы адаптации. Второходы выше → более высокий риск.
-                                        </TextBlock>
-                                        <lvc:CartesianChart Height="260"
-                                        Series="{Binding RecidivismSeries}"
-                                        XAxes="{Binding RecidivismXAxis}"
-                                        YAxes="{Binding RiskYAxis}"/>
-                                    </StackPanel>
-                                </Border>
+                                            <Expander Header="Стрессоустойчивость"
+                  Margin="0,6,0,6"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding StressHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                <!-- 🟡 АНАЛИТИКА ПО ОТРЯДАМ -->
-                                <TextBlock Text="Аналитика по отрядам"
-                       Style="{StaticResource HeaderTextStyle}"/>
+                                            <Expander Header="Адаптация"
+                  Margin="0,6,0,6"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding AdaptationHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                <Border Style="{StaticResource CardStyle}">
-                                    <StackPanel>
-                                        <TextBlock Text="ТОП отряды по улучшению"
-                               Style="{StaticResource CardTitleStyle}"/>
+                                            <Expander Header="Тревожность"
+                  Margin="0,6,0,6"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding AnxietyHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                        <TextBlock TextWrapping="Wrap"
-           Margin="0,5,0,0"
-           Foreground="#B0B0B0">
-    Диаграмма отображает отряды с наибольшей положительной динамикой снижения риска. 
-    Высокие значения указывают на эффективность воспитательной и психологической работы. 
-    Используется для выявления успешных практик и их дальнейшего распространения.
-                                        </TextBlock>
-                                        <lvc:CartesianChart Height="260"
-                                        Series="{Binding TopUnitsSeries}"
-                                        XAxes="{Binding TopUnitsXAxis}"
-                                        YAxes="{Binding RiskYAxis}"/>
-                                    </StackPanel>
-                                </Border>
+                                            <Expander Header="Устойчивость"
+                  Margin="0,6,0,6"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding ResilienceHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                <Border Style="{StaticResource CardStyle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Распределение риска"
-                               Style="{StaticResource CardTitleStyle}"/>
+                                            <Expander Header="Враждебность"
+                  Margin="0,6,0,0"
+                  Foreground="{StaticResource TextPrimaryColor}"
+                  Background="{StaticResource BgCardColor}">
+                                                <ItemsControl ItemsSource="{Binding HostilityHistory}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                                BorderThickness="0,0,0,1"
+                                Padding="0,6">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
+                                           Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
+                                           Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Expander>
 
-                                        <TextBlock TextWrapping="Wrap"
-           Margin="0,5,0,0"
-           Foreground="#B0B0B0">
-    Данная диаграмма отражает процентное распределение осуждённых по уровням риска.
-Она позволяет оценить общую криминогенную обстановку и выявить долю лиц с повышенным риском, требующих внимания.
-                                        </TextBlock>
-                                        <lvc:PieChart Height="260"
-                                  Series="{Binding RiskDistributionSeries}"/>
-                                    </StackPanel>
-                                </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
 
-                                <!-- 🟢 ПЕРСОНАЛЬНАЯ -->
-                                <TextBlock Text="Персональная аналитика"
-                       Style="{StaticResource HeaderTextStyle}"/>
+                                <!-- АНАЛИТИКА ПО ОТРЯДАМ -->
+                                <StackPanel Visibility="{Binding IsUnitAnalyticsVisible}">
 
-                                <ComboBox ItemsSource="{Binding Participants}"
-                      SelectedItem="{Binding SelectedParticipant}"
-                      DisplayMemberPath="FullName"
-                      Style="{StaticResource ComboStyle}"
-                      Margin="0,0,0,10"/>
+                                    <Border Style="{StaticResource CardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Распределение риска"
+                       Style="{StaticResource CardTitleStyle}"/>
 
-                                <Border Style="{StaticResource CardStyle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Динамика риска"
-                               Style="{StaticResource CardTitleStyle}"/>
+                                            <TextBlock Text="Диаграмма отражает общее распределение участников по уровням риска (низкий, средний, высокий) на основе результатов психологической диагностики. Она позволяет оценить текущую психологическую обстановку в группе. Преобладание высокого уровня риска указывает на неблагоприятную ситуацию и необходимость усиленного контроля и профилактических мероприятий. Сбалансированное распределение свидетельствует о стабильном состоянии контингента."
+                                                       TextWrapping="Wrap"
+                                                       Opacity="0.7"
+                                                       FontSize="12"
+                                                       Margin="0,6,0,10"
+                                                       Foreground="{StaticResource TextPrimaryColor}"/>
 
-                                        <TextBlock TextWrapping="Wrap"
-           Margin="0,5,0,0"
-           Foreground="#B0B0B0">
-    График демонстрирует изменение уровня риска конкретного осуждённого во времени. 
-    Позволяет отслеживать тенденции: улучшение, ухудшение или стабильность состояния. 
-    Используется для оценки эффективности индивидуальной работы.
-                                        </TextBlock>
-                                        <lvc:CartesianChart Height="300"
-                                        Series="{Binding PersonalRiskSeries}"
-                                        XAxes="{Binding DateXAxis}"
-                                        YAxes="{Binding RiskYAxis}"/>
-                                    </StackPanel>
-                                </Border>
+                                            <Grid Margin="10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="20"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+
+                                                <StackPanel Grid.Column="0"
+                            HorizontalAlignment="Center">
+
+
+                                                    <lvc:PieChart Series="{Binding RiskDistributionSeries}"
+                                  Width="260"
+                                  Height="260"
+                                  LegendPosition="Right">
+
+
+                                                        <lvc:PieChart.LegendTextPaint>
+                                                            <paint:SolidColorPaint Color="{x:Static skia:SKColors.White}"/>
+                                                        </lvc:PieChart.LegendTextPaint>
+
+                                                    </lvc:PieChart>
+
+                                                    <ComboBox ItemsSource="{Binding Units}"
+                              Style="{StaticResource DarkComboBox}"
+                              Height="32"
+                              Width="220"
+                              SelectedItem="{Binding SelectedUnit, Mode=TwoWay}"
+                              Margin="0,10,0,10"/>
+
+                                                    <TextBlock Text="{Binding UnitStats}"
+                               Foreground="{StaticResource TextPrimaryColor}"
+                               FontSize="13"
+                               Margin="0,0,0,4"
+                               HorizontalAlignment="Center"/>
+
+                                                    <TextBlock Text="{Binding UnitRisk}"
+                               Foreground="{StaticResource TextPrimaryColor}"
+                               FontSize="14"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <Border Grid.Column="2"
+                        Background="{StaticResource BgCardColor}"
+                        BorderBrush="{StaticResource BorderColor}"
+                        BorderThickness="1"
+                        Padding="12">
+
+                                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                                        <StackPanel>
+
+                                                            <TextBlock Text="Низкий риск:"
+                                       Foreground="#4FC3F7"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,6"/>
+
+                                                            <ItemsControl ItemsSource="{Binding LowRiskPeople}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <TextBlock Text="{Binding}"
+                                                   Foreground="{StaticResource TextPrimaryColor}"
+                                                   Margin="0,0,0,3"/>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+
+                                                            <TextBlock Text="Средний риск:"
+                                       Foreground="#FF7043"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Margin="0,12,0,6"/>
+
+                                                            <ItemsControl ItemsSource="{Binding MediumRiskPeople}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <TextBlock Text="{Binding}"
+                                                   Foreground="{StaticResource TextPrimaryColor}"
+                                                   Margin="0,0,0,3"/>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+
+                                                            <TextBlock Text="Высокий риск:"
+                                       Foreground="#8BC34A"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       Margin="0,12,0,6"/>
+
+                                                            <ItemsControl ItemsSource="{Binding HighRiskPeople}">
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <TextBlock Text="{Binding}"
+                                                   Foreground="{StaticResource TextPrimaryColor}"
+                                                   Margin="0,0,0,3"/>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+
+                                                        </StackPanel>
+                                                    </ScrollViewer>
+                                                </Border>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                </StackPanel>
+
+                                <!-- ОБЩАЯ АНАЛИТИКА -->
+                                <StackPanel Visibility="{Binding IsGeneralAnalyticsVisible}">
+
+                                    <Border Style="{StaticResource CardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Риск по отрядам"
+   Style="{StaticResource CardTitleStyle}"/>
+                                            <TextBlock Text="Диаграмма отображает распределение уровней риска по отдельным отрядам и позволяет выявить группы с наиболее выраженными проблемами. Высокие значения риска в конкретных отрядах свидетельствуют о возможных неблагоприятных психологических условиях, требующих внимания специалистов. Низкие показатели указывают на более стабильную обстановку."
+                                                       TextWrapping="Wrap"
+                                                       Opacity="0.7"
+                                                       FontSize="12"
+                                                       Margin="0,6,0,10"
+                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                            <lvc:CartesianChart Height="250"
+            Series="{Binding RiskByUnitSeries}"
+            XAxes="{Binding UnitXAxis}"
+            YAxes="{Binding RiskYAxis}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Первоходы vs Второходы"
+   Style="{StaticResource CardTitleStyle}"/>
+                                            <TextBlock Text="Диаграмма показывает различия в уровне риска между первично осуждёнными и лицами, имеющими повторные судимости. Сравнительный анализ позволяет выявить влияние криминального опыта на психологическое состояние и использовать эти данные для разработки более точных мер психологического сопровождения."
+                                                       TextWrapping="Wrap"
+                                                       Opacity="0.7"
+                                                       FontSize="12"
+                                                       Margin="0,6,0,10"
+                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                            <lvc:CartesianChart Height="260"
+            Series="{Binding RecidivismSeries}"
+            XAxes="{Binding RecidivismXAxis}"
+            YAxes="{Binding RiskYAxis}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource CardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="ТОП отряды по улучшению"
+   Style="{StaticResource CardTitleStyle}"/>
+                                            <TextBlock Text="Диаграмма отражает отряды, в которых наблюдается наибольшее улучшение психологических показателей за определённый период. Снижение негативных характеристик и рост позитивных показателей свидетельствуют об эффективности проводимой работы. Такой анализ помогает выявлять успешные практики и применять их в других подразделениях."
+                                                       TextWrapping="Wrap"
+                                                       Opacity="0.7"
+                                                       FontSize="12"
+                                                       Margin="0,6,0,10"
+                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+                                            <lvc:CartesianChart Height="260"
+            Series="{Binding TopUnitsSeries}"
+            XAxes="{Binding TopUnitsXAxis}"
+            YAxes="{Binding RiskYAxis}"/>
+                                            <ListBox ItemsSource="{Binding TopPeople}"
+ Background="Transparent"
+ Foreground="White"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
+
                 </TabControl>
             </Border>
         </ScrollViewer>
