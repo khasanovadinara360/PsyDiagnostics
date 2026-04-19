@@ -15,71 +15,81 @@ namespace PsyDiagnostics.Services
             var cmd = db.CreateCommand();
 
             cmd.CommandText = @"
-            CREATE TABLE IF NOT EXISTS Participants (
-                PrisonerId                  INTEGER PRIMARY KEY AUTOINCREMENT,
-                FullName            TEXT,
-                Gender              INTEGER,
-                BirthDate           TEXT,
-                BirthPlace          TEXT,
-                Nationality         TEXT,
-                Residence           TEXT,
-                FamilyUpbringing    INTEGER,
-                MaritalStatus       INTEGER,
-                HasCloseRelatives   INTEGER,
-                HasChildren         INTEGER,
-                ChildrenCount       INTEGER,
-                WillKeepContact     INTEGER,
-                EducationLevel      INTEGER,
-                HasProfession       INTEGER,
-                Profession          TEXT,
-                Religion            INTEGER,
+    CREATE TABLE IF NOT EXISTS Participants (
+        PrisonerId INTEGER PRIMARY KEY AUTOINCREMENT,
+        FullName TEXT,
+        Gender INTEGER,
+        BirthDate TEXT,
+        BirthPlace TEXT,
+        Nationality TEXT,
+        Residence TEXT,
+        FamilyUpbringing INTEGER,
+        MaritalStatus INTEGER,
+        HasCloseRelatives INTEGER,
+        HasChildren INTEGER,
+        ChildrenCount INTEGER,
+        WillKeepContact INTEGER,
+        EducationLevel INTEGER,
+        HasProfession INTEGER,
+        Profession TEXT,
+        Religion INTEGER,
 
-                ArmyService         INTEGER,
-                ArmyBranch          TEXT,
-                CombatParticipation INTEGER,
-                SomaticDiseases     INTEGER,
-                Disability          INTEGER,
-                MentalDiseases      INTEGER,
-                PsychiatristRegistry INTEGER,
-                Gambling            INTEGER,
-                Obligations         INTEGER,
-                NarcologistRegistry INTEGER,
-                DrugUse             INTEGER,
+        ArmyService INTEGER,
+        ArmyBranch TEXT,
+        CombatParticipation INTEGER,
+        SomaticDiseases INTEGER,
+        Disability INTEGER,
+        MentalDiseases INTEGER,
+        PsychiatristRegistry INTEGER,
+        Gambling INTEGER,
+        Obligations INTEGER,
+        NarcologistRegistry INTEGER,
+        DrugUse INTEGER,
 
-                ArticleNumber       TEXT,
-                ArticlePart         TEXT,
-                ArticlePoint        TEXT,
-                SentenceTerm        INTEGER,
-                CrimeType           INTEGER,
-                Recidivism          INTEGER,
-                Unit                TEXT,
-                Category            INTEGER,
+        ArticleNumber TEXT,
+        ArticlePart TEXT,
+        ArticlePoint TEXT,
+        SentenceTerm INTEGER,
+        CrimeType INTEGER,
+        Recidivism INTEGER,
+        Unit TEXT,
+        Category INTEGER,
 
-                CurrentFeelings     INTEGER,
-                AttitudeToUIS       INTEGER,
-                SuicideAttempts     INTEGER,
-                SelfHarmScars       INTEGER,
-                RelativesSuicide    INTEGER
-            );
+        CurrentFeelings INTEGER,
+        AttitudeToUIS INTEGER,
+        SuicideAttempts INTEGER,
+        SelfHarmScars INTEGER,
+        RelativesSuicide INTEGER
+    );
 
-            CREATE TABLE IF NOT EXISTS AiResults (
-                Id           INTEGER PRIMARY KEY AUTOINCREMENT,
-                PrisonerId   TEXT    NOT NULL,
-                TestName     TEXT    NOT NULL,
-                Score        INTEGER NOT NULL,
-                Prediction   INTEGER NOT NULL,
-                Probability  REAL,
-                Date         TEXT    NOT NULL
-            );
+    CREATE TABLE IF NOT EXISTS AiResults (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+        PrisonerId TEXT,
+        Unit TEXT,
 
-            CREATE TABLE IF NOT EXISTS Results (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                PrisonerId TEXT,
-                TestName TEXT,
-                Score INTEGER,
-                Date TEXT
-            );
-            ";
+        TestName TEXT,
+        Score INTEGER,
+
+        Prediction INTEGER,
+        Probability REAL,
+        RiskScore REAL,
+
+        Date TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS TestResults (
+        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+        PrisonerId TEXT,
+        Unit TEXT,
+        TestName TEXT,
+        Score INTEGER,
+        Prediction INTEGER,
+        Probability REAL,
+        RiskScore REAL,
+        CreatedAt TEXT
+    );
+    ";
+
             cmd.ExecuteNonQuery();
         }
 
@@ -264,7 +274,7 @@ namespace PsyDiagnostics.Services
             cmd.ExecuteNonQuery();
         }
 
-        public void SaveTestResult(string prisonerId, string testName, int score, int prediction, double probability)
+        public void SaveTestResult(string prisonerId, string unit, string testName, int score, int prediction, double probability)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
@@ -272,60 +282,40 @@ namespace PsyDiagnostics.Services
 
             var cmd = db.CreateCommand();
 
-            cmd.CommandText =
-            @"INSERT INTO AiResults 
-            (PrisonerId, TestName, Score, Prediction, Probability, Date)
-            VALUES ($id,$test,$score,$pred,$prob,$date)";
+            double risk = probability * 100;
+
+            cmd.CommandText = @"
+    INSERT INTO AiResults 
+    (PrisonerId, Unit, TestName, Score, Prediction, Probability, RiskScore, Date)
+    VALUES ($id,$unit,$test,$score,$pred,$prob,$risk,$date)";
 
             cmd.Parameters.AddWithValue("$id", prisonerId);
+            cmd.Parameters.AddWithValue("$unit", unit ?? "");
             cmd.Parameters.AddWithValue("$test", testName);
             cmd.Parameters.AddWithValue("$score", score);
             cmd.Parameters.AddWithValue("$pred", prediction);
             cmd.Parameters.AddWithValue("$prob", probability);
+            cmd.Parameters.AddWithValue("$risk", risk);
             cmd.Parameters.AddWithValue("$date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
             cmd.ExecuteNonQuery();
         }
 
-        public (Participant participant, List<ResultRecord> results, List<TestResultRecord> aiResults)
-            GetFullReport(string id)
+        public (Participant participant, List<TestResultRecord> aiResults)
+    GetFullReport(string id)
         {
             var participant = GetParticipant(id);
-            var results = new List<ResultRecord>();
             var aiResults = new List<TestResultRecord>();
 
             using var db = new SqliteConnection(_conn);
             db.Open();
             InitializeDatabase(db);
 
-            try
-            {
-                var cmd1 = db.CreateCommand();
-                cmd1.CommandText = "SELECT * FROM Results WHERE PrisonerId=$id";
-                cmd1.Parameters.AddWithValue("$id", id);
+            var cmd = db.CreateCommand();
+            cmd.CommandText = "SELECT * FROM AiResults WHERE PrisonerId=$id";
+            cmd.Parameters.AddWithValue("$id", id);
 
-                using (var r = cmd1.ExecuteReader())
-                {
-                    while (r.Read())
-                    {
-                        results.Add(new ResultRecord
-                        {
-                            TestName = r["TestName"].ToString(),
-                            Score = Convert.ToInt32(r["Score"]),
-                            Date = r["Date"].ToString()
-                        });
-                    }
-                }
-            }
-            catch
-            {
-            }
-
-            var cmd2 = db.CreateCommand();
-            cmd2.CommandText = "SELECT * FROM AiResults WHERE PrisonerId=$id";
-            cmd2.Parameters.AddWithValue("$id", id);
-
-            using (var r = cmd2.ExecuteReader())
+            using (var r = cmd.ExecuteReader())
             {
                 while (r.Read())
                 {
@@ -335,12 +325,14 @@ namespace PsyDiagnostics.Services
                         Score = Convert.ToInt32(r["Score"]),
                         Prediction = Convert.ToInt32(r["Prediction"]),
                         Probability = r["Probability"] != DBNull.Value ? Convert.ToDouble(r["Probability"]) : 0,
+                        RiskScore = r["RiskScore"] != DBNull.Value ? Convert.ToDouble(r["RiskScore"]) : 0,
+                        Unit = r["Unit"]?.ToString(),
                         Date = r["Date"].ToString()
                     });
                 }
             }
 
-            return (participant, results, aiResults);
+            return (participant, aiResults);
         }
 
         public List<AiData> GetAiTrainingData()
@@ -561,64 +553,154 @@ namespace PsyDiagnostics.Services
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
-            InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
 
             cmd.CommandText = @"
-        SELECT AVG(Probability)
-        FROM AiResults ar
-        JOIN Participants p ON p.PrisonerId = ar.PrisonerId
-        WHERE p.Unit = $unit
+        SELECT AVG(RiskScore)
+        FROM AiResults
+        WHERE Unit = $unit
     ";
 
             cmd.Parameters.AddWithValue("$unit", unit ?? "");
 
             var result = cmd.ExecuteScalar();
 
-            if (result == null || result == DBNull.Value)
-                return 0;
-
-            return Convert.ToDouble(result);
+            return result == null || result == DBNull.Value
+                ? 0
+                : Convert.ToDouble(result);
         }
+
         public (int count, double low, double mid, double high) GetUnitStats(string unit)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
-            InitializeDatabase(db);
+
+            // 👥 ОБЩЕЕ КОЛИЧЕСТВО ЛЮДЕЙ В ОТРЯДЕ
+            var countCmd = db.CreateCommand();
+            countCmd.CommandText = @"
+        SELECT COUNT(*) 
+        FROM Participants 
+        WHERE CAST(TRIM(Unit) AS INTEGER) = CAST(TRIM($unit) AS INTEGER)
+    ";
+            countCmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            int count = Convert.ToInt32(countCmd.ExecuteScalar());
+
+            // 📊 РАСПРЕДЕЛЕНИЕ ПО РИСКУ
+            var statsCmd = db.CreateCommand();
+            statsCmd.CommandText = @"
+        SELECT 
+            COUNT(DISTINCT PrisonerId),
+
+            COUNT(CASE WHEN RiskScore <= 32 THEN 1 END),
+            COUNT(CASE WHEN RiskScore > 32 AND RiskScore <= 66 THEN 1 END),
+            COUNT(CASE WHEN RiskScore > 66 THEN 1 END)
+
+        FROM AiResults
+        WHERE CAST(TRIM(Unit) AS INTEGER) = CAST(TRIM($unit) AS INTEGER)
+    ";
+            statsCmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            using var r = statsCmd.ExecuteReader();
+
+            if (r.Read())
+            {
+                return (
+                    count, // 👈 ОБЩЕЕ КОЛИЧЕСТВО ИЗ Participants
+                    r.IsDBNull(1) ? 0 : r.GetInt32(1),
+                    r.IsDBNull(2) ? 0 : r.GetInt32(2),
+                    r.IsDBNull(3) ? 0 : r.GetInt32(3)
+                );
+            }
+
+            return (count, 0, 0, 0);
+        }
+
+        public (double first, double repeat) GetRecidivismStats()
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
 
             var cmd = db.CreateCommand();
-
             cmd.CommandText = @"
         SELECT 
-            COUNT(DISTINCT p.PrisonerId),
-
-            AVG(CASE WHEN ar.Probability <= 0.32 THEN 1.0 ELSE 0 END),
-            AVG(CASE WHEN ar.Probability > 0.32 AND ar.Probability <= 0.66 THEN 1.0 ELSE 0 END),
-            AVG(CASE WHEN ar.Probability > 0.66 THEN 1.0 ELSE 0 END)
-
+            AVG(CASE WHEN p.Recidivism = 0 THEN ar.RiskScore END),
+            AVG(CASE WHEN p.Recidivism = 1 THEN ar.RiskScore END)
         FROM Participants p
-        LEFT JOIN AiResults ar 
-            ON CAST(p.PrisonerId AS TEXT) = ar.PrisonerId
-        WHERE p.Unit = $unit
+        JOIN AiResults ar ON p.PrisonerId = ar.PrisonerId
     ";
-
-            cmd.Parameters.AddWithValue("$unit", unit ?? "");
 
             using var r = cmd.ExecuteReader();
 
             if (r.Read())
             {
-                int count = r.IsDBNull(0) ? 0 : r.GetInt32(0);
-                double low = r.IsDBNull(1) ? 0 : r.GetDouble(1);
-                double mid = r.IsDBNull(2) ? 0 : r.GetDouble(2);
-                double high = r.IsDBNull(3) ? 0 : r.GetDouble(3);
-
-                return (count, low, mid, high);
+                return (
+                    r.IsDBNull(0) ? 0 : r.GetDouble(0),
+                    r.IsDBNull(1) ? 0 : r.GetDouble(1)
+                );
             }
 
-            return (0, 0, 0, 0);
+            return (0, 0);
         }
 
+        public List<(string unit, double improvement)> GetTopUnitsImprovement()
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+            cmd.CommandText = @"
+        SELECT Unit, 
+               MAX(RiskScore) - MIN(RiskScore) as improvement
+        FROM AiResults
+        GROUP BY Unit
+        ORDER BY improvement DESC
+        LIMIT 5
+    ";
+
+            using var r = cmd.ExecuteReader();
+
+            var list = new List<(string, double)>();
+
+            while (r.Read())
+            {
+                list.Add((
+                    r["Unit"].ToString(),
+                    r.IsDBNull(1) ? 0 : r.GetDouble(1)
+                ));
+            }
+
+            return list;
+        }
+
+
+
+        public List<(string unit, double avgRisk)> GetRiskByUnits()
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+            cmd.CommandText = @"
+        SELECT Unit, AVG(RiskScore)
+        FROM AiResults
+        GROUP BY Unit
+    ";
+
+            using var r = cmd.ExecuteReader();
+
+            var list = new List<(string, double)>();
+
+            while (r.Read())
+            {
+                list.Add((
+                    r["Unit"].ToString(),
+                    r.IsDBNull(1) ? 0 : r.GetDouble(1)
+                ));
+            }
+
+            return list;
+        }
     }
 }

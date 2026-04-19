@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using PsyDiagnostics.ViewModels;
 using PsyDiagnostics.Services;
+using LiveChartsCore;
 
 namespace PsyDiagnostics
 {

@@ -10,6 +10,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using LiveChartsCore.SkiaSharpView.WPF;
+using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore;
+using LiveChartsCore.SkiaSharpView.Painting;
+using SkiaSharp;
+using QuestPDF.Infrastructure;
+using LiveChartsCore.Kernel.Sketches;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -378,8 +385,6 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-        private readonly DatabaseService db = new DatabaseService();
-
         private string _unitStats;
         public string UnitStats
         {
@@ -390,6 +395,7 @@ namespace PsyDiagnostics.ViewModels
                 OnPropertyChanged();
             }
         }
+
         public void UpdateUnitRisk()
         {
             if (Current == null || string.IsNullOrEmpty(Current.Unit))
@@ -399,36 +405,231 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            double avg = db.GetAverageRiskByUnit(Current.Unit);
+            double avg = _db.GetAverageRiskByUnit(Current.Unit);
 
-            // 🔴 цвет
-            if (avg > 0.7)
+            string level;
+            if (avg > 66)
             {
-                UnitRisk = $"Высокий ({avg:P0})";
+                level = "Высокий";
                 UnitRiskColor = "#FF5252";
             }
-            else if (avg > 0.4)
+            else if (avg > 32)
             {
-                UnitRisk = $"Средний ({avg:P0})";
+                level = "Средний";
                 UnitRiskColor = "#FFC107";
             }
             else
             {
-                UnitRisk = $"Низкий ({avg:P0})";
+                level = "Низкий";
                 UnitRiskColor = "#4CAF50";
             }
-            var stats = db.GetUnitStats(Current.Unit);
+
+            UnitRisk = $"{level} ({avg:F0}%)";
+
+            var stats = _db.GetUnitStats(Current.Unit);
 
             UnitCount = stats.count;
-
-            int low = (int)(stats.low * 100);
-            int mid = (int)(stats.mid * 100);
-            int high = (int)(stats.high * 100);
+            int low = (int)stats.low;
+            int mid = (int)stats.mid;
+            int high = (int)stats.high;
 
             UnitStats = $"Отряд: {Current.Unit} | Человек: {UnitCount}";
 
+            // 🔥 PIE С ПОДПИСЯМИ
+            int total = UnitCount;
 
+            RiskDistributionSeries = new ISeries[]
+            {
+    new PieSeries<double>
+    {
+        Values = new List<double> { low },
+        Name = "Низкий",
+        DataLabelsFormatter = p =>
+        {
+            double percent = total == 0 ? 0 : (p.Model / total) * 100;
+            return $"{p.Model} чел ({percent:F0}%)";
         }
+    },
+    new PieSeries<double>
+    {
+        Values = new List<double> { mid },
+        Name = "Средний",
+        DataLabelsFormatter = p =>
+        {
+            double percent = total == 0 ? 0 : (p.Model / total) * 100;
+            return $"{p.Model} чел ({percent:F0}%)";
+        }
+    },
+    new PieSeries<double>
+    {
+        Values = new List<double> { high },
+        Name = "Высокий",
+        DataLabelsFormatter = p =>
+        {
+            double percent = total == 0 ? 0 : (p.Model / total) * 100;
+            return $"{p.Model} чел ({percent:F0}%)";
+        }
+    }
+            };
+
+            BuildRiskByUnitsChart();
+            BuildRecidivismChart();
+            BuildTopUnitsChart();
+            BuildPersonalChart();
+
+            OnPropertyChanged(nameof(RiskDistributionSeries));
+        }
+
+        public void BuildRiskByUnitsChart()
+        {
+            var data = _db.GetRiskByUnits();
+
+            RiskByUnitSeries = new ISeries[]
+            {
+        new ColumnSeries<double>
+        {
+            Values = data.Select(x => x.avgRisk).ToList(),
+            DataLabelsFormatter = p => $"{p.Model:F0}%"
+        }
+            };
+
+            UnitXAxis = new Axis[]
+            {
+        new Axis
+        {
+            Labels = data.Select(x => $"Отряд {x.unit}").ToArray()
+        }
+            };
+
+            OnPropertyChanged(nameof(RiskByUnitSeries));
+            OnPropertyChanged(nameof(UnitXAxis));
+        }
+        public void BuildRecidivismChart()
+        {
+            var data = _db.GetRecidivismStats();
+
+            // 🔥 приводим к double (важно)
+            double first = data.first;
+            double repeat = data.repeat;
+
+            double total = first + repeat;
+
+            RecidivismSeries = new ISeries[]
+            {
+        new ColumnSeries<double>
+        {
+            Values = new double[] { first, repeat },
+
+            DataLabelsFormatter = point =>
+            {
+                var value = point.Coordinate.PrimaryValue;
+                double percent = total == 0 ? 0 : (value / total) * 100;
+                return $"{(int)value} чел ({percent:F0}%)";
+            }
+        }
+            };
+
+            RecidivismXAxis = new Axis[]
+            {
+        new Axis
+        {
+            Labels = new[]
+            {
+                "Первоходы",
+                "Второходы"
+            }
+        }
+            };
+
+            RiskYAxis = new Axis[]
+            {
+        new Axis
+        {
+            MinLimit = 0
+        }
+            };
+
+            OnPropertyChanged(nameof(RecidivismSeries));
+            OnPropertyChanged(nameof(RecidivismXAxis));
+            OnPropertyChanged(nameof(RiskYAxis));
+        }
+        public void BuildTopUnitsChart()
+        {
+            var data = _db.GetTopUnitsImprovement();
+
+            if (data == null || data.Count == 0)
+                return;
+
+            // 🔥 считаем общее значение
+            double total = data.Sum(x => x.improvement);
+
+            TopUnitsSeries = new ISeries[]
+            {
+        new ColumnSeries<double>
+        {
+            Values = data.Select(x => (double)x.improvement).ToArray(),
+
+            DataLabelsFormatter = point =>
+            {
+                double value = point.Coordinate.PrimaryValue;
+                double percent = total == 0 ? 0 : (value / total) * 100;
+
+                return $"{(int)value} чел ({percent:F0}%)";
+            }
+        }
+            };
+
+            TopUnitsXAxis = new Axis[]
+            {
+        new Axis
+        {
+            Labels = data.Select(x => $"Отряд {x.unit}").ToArray()
+        }
+            };
+
+            RiskYAxis = new Axis[]
+            {
+        new Axis
+        {
+            MinLimit = 0
+        }
+            };
+
+            OnPropertyChanged(nameof(TopUnitsSeries));
+            OnPropertyChanged(nameof(TopUnitsXAxis));
+            OnPropertyChanged(nameof(RiskYAxis));
+        }
+        public void BuildPersonalChart()
+        {
+            var report = _db.GetFullReport(Current.PrisonerId);
+
+            var ordered = report.aiResults
+                .OrderBy(x => DateTime.Parse(x.Date))
+                .ToList();
+
+            PersonalRiskSeries = new ISeries[]
+            {
+        new LineSeries<double>
+        {
+            Values = ordered.Select(x => x.RiskScore).ToArray(),
+            DataLabelsFormatter = p => $"{p.Model:F0}%"
+        }
+            };
+
+            DateXAxis = new Axis[]
+            {
+        new Axis
+        {
+            Labels = ordered
+                .Select(x => DateTime.Parse(x.Date).ToShortDateString())
+                .ToArray()
+        }
+            };
+
+            OnPropertyChanged(nameof(PersonalRiskSeries));
+            OnPropertyChanged(nameof(DateXAxis));
+        }
+
 
         private string _unitRiskColor;
         public string UnitRiskColor
@@ -507,6 +708,7 @@ namespace PsyDiagnostics.ViewModels
         }
 
 
+
         private void Save()
         {
             if (string.IsNullOrWhiteSpace(SearchId))
@@ -551,6 +753,19 @@ namespace PsyDiagnostics.ViewModels
         {
             ShowParticipant();
         }
+
+        public ISeries[] RiskByUnitSeries { get; set; }
+        public Axis[] UnitXAxis { get; set; }
+        public Axis[] RiskYAxis { get; set; }
+        public ISeries[] RecidivismSeries { get; set; }
+        public Axis[] RecidivismXAxis { get; set; }
+        public ISeries[] TopUnitsSeries { get; set; }
+        public Axis[] TopUnitsXAxis { get; set; }
+        public ISeries[] RiskDistributionSeries { get; set; }
+        public ISeries[] PersonalRiskSeries { get; set; }
+        public Axis[] DateXAxis { get; set; }
+        public ObservableCollection<Participant> Participants { get; set; }
+        public Participant SelectedParticipant { get; set; }
 
         public bool CanSave =>
             Current != null &&

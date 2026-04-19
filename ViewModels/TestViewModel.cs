@@ -5,8 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -34,7 +36,7 @@ namespace PsyDiagnostics.ViewModels
 
         private Test _test;
         private Dictionary<string, int> results = new();
-
+        public Participant SelectedParticipant { get; set; }
         public string TestTitle => _test.DisplayName ?? _test.Name;
 
         private string _modeTitle;
@@ -92,7 +94,7 @@ namespace PsyDiagnostics.ViewModels
 
             NextCommand = new RelayCommand(Next);
             PrevCommand = new RelayCommand(Prev, () => _currentIndex > 0);
-            FinishCommand = new RelayCommand(() => FinishTest());
+            FinishCommand = new RelayCommand(async () => await FinishTest());
         }
 
         private void Next()
@@ -121,7 +123,7 @@ namespace PsyDiagnostics.ViewModels
             }
             else
             {
-                FinishTest();
+                _ = FinishTest();
             }
         }
 
@@ -140,7 +142,40 @@ namespace PsyDiagnostics.ViewModels
             RaiseAll();
         }
 
-        private async void FinishTest()
+        public Dictionary<string, int> GetResults() => results;
+
+        private void RaiseAll()
+        {
+            OnPropertyChanged(nameof(CurrentQuestion));
+            OnPropertyChanged(nameof(CurrentIndex));
+            OnPropertyChanged(nameof(TotalQuestions));
+            OnPropertyChanged(nameof(QuestionNumber));
+            OnPropertyChanged(nameof(NextButtonText));
+            OnPropertyChanged(nameof(FinishButtonVisibility));
+        }
+
+        public void OnAnswerSelected()
+        {
+            if (_currentIndex >= Questions.Count - 1)
+            {
+                RaiseAll();
+                return;
+            }
+
+            _currentIndex++;
+
+            if (_currentIndex < Questions.Count)
+            {
+                CurrentQuestion = Questions[_currentIndex];
+
+                foreach (var a in CurrentQuestion.Answers)
+                    a.IsSelected = a.Value == CurrentQuestion.Answer;
+
+                RaiseAll();
+            }
+        }
+
+        private async Task FinishTest()
         {
             int sum = Questions.Sum(q => q.Answer);
 
@@ -179,58 +214,32 @@ namespace PsyDiagnostics.ViewModels
                 Hostility = aiInput.Hostility
             };
 
-            int result = await _api.GetPrediction(request);
-
-            int percent = result == 1 ? 80 : 20;
-
-            if (_main.Current != null)
+            try
             {
-                db.SaveTestResult(
-                    _main.Current.PrisonerId,
-                    _test.Name,
-                    finalScore,
-                    result,
-                    percent / 100.0
-                );
+                int prediction = await _api.GetPrediction(request);
+
+                double probability = prediction == 1 ? 0.8 : 0.2;
+                int score = (int)(probability * 100);
+
+                if (SelectedParticipant != null)
+                {
+                    db.SaveTestResult(
+                        SelectedParticipant.PrisonerId,
+                        SelectedParticipant.Unit,
+                        "AI",
+                        score,
+                        prediction,
+                        probability
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка ИИ: " + ex.Message);
             }
 
-            // здесь больше не показываем общий MessageBox,
-            // только даём сигнал MultiTestViewModel / MainViewModel
             OnFinished?.Invoke();
             _main.UpdateUnitRisk();
-        }
-
-        public Dictionary<string, int> GetResults() => results;
-
-        private void RaiseAll()
-        {
-            OnPropertyChanged(nameof(CurrentQuestion));
-            OnPropertyChanged(nameof(CurrentIndex));
-            OnPropertyChanged(nameof(TotalQuestions));
-            OnPropertyChanged(nameof(QuestionNumber));
-            OnPropertyChanged(nameof(NextButtonText));
-            OnPropertyChanged(nameof(FinishButtonVisibility));
-        }
-
-        public void OnAnswerSelected()
-        {
-            if (_currentIndex >= Questions.Count - 1)
-            {
-                RaiseAll();
-                return;
-            }
-
-            _currentIndex++;
-
-            if (_currentIndex < Questions.Count)
-            {
-                CurrentQuestion = Questions[_currentIndex];
-
-                foreach (var a in CurrentQuestion.Answers)
-                    a.IsSelected = a.Value == CurrentQuestion.Answer;
-
-                RaiseAll();
-            }
         }
     }
 }

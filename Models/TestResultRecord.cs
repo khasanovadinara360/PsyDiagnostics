@@ -11,7 +11,9 @@ namespace PsyDiagnostics.Models
         public string TestName { get; set; }
         public int Score { get; set; }
         public int Prediction { get; set; }
-        public string Date { get; set; }
         public double Probability { get; set; }
+        public double RiskScore { get; set; }
+        public string Unit { get; set; }   
+        public string Date { get; set; }
     }
 }
