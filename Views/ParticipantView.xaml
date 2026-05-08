@@ -235,6 +235,12 @@
         Margin="5,0"
         Padding="10,0"
         Height="32"/>
+                <Button Content="Добавить тест"
+        Command="{Binding AddTestCommand}"
+        Visibility="{Binding PsychologistVisibility}"
+        Margin="5,0"
+        Padding="10,0"
+        Height="32"/>
             </StackPanel>
         </StackPanel>
 

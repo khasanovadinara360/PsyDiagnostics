@@ -2,6 +2,56 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="BgMainColor" Color="#FF1E1E28"/>
+        <SolidColorBrush x:Key="BgCardColor" Color="#FF252532"/>
+        <SolidColorBrush x:Key="BorderColor" Color="#FF323244"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#FF4E5DFF"/>
+        <SolidColorBrush x:Key="TextPrimaryColor" Color="#FFF5F5F7"/>
+        <SolidColorBrush x:Key="TextSecondaryColor" Color="#FF9FA4B5"/>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Background="#1E1E28" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -12,7 +62,6 @@
 
         <TextBlock Grid.Row="0"
                    Text="Добавление нового теста"
-                   Foreground="White"
                    FontSize="22"
                    FontWeight="Bold"
                    Margin="0,0,0,15"/>
@@ -22,105 +71,160 @@
                 Padding="15"
                 CornerRadius="8"
                 Margin="0,0,0,10">
-            <StackPanel>
-                <TextBlock Text="Название теста" Foreground="White"/>
-                <TextBox Text="{Binding TestName, UpdateSourceTrigger=PropertyChanged}"
-                         Height="32"
-                         Margin="0,5,0,10"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="240"/>
+                </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal">
-                    <StackPanel Width="280">
-                        <TextBlock Text="Максимум низкого уровня" Foreground="White"/>
-                        <TextBox Text="{Binding LowMaxText, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="32"
-                                 Margin="0,5,0,0"/>
-                    </StackPanel>
-
-                    <StackPanel Width="280" Margin="20,0,0,0">
-                        <TextBlock Text="Максимум среднего уровня" Foreground="White"/>
-                        <TextBox Text="{Binding MediumMaxText, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="32"
-                                 Margin="0,5,0,0"/>
-                    </StackPanel>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Название теста"/>
+                    <TextBox Text="{Binding TestName, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,5,0,0"/>
                 </StackPanel>
-            </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Количество вопросов"/>
+                    <TextBox Text="{Binding QuestionsCountText, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0,5,0,0"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="2" Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="20"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="1.15*"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="1.05*"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="0.95*"/>
             </Grid.ColumnDefinitions>
 
+            <!-- Левая часть: добавление вопроса -->
             <Border Grid.Column="0"
                     Background="#2A2A40"
                     Padding="15"
                     CornerRadius="8">
                 <StackPanel>
-                    <TextBlock Text="Текст вопроса" Foreground="White"/>
+                    <TextBlock Text="Текст вопроса" FontWeight="SemiBold"/>
                     <TextBox Text="{Binding QuestionText, UpdateSourceTrigger=PropertyChanged}"
-                             Height="32"
-                             Margin="0,5,0,10"/>
+                             Height="34"
+                             Margin="0,5,0,15"/>
 
-                    <TextBlock Text="Ответы" Foreground="White"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="90"/>
+                        </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Ответ 1" Foreground="#9FA4B5" Margin="0,8,0,2"/>
-                    <DockPanel>
-                        <TextBox Text="{Binding Answer1Text, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="32"
-                                 DockPanel.Dock="Left"/>
-                        <TextBox Text="{Binding Answer1ValueText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="70"
-                                 Height="32"
+                        <TextBlock Text="Ответ" Foreground="#9FA4B5"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="Баллы"
+                                   Foreground="#9FA4B5"
+                                   HorizontalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="90"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding Answer1Text, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding Answer1ValueText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="10,0,0,0"/>
-                    </DockPanel>
+                    </Grid>
 
-                    <TextBlock Text="Ответ 2" Foreground="#9FA4B5" Margin="0,8,0,2"/>
-                    <DockPanel>
-                        <TextBox Text="{Binding Answer2Text, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="32"
-                                 DockPanel.Dock="Left"/>
-                        <TextBox Text="{Binding Answer2ValueText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="70"
-                                 Height="32"
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="90"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding Answer2Text, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding Answer2ValueText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="10,0,0,0"/>
-                    </DockPanel>
+                    </Grid>
 
-                    <TextBlock Text="Ответ 3" Foreground="#9FA4B5" Margin="0,8,0,2"/>
-                    <DockPanel>
-                        <TextBox Text="{Binding Answer3Text, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="32"
-                                 DockPanel.Dock="Left"/>
-                        <TextBox Text="{Binding Answer3ValueText, UpdateSourceTrigger=PropertyChanged}"
-                                 Width="70"
-                                 Height="32"
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="90"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding Answer3Text, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding Answer3ValueText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="10,0,0,0"/>
-                    </DockPanel>
+                    </Grid>
 
                     <Button Content="Добавить вопрос"
                             Command="{Binding AddQuestionCommand}"
                             Height="36"
-                            Margin="0,15,0,0"/>
+                            Margin="0,18,0,0"
+                            Background="#4E5DFF"
+                            BorderBrush="Transparent"/>
                 </StackPanel>
             </Border>
 
+            <!-- Средняя часть: добавленные вопросы -->
             <Border Grid.Column="2"
                     Background="#2A2A40"
                     Padding="15"
                     CornerRadius="8">
-                <StackPanel>
-                    <TextBlock Text="Добавленные вопросы"
-                               Foreground="White"
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Добавленные вопросы"
                                FontSize="16"
                                FontWeight="Bold"
                                Margin="0,0,0,10"/>
 
-                    <ListBox ItemsSource="{Binding QuestionsPreview}"
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding QuestionsPreview}"
                              Background="#252532"
-                             Foreground="White"
-                             BorderThickness="0"/>
-                </StackPanel>
+                             BorderBrush="#323244"
+                             BorderThickness="1"/>
+                </Grid>
+            </Border>
+
+            <!-- Правая часть: существующие тесты -->
+            <Border Grid.Column="4"
+                    Background="#2A2A40"
+                    Padding="15"
+                    CornerRadius="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Существующие тесты"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Margin="0,0,0,10"/>
+
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding ExistingTests}"
+                             SelectedItem="{Binding SelectedExistingTest, Mode=TwoWay}"
+                             Background="#252532"
+                             BorderBrush="#323244"
+                             BorderThickness="1"/>
+
+                    <Button Grid.Row="2"
+                            Content="Удалить тест"
+                            Command="{Binding DeleteTestCommand}"
+                            Height="36"
+                            Margin="0,12,0,0"
+                            Background="#B63A3A"
+                            BorderBrush="Transparent"/>
+                </Grid>
             </Border>
         </Grid>
 
