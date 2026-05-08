@@ -89,6 +89,40 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        private UserRole _currentRole = UserRole.Psychologist;
+
+        public UserRole CurrentRole
+        {
+            get => _currentRole;
+            set
+            {
+                _currentRole = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsPsychologist));
+                OnPropertyChanged(nameof(IsPrisoner));
+                OnPropertyChanged(nameof(PsychologistVisibility));
+                OnPropertyChanged(nameof(PrisonerVisibility));
+            }
+        }
+
+        private void AddTest()
+        {
+            var vm = new AddTestViewModel(this);
+            CurrentView = new AddTestView
+            {
+                DataContext = vm
+            };
+        }
+
+        public bool IsPsychologist => CurrentRole == UserRole.Psychologist;
+        public bool IsPrisoner => CurrentRole == UserRole.Prisoner;
+
+        public Visibility PsychologistVisibility =>
+            IsPsychologist ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility PrisonerVisibility =>
+            IsPrisoner ? Visibility.Visible : Visibility.Collapsed;
+
         private void Current_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             OnPropertyChanged(nameof(Current));
@@ -108,6 +142,10 @@ namespace PsyDiagnostics.ViewModels
         public ICommand CalculateRiskCommand { get; }
         public ICommand GoHomeCommand { get; }
         public ICommand ExportPdfCommand { get; }
+        public ICommand SelectPsychologistRoleCommand { get; }
+        public ICommand SelectPrisonerRoleCommand { get; }
+        public ICommand AddTestCommand { get; }
+        public ICommand PrisonerStartTestCommand { get; }
 
         private object _currentView;
         public object CurrentView
@@ -213,7 +251,17 @@ namespace PsyDiagnostics.ViewModels
             CalculateRiskCommand = new RelayCommand(_ => CalculateRisk());
             GoHomeCommand = new RelayCommand(_ => GoHome());
             ExportPdfCommand = new RelayCommand(_ => ExportPdf());
+            SelectPsychologistRoleCommand = new RelayCommand(_ =>
+            {
+                SelectRole(UserRole.Psychologist);
+            });
 
+            SelectPrisonerRoleCommand = new RelayCommand(_ =>
+            {
+                SelectRole(UserRole.Prisoner);
+            });
+            PrisonerStartTestCommand = new RelayCommand(_ => PrisonerStartTest());
+            AddTestCommand = new RelayCommand(_ => AddTest());
             AllArticles = JsonHelper.LoadArticles();
             FilteredArticles = AllArticles;
 
@@ -224,9 +272,8 @@ namespace PsyDiagnostics.ViewModels
             if (Units.Any())
                 SelectedUnit = Units.First();
 
+            ShowRoleSelection();
 
-
-            ShowParticipant();
             BuildRiskByUnitsChart();
             BuildRecidivismChart();
             BuildTopUnitsChart();
@@ -272,6 +319,11 @@ namespace PsyDiagnostics.ViewModels
             };
 
             CurrentView = new ParticipantView { DataContext = this };
+        }
+
+        public void ShowParticipantPage()
+        {
+            ShowParticipant();
         }
 
         private void GoToTest()
@@ -807,6 +859,15 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(HighRiskPeople));
         }
 
+        private void PrisonerStartTest()
+        {
+            Search();
+
+            if (Current == null)
+                return;
+
+            GoToTest();
+        }
         private void LoadFilteredData()
         {
             FilteredHistory.Clear();
@@ -1196,13 +1257,21 @@ namespace PsyDiagnostics.ViewModels
 
                 Current = found;
 
-                FilteredArticles = AllArticles;
-
                 var article = AllArticles
-                    .FirstOrDefault(a =>
-                        a.Number?.Trim() == Current.ArticleNumber?.Trim());
+    .FirstOrDefault(a => a.Number?.Trim() == Current.ArticleNumber?.Trim());
 
                 SelectedArticle = article;
+
+                if (article != null)
+                {
+                    ArticleSearch = article.Number;
+                    FilteredArticles = new List<Article> { article };
+                }
+                else
+                {
+                    ArticleSearch = "";
+                    FilteredArticles = AllArticles;
+                }
 
                 OnPropertyChanged(nameof(SelectedArticle));
             }
@@ -1250,6 +1319,17 @@ namespace PsyDiagnostics.ViewModels
             }
 
             MessageBox.Show("Расчёт риска пока не реализован");
+        }
+
+        private void ShowRoleSelection()
+        {
+            CurrentView = new RoleSelectionView { DataContext = this };
+        }
+
+        private void SelectRole(UserRole role)
+        {
+            CurrentRole = role;
+            ShowParticipant();
         }
 
         private void GoHome()

@@ -47,13 +47,13 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Не женат / не замужем")]
+        [Description("Не женат")]
         НеЖенат,
 
-        [Description("Женат / замужем")]
+        [Description("Женат")]
         Женат,
 
-        [Description("Разведен(а)")]
+        [Description("Разведен")]
         Разведен
     }
 
@@ -227,10 +227,10 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Не служил(а) в армии")]
+        [Description("Не служил в армии")]
         Нет,
 
-        [Description("Служил(а) в армии")]
+        [Description("Служил в армии")]
         Да,
     }
 
@@ -239,10 +239,10 @@ namespace PsyDiagnostics.Models
         [Description("Не выбрано")]
         НеВыбрано = 0,
 
-        [Description("Не участвовал(а) в боевых действиях")]
+        [Description("Не участвовал в боевых действиях")]
         Нет,
 
-        [Description("Участвовал(а) в боевых действиях")]
+        [Description("Участвовал в боевых действиях")]
         Да,
     }
 
@@ -299,10 +299,10 @@ namespace PsyDiagnostics.Models
         НеВыбрано = 0,
 
 
-        [Description("Не состоял(а) на учете у психиатра")]
+        [Description("Не состоял на учете у психиатра")]
         Нет,
 
-        [Description("Состоял(а) на учете у психиатра")]
+        [Description("Состоял на учете у психиатра")]
         Да
     }
 
@@ -312,10 +312,10 @@ namespace PsyDiagnostics.Models
         НеВыбрано = 0,
 
 
-        [Description("Не принимал(а) участия в азартных играх")]
+        [Description("Не принимал участия в азартных играх")]
         Нет,
 
-        [Description("Принимал(а) участие в азартных играх")]
+        [Description("Принимал участие в азартных играх")]
         Да,
     }
 
@@ -352,10 +352,10 @@ namespace PsyDiagnostics.Models
         НеВыбрано = 0,
 
 
-        [Description("Не состоял(а) на учете у нарколога")]
+        [Description("Не состоял на учете у нарколога")]
         Нет,
 
-        [Description("Состоял(а) на учете у нарколога")]
+        [Description("Состоял на учете у нарколога")]
         Да,
     }
 
@@ -365,13 +365,13 @@ namespace PsyDiagnostics.Models
         НеВыбрано = 0,
 
 
-        [Description("Не употреблял(а) наркотические средства")]
+        [Description("Не употреблял наркотические средства")]
         Нет,
 
-        [Description("Употреблял(а) наркотические средства")]
+        [Description("Употреблял наркотические средства")]
         Да,
 
-        [Description("Пробовал(а) наркотические средства")]
+        [Description("Пробовал наркотические средства")]
         Пробовал,
     }
 

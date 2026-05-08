@@ -57,7 +57,8 @@ namespace PsyDiagnostics.Services
         AttitudeToUIS INTEGER,
         SuicideAttempts INTEGER,
         SelfHarmScars INTEGER,
-        RelativesSuicide INTEGER
+        RelativesSuicide INTEGER,
+        Citizenship INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS AiResults (
@@ -86,6 +87,47 @@ namespace PsyDiagnostics.Services
     ";
 
             cmd.ExecuteNonQuery();
+
+            AddColumnIfNotExists(db, "Participants", "Citizenship", "INTEGER");
+
+            AddColumnIfNotExists(db, "AiResults", "Unit", "TEXT");
+            AddColumnIfNotExists(db, "AiResults", "Prediction", "INTEGER");
+            AddColumnIfNotExists(db, "AiResults", "Probability", "REAL");
+            AddColumnIfNotExists(db, "AiResults", "RiskScore", "REAL");
+            AddColumnIfNotExists(db, "AiResults", "Date", "TEXT");
+
+            AddColumnIfNotExists(db, "TestResults", "Unit", "TEXT");
+            AddColumnIfNotExists(db, "TestResults", "Prediction", "INTEGER");
+            AddColumnIfNotExists(db, "TestResults", "Probability", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "RiskScore", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "CreatedAt", "TEXT");
+        }
+
+        private void AddColumnIfNotExists(SqliteConnection db, string tableName, string columnName, string columnType)
+        {
+            var checkCmd = db.CreateCommand();
+            checkCmd.CommandText = $"PRAGMA table_info({tableName})";
+
+            bool exists = false;
+
+            using (var reader = checkCmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    if (reader["name"]?.ToString() == columnName)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!exists)
+            {
+                var alterCmd = db.CreateCommand();
+                alterCmd.CommandText = $"ALTER TABLE {tableName} ADD COLUMN {columnName} {columnType}";
+                alterCmd.ExecuteNonQuery();
+            }
         }
 
         public Participant GetParticipant(string id)
@@ -202,7 +244,7 @@ namespace PsyDiagnostics.Services
              ArmyService, ArmyBranch, CombatParticipation, SomaticDiseases, Disability,
              MentalDiseases, PsychiatristRegistry, Gambling, Obligations, NarcologistRegistry, DrugUse,
              ArticleNumber, ArticlePart, ArticlePoint, SentenceTerm, CrimeType, Recidivism, Unit, Category,
-             CurrentFeelings, AttitudeToUIS, SuicideAttempts, SelfHarmScars, RelativesSuicide)
+             CurrentFeelings, AttitudeToUIS, SuicideAttempts, SelfHarmScars, RelativesSuicide, Citizenship)
             VALUES
             ($id,$name,$gender,$birth,$place,$nat,$res,
              $fam,$mar,$rel,$hasChild,$childCount,
@@ -210,7 +252,7 @@ namespace PsyDiagnostics.Services
              $army,$armyBranch,$combat,$som,$dis,
              $ment,$psyc,$gamb,$obl,$narc,$drug,
              $artNum,$artPart,$artPoint,$term,$crime,$rec,$unit,$cat,
-             $cf,$att,$suic,$scar,$relSuic)";
+             $cf,$att,$suic,$scar,$relSuic,$citizenship)";
 
             cmd.Parameters.AddWithValue("$id", p.PrisonerId?.Trim() ?? "");
             cmd.Parameters.AddWithValue("$name", p.FullName ?? "");
@@ -258,6 +300,7 @@ namespace PsyDiagnostics.Services
             cmd.Parameters.AddWithValue("$suic", (int)p.SuicideAttempts);
             cmd.Parameters.AddWithValue("$scar", (int)p.SelfHarmScars);
             cmd.Parameters.AddWithValue("$relSuic", (int)p.RelativesSuicide);
+            cmd.Parameters.AddWithValue("$citizenship", (int)p.Citizenship);
 
             cmd.ExecuteNonQuery();
         }
@@ -544,7 +587,7 @@ namespace PsyDiagnostics.Services
             cmd.CommandText = @"
         SELECT AVG(t.RiskScore)
         FROM (
-            SELECT a.PrisonerId, a.RiskScore
+            SELECT a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
             FROM AiResults a
             WHERE TRIM(a.Unit) = TRIM($unit)
               AND a.Date = (
@@ -572,7 +615,7 @@ namespace PsyDiagnostics.Services
             bestUnitCmd.CommandText = @"
         SELECT t.Unit
         FROM (
-            SELECT a.Unit, a.PrisonerId, a.RiskScore
+            SELECT a.Unit, a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
             FROM AiResults a
             WHERE a.Date = (
                 SELECT MAX(a2.Date)
@@ -591,16 +634,16 @@ namespace PsyDiagnostics.Services
 
             var cmd = db.CreateCommand();
             cmd.CommandText = @"
-        SELECT p.FullName, a.RiskScore, a.Unit
+        SELECT p.FullName, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore, a.Unit
         FROM AiResults a
-        JOIN Participants p ON p.PrisonerId = a.PrisonerId
+        JOIN Participants p ON TRIM(p.PrisonerId) = TRIM(a.PrisonerId)
         WHERE TRIM(a.Unit) = TRIM($unit)
           AND a.Date = (
               SELECT MAX(a2.Date)
               FROM AiResults a2
               WHERE a2.PrisonerId = a.PrisonerId
           )
-        ORDER BY a.RiskScore ASC
+        ORDER BY RiskScore ASC
         LIMIT 5";
             cmd.Parameters.AddWithValue("$unit", bestUnit);
 
@@ -627,16 +670,16 @@ namespace PsyDiagnostics.Services
 
             var cmd = db.CreateCommand();
             cmd.CommandText = @"
-        SELECT p.FullName, a.RiskScore, a.Unit
+        SELECT p.FullName, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore, a.Unit
         FROM AiResults a
-        JOIN Participants p ON p.PrisonerId = a.PrisonerId
+        JOIN Participants p ON TRIM(p.PrisonerId) = TRIM(a.PrisonerId)
         WHERE TRIM(a.Unit) = TRIM($unit)
           AND a.Date = (
               SELECT MAX(a2.Date)
               FROM AiResults a2
               WHERE a2.PrisonerId = a.PrisonerId
           )
-        ORDER BY a.RiskScore DESC, p.FullName ASC";
+        ORDER BY RiskScore DESC, p.FullName ASC";
             cmd.Parameters.AddWithValue("$unit", unit ?? "");
 
             var list = new List<(string, double, string)>();
@@ -691,7 +734,7 @@ namespace PsyDiagnostics.Services
             AVG(CASE WHEN p.Recidivism = 1 THEN t.RiskScore END)
         FROM Participants p
         JOIN (
-            SELECT a.PrisonerId, a.RiskScore
+            SELECT a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
             FROM AiResults a
             WHERE a.Date = (
                 SELECT MAX(a2.Date)
@@ -735,7 +778,7 @@ namespace PsyDiagnostics.Services
             COUNT(CASE WHEN t.RiskScore >= 33 AND t.RiskScore <= 66 THEN 1 END),
             COUNT(CASE WHEN t.RiskScore >= 67 THEN 1 END)
         FROM (
-            SELECT a.PrisonerId, a.RiskScore
+            SELECT a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
             FROM AiResults a
             WHERE TRIM(a.Unit) = TRIM($unit)
               AND a.Date = (
@@ -770,7 +813,7 @@ namespace PsyDiagnostics.Services
             var cmd = db.CreateCommand();
             cmd.CommandText = @"
         SELECT Unit, 
-               MAX(RiskScore) - MIN(RiskScore) as improvement
+               MAX(COALESCE(RiskScore, Score, 0)) - MIN(COALESCE(RiskScore, Score, 0)) as improvement
         FROM AiResults
         GROUP BY Unit
         ORDER BY improvement DESC
@@ -801,7 +844,7 @@ namespace PsyDiagnostics.Services
             cmd.CommandText = @"
         SELECT t.Unit, AVG(t.RiskScore)
         FROM (
-            SELECT a.Unit, a.PrisonerId, a.RiskScore
+            SELECT a.Unit, a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
             FROM AiResults a
             WHERE a.Date = (
                 SELECT MAX(a2.Date)

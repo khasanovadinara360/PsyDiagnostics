@@ -22,14 +22,11 @@ namespace PsyDiagnostics.ViewModels
             set { _currentTest = value; OnPropertyChanged(); }
         }
 
-        // общий словарь результатов по всем тестам
-        private readonly Dictionary<string, int> _allResults = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _allResults = new();
 
         public ICommand SelectTestCommand { get; }
 
-        public MultiTestViewModel(MainViewModel main,
-                                  IEnumerable<TestDefinition> defs,
-                                  TestMode mode)
+        public MultiTestViewModel(MainViewModel main, IEnumerable<TestDefinition> defs, TestMode mode)
         {
             _main = main;
             _mode = mode;
@@ -44,38 +41,38 @@ namespace PsyDiagnostics.ViewModels
             }
 
             CurrentTest = TestViewModels.FirstOrDefault();
-
             SelectTestCommand = new RelayCommand(p => SelectTest(p));
         }
 
         private void SelectTest(object parameter)
         {
-            var vm = parameter as TestViewModel;
-            if (vm == null)
+            if (parameter is not TestViewModel vm)
                 return;
 
             if (_mode == TestMode.Normal)
-            {
                 CurrentTest = vm;
-            }
-            // в Full порядок фиксированный — игнорируем выбор
         }
 
         private void OnSingleTestFinished(TestViewModel finished)
         {
             var res = finished.GetResults();
+
             foreach (var kv in res)
                 _allResults[kv.Key] = kv.Value;
+
+            finished.IsCompleted = true;
 
             if (_mode == TestMode.Full)
             {
                 var idx = TestViewModels.IndexOf(finished);
+
                 if (idx >= 0 && idx < TestViewModels.Count - 1)
                 {
                     CurrentTest = TestViewModels[idx + 1];
                     return;
                 }
             }
+
             bool allFinished = TestViewModels.All(vm =>
             {
                 var r = vm.GetResults();
@@ -89,8 +86,7 @@ namespace PsyDiagnostics.ViewModels
             else
             {
                 System.Windows.MessageBox.Show(
-                    "Вы выбрали несколько тестов. " +
-                    "Чтобы получить результат, нужно пройти все выбранные тесты."
+                    "Вы выбрали несколько тестов. Чтобы получить результат, нужно пройти все выбранные тесты."
                 );
             }
         }

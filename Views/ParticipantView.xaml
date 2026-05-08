@@ -15,6 +15,8 @@
         <SolidColorBrush x:Key="TextPrimaryColor" Color="#FFF5F5F7"/>
         <SolidColorBrush x:Key="TextSecondaryColor" Color="#FF9FA4B5"/>
         <SolidColorBrush x:Key="ErrorColor" Color="#FFFF5370"/>
+        <helpers:EnumDescriptionConverter x:Key="EnumDescriptionConverter"/>
+        <helpers:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
 
         <Style x:Key="CardStyle" TargetType="Border">
             <Setter Property="Background" Value="#2A2A40"/>
@@ -38,7 +40,7 @@
         <Style x:Key="ComboStyle" TargetType="ComboBox">
             <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
-        
+
         <!-- Единый стиль для всех полей ввода -->
         <Style TargetType="TextBox">
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
@@ -131,7 +133,7 @@
             <Setter Property="ItemTemplate">
                 <Setter.Value>
                     <DataTemplate>
-                        <TextBlock Text="{Binding}"/>
+                        <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
                     </DataTemplate>
                 </Setter.Value>
             </Setter>
@@ -200,7 +202,8 @@
         </Grid.RowDefinitions>
 
         <!-- Поиск по ID -->
-        <StackPanel Grid.Row="0">
+        <StackPanel Grid.Row="0"
+            Visibility="{Binding PsychologistVisibility}">
             <TextBlock Text="ID"
                        Foreground="{StaticResource TextSecondaryColor}"/>
 
@@ -227,10 +230,11 @@
                         Background="{StaticResource AccentColor}"
                         BorderBrush="Transparent"/>
                 <Button Content="Сохранить"
-                        Command="{Binding SaveCommand}"
-                        Margin="5,0"
-                        Padding="10,0"
-                        Height="32"/>
+        Command="{Binding SaveCommand}"
+        Visibility="{Binding PsychologistVisibility}"
+        Margin="5,0"
+        Padding="10,0"
+        Height="32"/>
             </StackPanel>
         </StackPanel>
 
@@ -240,52 +244,91 @@
                     Padding="10"
                     BorderBrush="{StaticResource BorderColor}"
                     BorderThickness="1">
-                <TabControl Margin="10"
-                            Background="Transparent"
-                            BorderThickness="0">
+                <Grid>
 
-                    <!-- Личные -->
-                    <TabItem Header="Личные">
-                        <StackPanel Margin="10">
+                    <StackPanel Visibility="{Binding PrisonerVisibility}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Width="420">
 
-                            <TextBlock Text="ФИО" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                        <TextBlock Text="Режим заключённого"
+                                   Foreground="{StaticResource TextPrimaryColor}"
+                                   FontSize="22"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,15"/>
+
+                        <TextBlock Text="Введите свой ID и перейдите к тестированию."
+                                   Foreground="{StaticResource TextSecondaryColor}"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   FontSize="14"
+                                   Margin="0,0,0,20"/>
+
+                        <TextBlock Text="ID"
+                                   Foreground="{StaticResource TextSecondaryColor}"
+                                   Margin="0,0,0,5"/>
+
+                        <TextBox Text="{Binding SearchId, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="36"
+                                 Margin="0,0,0,15"
+                                 BorderBrush="{StaticResource AccentColor}"
+                                 BorderThickness="1"/>
+
+                        <Button Content="Перейти к тестированию"
+                                Command="{Binding PrisonerStartTestCommand}"
+                                Height="42"
+                                Background="{StaticResource AccentColor}"
+                                BorderBrush="Transparent"/>
+                    </StackPanel>
+
+                    <TabControl Margin="10"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Visibility="{Binding PsychologistVisibility}">
+
+                        <!-- Личные -->
+                        <TabItem Header="Личные" Visibility="{Binding PsychologistVisibility}">
+                            <StackPanel Margin="10">
+
+                                <TextBlock Text="ФИО" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
                                      Text="{Binding ParticipantVm.CurrentParticipant.FullName, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Text="Пол" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Пол" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.Genders}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.Gender, Mode=TwoWay}"/>
 
-                            <TextBlock Text="Дата рождения" Style="{StaticResource SectionHeader}"/>
-                            <DatePicker SelectedDate="{Binding ParticipantVm.CurrentParticipant.BirthDate, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBlock Text="Дата рождения" Style="{StaticResource SectionHeader}"/>
+                                <DatePicker SelectedDate="{Binding ParticipantVm.CurrentParticipant.BirthDate, UpdateSourceTrigger=PropertyChanged}"
                                         Margin="0,3"
                                         Height="32">
-                                <DatePicker.Resources>
-                                    <Style TargetType="DatePickerTextBox">
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Background" Value="#2B2B3A"/>
-                                        <Setter Property="BorderThickness" Value="0"/>
+                                    <DatePicker.Resources>
+                                        <Style TargetType="DatePickerTextBox">
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="Background" Value="#2B2B3A"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
 
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="DatePickerTextBox">
-                                                    <TextBox
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="DatePickerTextBox">
+                                                        <TextBox
                             Text="{Binding Path=SelectedDate, RelativeSource={RelativeSource AncestorType=DatePicker}, StringFormat=d}"
                             Background="{TemplateBinding Background}"
                             Foreground="{TemplateBinding Foreground}"
                             BorderThickness="0"/>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </DatePicker.Resources>
-                            </DatePicker>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </DatePicker.Resources>
+                                </DatePicker>
 
-                            <TextBlock Text="Возраст (полных лет)" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Text="{Binding ParticipantVm.CurrentParticipant.Age, Mode=OneWay}"
+                                <TextBlock Text="Возраст (полных лет)" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Text="{Binding ParticipantVm.CurrentParticipant.Age, Mode=OneWay}"
                                      IsReadOnly="True"
                                      Margin="0,3"
                                      Padding="6,0"
@@ -294,334 +337,326 @@
                                      BorderBrush="{StaticResource BorderColor}"
                                      BorderThickness="1"/>
 
-                            <TextBlock Text="Гражданство" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                                <TextBlock Text="Гражданство" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
                                     Text="{Binding ParticipantVm.CurrentParticipant.Citizenship, UpdateSourceTrigger=PropertyChanged}"/>
 
 
-                            <TextBlock Text="Место рождения (регион)" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                                <TextBlock Text="Место рождения (регион)" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
                                      Text="{Binding ParticipantVm.CurrentParticipant.BirthPlace, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Text="Место проживания (населенный пункт)" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                                <TextBlock Text="Место проживания (населенный пункт)" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
                             Text="{Binding ParticipantVm.CurrentParticipant.Residence, UpdateSourceTrigger=PropertyChanged}"/>
 
 
 
-                            <TextBlock Text="Национальность" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                                <TextBlock Text="Национальность" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
                                      Text="{Binding ParticipantVm.CurrentParticipant.Nationality, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, NotifyOnValidationError=True}"/>
 
 
-                            <TextBlock Text="Воспитывались ли Вы в полной семье?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Воспитывались ли Вы в полной семье?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.FamilyUpbringings}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.FamilyUpbringing}"/>
 
-                            <TextBlock Text="Семейное положение" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Семейное положение" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.MaritalStatuses}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.MaritalStatus}"/>
 
-                            <TextBlock Text="Имеются ли у Вас близкие родственники?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Имеются ли у Вас близкие родственники?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.YesNoValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.HasCloseRelatives}"/>
 
-                            <TextBlock Text="Имеются ли у Вас дети? Сколько?" Style="{StaticResource SectionHeader}"/>
-                            <StackPanel Orientation="Horizontal">
-                                <ComboBox Width="100"
+                                <TextBlock Text="Имеются ли у Вас дети? Сколько?" Style="{StaticResource SectionHeader}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox Width="100"
                                           Margin="0,3,6,3"
                                           Height="32"
                                           Style="{StaticResource DarkComboBox}"
                                           ItemsSource="{Binding ParticipantVm.ChildrenPresenceValues}"
                                           SelectedItem="{Binding ParticipantVm.CurrentParticipant.HasChildren}"/>
-                                <TextBox Width="80"
+                                    <TextBox Width="80"
                                          Height="32"
                                          Style="{StaticResource ValidatedTextBox}"
                                          Text="{Binding ParticipantVm.CurrentParticipant.ChildrenCount, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
+                                </StackPanel>
 
-                            <TextBlock Text="Поддерживаете ли (намерены поддерживать) связь с родственниками в местах изоляции?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Поддерживаете ли (намерены поддерживать) связь с родственниками в местах изоляции?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.YesNoValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.WillKeepContact}"/>
 
-                            <TextBlock Text="Образование" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Образование" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.EducationValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.EducationLevel}"/>
 
-                            <TextBlock Text="Имеете ли Вы профессию?" Style="{StaticResource SectionHeader}"/>
-                            <StackPanel Orientation="Horizontal">
-                                <ComboBox Width="100"
+                                <TextBlock Text="Имеете ли Вы профессию?" Style="{StaticResource SectionHeader}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox Width="100"
                                           Margin="0,3,6,3"
                                           Height="32"
                                           Style="{StaticResource DarkComboBox}"
                                           ItemsSource="{Binding ParticipantVm.ProfessionPresenceValues}"
                                           SelectedItem="{Binding ParticipantVm.CurrentParticipant.HasProfession}"/>
-                                <TextBox Width="200"
+                                    <TextBox Width="200"
                                          Height="32"
                                          Style="{StaticResource ValidatedTextBox}"
                                          Text="{Binding ParticipantVm.CurrentParticipant.Profession, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
+                                </StackPanel>
 
-                            <TextBlock Text="Ваше вероисповедание" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Ваше вероисповедание" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.ReligionValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.Religion}"/>
 
-                        </StackPanel>
-                    </TabItem>
+                            </StackPanel>
+                        </TabItem>
 
-                    <!-- Социальные -->
-                    <TabItem Header="Социальные">
-                        <StackPanel Margin="10">
+                        <!-- Социальные -->
+                        <TabItem Header="Социальные" Visibility="{Binding PsychologistVisibility}">
+                            <StackPanel Margin="10">
 
-                            <TextBlock Text="Служба в армии" Style="{StaticResource SectionHeader}"/>
-                            <StackPanel Orientation="Horizontal">
-                                <ComboBox Width="100"
+                                <TextBlock Text="Служба в армии" Style="{StaticResource SectionHeader}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ComboBox Width="100"
                                           Margin="0,3,6,3"
                                           Height="32"
                                           Style="{StaticResource DarkComboBox}"
                                           ItemsSource="{Binding ParticipantVm.ArmyServiceValues}"
                                           SelectedItem="{Binding ParticipantVm.CurrentParticipant.ArmyService}"/>
-                                <TextBox Width="200"
+                                    <TextBox Width="200"
                                          Height="32"
                                          Style="{StaticResource ValidatedTextBox}"
                                          Text="{Binding ParticipantVm.CurrentParticipant.ArmyBranch, UpdateSourceTrigger=PropertyChanged}"
                                          ToolTip="Род войск"/>
-                            </StackPanel>
+                                </StackPanel>
 
-                            <TextBlock Text="Участие в боевых действиях" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Участие в боевых действиях" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.CombatParticipationValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.CombatParticipation}"/>
 
-                            <TextBlock Text="Наличие тяжёлых соматических заболеваний" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Наличие тяжёлых соматических заболеваний" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.SomaticDiseasesValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.SomaticDiseases}"/>
 
-                            <TextBlock Text="Наличие инвалидности" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Наличие инвалидности" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.DisabilityValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.Disability}"/>
 
-                            <TextBlock Text="Наличие психических заболеваний" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Наличие психических заболеваний" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.MentalDiseasesValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.MentalDiseases}"/>
 
-                            <TextBlock Text="Состояли ли Вы на учете у врача-психиатра?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Состояли ли Вы на учете у врача-психиатра?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.PsychiatristRegistryValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.PsychiatristRegistry}"/>
 
-                            <TextBlock Text="Принимали ли Вы участие в азартных играх (тотализаторах)?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Принимали ли Вы участие в азартных играх (тотализаторах)?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.GamblingValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.Gambling}"/>
 
-                            <TextBlock Text="Имеете ли Вы обязательства?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Имеете ли Вы обязательства?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.ObligationsValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.Obligations}"/>
 
-                            <TextBlock Text="Состояли ли Вы на учете у врача-нарколога?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Состояли ли Вы на учете у врача-нарколога?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.NarcologistRegistryValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.NarcologistRegistry}"/>
 
-                            <TextBlock Text="Употребляли ли Вы наркотические средства?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Употребляли ли Вы наркотические средства?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.DrugUseValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.DrugUse}"/>
 
-                        </StackPanel>
-                    </TabItem>
+                            </StackPanel>
+                        </TabItem>
 
-                    <!-- Криминальные -->
-                    <TabItem Header="Криминальные">
-                        <StackPanel Margin="10">
+                        <!-- Криминальные -->
+                        <TabItem Header="Криминальные" Visibility="{Binding PsychologistVisibility}">
+                            <StackPanel Margin="10">
 
-                            <TextBlock Text="Статья" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="Статья" Style="{StaticResource SectionHeader}"/>
 
-                            <TextBox Width="250"
+                                <TextBox Width="250"
                                      Margin="0,5"
                                      Height="32"
                                      Padding="6,0"
                                      Text="{Binding ArticleSearch, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <ListBox ItemsSource="{Binding FilteredArticles}"
+                                <ListBox ItemsSource="{Binding FilteredArticles}"
          SelectedItem="{Binding SelectedArticle, Mode=TwoWay}"
          MaxHeight="150"
          BorderThickness="1"
          Margin="0,5">
 
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Display}" />
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Display}" />
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
 
-                            </ListBox>
+                                </ListBox>
 
-                            <TextBlock Text="{Binding SelectedArticle.Display}" Foreground="Yellow"/>
-                            <TextBlock Text="{Binding SelectedArticle.Parts.Count}" Foreground="Green"/>
 
-                            <TextBlock Text="Часть" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox ItemsSource="{Binding AvailableParts}"
+                                <TextBlock Text="Часть" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox ItemsSource="{Binding AvailableParts}"
                                       Style="{StaticResource DarkComboBox}"
                                       Height="32"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.ArticlePart, Mode=TwoWay}"
                                       Margin="0,5"/>
 
-                            <TextBlock Text="Пункт" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox ItemsSource="{Binding AvailablePoints}"
+                                <TextBlock Text="Пункт" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox ItemsSource="{Binding AvailablePoints}"
                                       Style="{StaticResource DarkComboBox}"
                                       Height="32"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.ArticlePoint, Mode=TwoWay}"
                                       Margin="0,5"/>
 
-                            <TextBlock Text="{Binding ParticipantVm.CurrentParticipant.CriminalArticle}"
+                                <TextBlock Text="{Binding ParticipantVm.CurrentParticipant.CriminalArticle}"
                                        FontWeight="Bold"
                                        Foreground="#FF87AFFF"
                                        Margin="0,10"/>
 
-                            <TextBlock Text="Срок (лет)" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                                <TextBlock Text="Срок (лет)" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
                                      Height="32"
                                      Text="{Binding ParticipantVm.CurrentParticipant.SentenceTerm, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                      Margin="0,5"/>
 
-                            <TextBlock Text="{Binding ParticipantVm.CurrentParticipant.SentenceTermDisplay}"
+                                <TextBlock Text="{Binding ParticipantVm.CurrentParticipant.SentenceTermDisplay}"
                                        Foreground="#FF87AFFF"
                                        FontWeight="Bold"
                                        Margin="0,5"/>
 
-                            <TextBlock Text="Какие Вы испытываете чувства в настоящее время?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Какие Вы испытываете чувства в настоящее время?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.CurrentFeelingsValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.CurrentFeelings}"/>
 
-                            <TextBlock Text="Что Вы думаете о своем нынешнем пребывании в УИС?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Что Вы думаете о своем нынешнем пребывании в УИС?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.AttitudeToUISValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.AttitudeToUIS}"/>
 
-                            <TextBlock Text="Предпринимали ли Вы попытки суицида?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Предпринимали ли Вы попытки суицида?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.SuicideAttemptsValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.SuicideAttempts}"/>
 
-                            <TextBlock Text="Есть ли у Вас шрамы от самопорезов?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Есть ли у Вас шрамы от самопорезов?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.SelfHarmScarsValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.SelfHarmScars}"/>
 
-                            <TextBlock Text="Совершали ли Ваши близкие родственники суициды/попытки суицидов?" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox Margin="0,3"
+                                <TextBlock Text="Совершали ли Ваши близкие родственники суициды/попытки суицидов?" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox Margin="0,3"
                                       Height="32"
                                       Style="{StaticResource DarkComboBox}"
                                       ItemsSource="{Binding ParticipantVm.RelativesSuicideValues}"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.RelativesSuicide}"/>
 
-                            <TextBlock Text="Тип преступления" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox ItemsSource="{Binding CrimeTypes}"
+                                <TextBlock Text="Тип преступления" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox ItemsSource="{Binding CrimeTypes}"
                                       Style="{StaticResource DarkComboBox}"
                                       Height="32"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.CrimeType, Mode=TwoWay}"
                                       Margin="0,5"/>
 
-                            <TextBlock Text="Рецидив" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox ItemsSource="{Binding Recidivisms}"
+                                <TextBlock Text="Рецидив" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox ItemsSource="{Binding Recidivisms}"
                                       Style="{StaticResource DarkComboBox}"
                                       Height="32"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.Recidivism, Mode=TwoWay}"
                                       Margin="0,5"/>
 
-                            <TextBlock Text="Отряд" Style="{StaticResource SectionHeader}"/>
-                            <TextBox Style="{StaticResource ValidatedTextBox}"
+                                <TextBlock Text="Отряд" Style="{StaticResource SectionHeader}"/>
+                                <TextBox Style="{StaticResource ValidatedTextBox}"
                                      Height="32"
                                      Text="{Binding ParticipantVm.CurrentParticipant.Unit, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                      Margin="0,5"/>
 
-                            <TextBlock Text="Категория" Style="{StaticResource SectionHeader}"/>
-                            <ComboBox ItemsSource="{Binding Categories}"
+                                <TextBlock Text="Категория" Style="{StaticResource SectionHeader}"/>
+                                <ComboBox ItemsSource="{Binding Categories}"
                                       Style="{StaticResource DarkComboBox}"
                                       Height="32"
                                       SelectedItem="{Binding ParticipantVm.CurrentParticipant.Category, Mode=TwoWay}"
                                       Margin="0,5"/>
-
-                            <Button Content="Перейти к тестированию"
-                                    Height="40"
-                                    Margin="0,20,0,0"
-                                    Command="{Binding GoToTestCommand}"
-                                    Background="{StaticResource AccentColor}"
-                                    BorderBrush="Transparent"/>
-
-                        </StackPanel>
-                    </TabItem>
-
-                    <!-- Тестирование -->
-                    <TabItem Header="Тестирование" Height="NaN" Margin="0,0,8,0">
-                        <Grid Margin="10">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                            </StackPanel>
+                        </TabItem>
 
 
-                            <TextBlock Grid.Row="0"
+
+                        <!-- Тестирование -->
+                        <TabItem Header="Тестирование" Height="NaN" Margin="0,0,8,0" Visibility="{Binding PsychologistVisibility}">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+
+                                <TextBlock Grid.Row="0"
                    Text="Пройденные тесты"
                    Foreground="{StaticResource TextPrimaryColor}"
                    FontSize="14"
                    Margin="0,0,0,10"/>
 
-                            <!-- 🔥 БЛОК РИСКА ПО ОТРЯДУ -->
-                            <Border Grid.Row="1"
+                                <!-- 🔥 БЛОК РИСКА ПО ОТРЯДУ -->
+                                <Border Grid.Row="1"
                 Background="#2A2A40"
                 Padding="10"
                 CornerRadius="8"
@@ -629,27 +664,27 @@
                 BorderBrush="{StaticResource BorderColor}"
                 BorderThickness="1">
 
-                                <StackPanel>
-                                    <TextBlock Text="Риск по отряду"
+                                    <StackPanel>
+                                        <TextBlock Text="Риск по отряду"
                            Foreground="{StaticResource TextPrimaryColor}"
                            FontSize="14"
                            FontWeight="SemiBold"
                            Margin="0,0,0,5"/>
 
-                                    <TextBlock Text="{Binding UnitRisk}"
+                                        <TextBlock Text="{Binding UnitRisk}"
            Foreground="{Binding UnitRiskColor}"
            FontSize="13"
            FontWeight="Bold"
            Margin="0,0,0,5"/>
 
-                                    <TextBlock Text="{Binding UnitStats}"
+                                        <TextBlock Text="{Binding UnitStats}"
                            Foreground="{StaticResource TextSecondaryColor}"
                            FontSize="12"
                            TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
+                                    </StackPanel>
+                                </Border>
 
-                            <DataGrid Grid.Row="2"
+                                <DataGrid Grid.Row="2"
                   ItemsSource="{Binding TestHistory}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
@@ -665,196 +700,197 @@
                   AlternatingRowBackground="#FF2A2A38"
                   AlternationCount="2">
 
-                                <DataGrid.Resources>
-                                    <Style x:Key="CenterCellText" TargetType="TextBlock">
-                                        <Setter Property="TextAlignment" Value="Center"/>
-                                        <Setter Property="HorizontalAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGrid.Resources>
+                                    <DataGrid.Resources>
+                                        <Style x:Key="CenterCellText" TargetType="TextBlock">
+                                            <Setter Property="TextAlignment" Value="Center"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGrid.Resources>
 
-                                <DataGrid.ColumnHeaderStyle>
-                                    <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="Background" Value="#FF2B2B3A"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
-                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                        <Setter Property="Height" Value="32"/>
-                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGrid.ColumnHeaderStyle>
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="Background" Value="#FF2B2B3A"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                            <Setter Property="Height" Value="32"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
 
-                                <DataGrid.RowStyle>
-                                    <Style TargetType="DataGridRow">
-                                        <Setter Property="Height" Value="32"/>
-                                        <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Setter Property="Height" Value="32"/>
+                                            <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
 
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#FF2F2F40"/>
-                                            </Trigger>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#FF2F2F40"/>
+                                                </Trigger>
 
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="{StaticResource AccentColor}"/>
-                                                <Setter Property="Foreground" Value="White"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGrid.RowStyle>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
 
-                                <DataGrid.CellStyle>
-                                    <Style TargetType="DataGridCell">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
-                                        <Setter Property="BorderThickness" Value="0"/>
-                                        <Setter Property="Padding" Value="6,0"/>
+                                    <DataGrid.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Padding" Value="6,0"/>
 
-                                        <Style.Triggers>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Foreground" Value="White"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGrid.CellStyle>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.CellStyle>
 
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Тест"
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Тест"
                                     Binding="{Binding TestName}"
                                     Width="*"
                                     ElementStyle="{StaticResource CenterCellText}"/>
 
-                                    <DataGridTextColumn Header="Баллы"
+                                        <DataGridTextColumn Header="Баллы"
                                     Binding="{Binding Score}"
                                     Width="80"
                                     ElementStyle="{StaticResource CenterCellText}"/>
 
-                                    <DataGridTextColumn Header="Риск"
+                                        <DataGridTextColumn Header="Риск"
                                     Binding="{Binding Risk}"
                                     Width="120"
                                     ElementStyle="{StaticResource CenterCellText}"/>
 
-                                    <DataGridTextColumn Header="Дата"
+                                        <DataGridTextColumn Header="Дата"
                                     Binding="{Binding Date}"
                                     Width="150"
                                     ElementStyle="{StaticResource CenterCellText}"/>
-                                </DataGrid.Columns>
+                                    </DataGrid.Columns>
 
-                            </DataGrid>
+                                </DataGrid>
 
-                            <StackPanel Grid.Row="3"
+                                <StackPanel Grid.Row="3"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-                                <Button Content="Выгрузить отчет в PDF"
+                                    <Button Content="Выгрузить отчет в PDF"
                     Command="{Binding ExportPdfCommand}"
                     Background="{StaticResource AccentColor}"
                     BorderBrush="Transparent"
                     Height="32"
                     Padding="12,0"/>
-                            </StackPanel>
-                        </Grid>
-                    </TabItem>
+                                </StackPanel>
+                            </Grid>
+                        </TabItem>
 
-                    <!-- Аналитика -->
-                    <TabItem Header="Аналитика">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel Margin="10">
+                        <!-- Аналитика -->
+                        <TabItem Header="Аналитика" Visibility="{Binding PsychologistVisibility}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="10">
 
-                                <TextBlock Text="Аналитика"
+                                    <TextBlock Text="Аналитика"
                        Style="{StaticResource HeaderTextStyle}"/>
 
-                                <ComboBox ItemsSource="{Binding AnalyticsSections}"
-                      SelectedItem="{Binding SelectedAnalyticsSection, Mode=TwoWay}"
-                      Style="{StaticResource DarkComboBox}"
-                      Width="260"
-                      Height="32"
-                      Margin="0,0,0,15">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                    <ComboBox ItemsSource="{Binding AnalyticsSections}"
+          SelectedItem="{Binding SelectedAnalyticsSection, Mode=TwoWay}"
+          Style="{StaticResource DarkComboBox}"
+          Width="260"
+          Height="32"
+          Margin="0,0,0,15">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Converter={StaticResource EnumDescriptionConverter}}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
 
-                                <!-- ================= ПЕРСОНАЛЬНАЯ АНАЛИТИКА ================= -->
-                                <StackPanel Visibility="{Binding IsPersonalAnalyticsVisible}">
 
-                                    <!-- КРАТКАЯ ИНФОРМАЦИЯ -->
-                                    <Border Style="{StaticResource CardStyle}">
-                                        <Grid Margin="10">
+                                    <!-- ================= ПЕРСОНАЛЬНАЯ АНАЛИТИКА ================= -->
+                                    <StackPanel Visibility="{Binding IsPersonalAnalyticsVisible}">
 
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="180"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
+                                        <!-- КРАТКАЯ ИНФОРМАЦИЯ -->
+                                        <Border Style="{StaticResource CardStyle}">
+                                            <Grid Margin="10">
 
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="180"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
                        Text="Краткая информация"
                        Style="{StaticResource CardTitleStyle}"
                        Margin="0,0,0,10"/>
 
-                                            <!-- ФИО -->
-                                            <TextBlock Grid.Row="1" Grid.Column="0"
+                                                <!-- ФИО -->
+                                                <TextBlock Grid.Row="1" Grid.Column="0"
                        Text="ФИО:"
                        Foreground="{StaticResource TextSecondaryColor}"/>
-                                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                                <TextBlock Grid.Row="1" Grid.Column="1"
                        Text="{Binding Current.FullName}"
                        Foreground="{StaticResource TextPrimaryColor}"/>
 
-                                            <!-- ID -->
-                                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                                <!-- ID -->
+                                                <TextBlock Grid.Row="2" Grid.Column="0"
                        Text="ID:"
                        Foreground="{StaticResource TextSecondaryColor}"/>
-                                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                                <TextBlock Grid.Row="2" Grid.Column="1"
                        Text="{Binding Current.PrisonerId}"
                        Foreground="{StaticResource TextPrimaryColor}"/>
 
-                                            <!-- Отряд -->
-                                            <TextBlock Grid.Row="3" Grid.Column="0"
+                                                <!-- Отряд -->
+                                                <TextBlock Grid.Row="3" Grid.Column="0"
                        Text="Отряд:"
                        Foreground="{StaticResource TextSecondaryColor}"/>
-                                            <TextBlock Grid.Row="3" Grid.Column="1"
+                                                <TextBlock Grid.Row="3" Grid.Column="1"
                        Text="{Binding Current.Unit}"
                        Foreground="{StaticResource TextPrimaryColor}"/>
 
-                                            <!-- Статья -->
-                                            <TextBlock Grid.Row="4" Grid.Column="0"
+                                                <!-- Статья -->
+                                                <TextBlock Grid.Row="4" Grid.Column="0"
                        Text="Статья:"
                        Foreground="{StaticResource TextSecondaryColor}"/>
-                                            <TextBlock Grid.Row="4" Grid.Column="1"
+                                                <TextBlock Grid.Row="4" Grid.Column="1"
                        Text="{Binding Current.ArticleNumber}"
                        Foreground="{StaticResource TextPrimaryColor}"/>
 
-                                            <!-- Категория -->
-                                            <TextBlock Grid.Row="5" Grid.Column="0"
+                                                <!-- Категория -->
+                                                <TextBlock Grid.Row="5" Grid.Column="0"
                        Text="Категория:"
                        Foreground="{StaticResource TextSecondaryColor}"/>
-                                            <TextBlock Grid.Row="5" Grid.Column="1"
+                                                <TextBlock Grid.Row="5" Grid.Column="1"
                        Text="{Binding Current.Category}"
                        Foreground="{StaticResource TextPrimaryColor}"/>
 
-                                        </Grid>
-                                    </Border>
+                                            </Grid>
+                                        </Border>
 
-                                    <!-- ДИНАМИКА РИСКА -->
-                                    <Border Style="{StaticResource CardStyle}"
+                                        <!-- ДИНАМИКА РИСКА -->
+                                        <Border Style="{StaticResource CardStyle}"
         MaxWidth="980"
         HorizontalAlignment="Left">
 
-                                        <StackPanel>
-                                            <TextBlock Text="Динамика по тестам"
+                                            <StackPanel>
+                                                <TextBlock Text="Динамика по тестам"
                    Style="{StaticResource CardTitleStyle}"/>
 
-                                            <lvc:CartesianChart Height="280"
+                                                <lvc:CartesianChart Height="280"
                             Width="720"
                             Margin="0,10,0,0"
                             HorizontalAlignment="Left"
@@ -863,421 +899,369 @@
                             YAxes="{Binding PersonalYAxis}"
                             LegendPosition="Right"
                             LegendTextPaint="{Binding PersonalLegendTextPaint}"/>
-                                        </StackPanel>
-                                    </Border>
+                                            </StackPanel>
+                                        </Border>
 
-                                    <Border Style="{StaticResource CardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="Прогноз и заключение"
+                                        <Border Style="{StaticResource CardStyle}">
+                                            <StackPanel>
+                                                <TextBlock Text="Прогноз и заключение"
                    Style="{StaticResource CardTitleStyle}"/>
 
-                                            <TextBlock Text="{Binding PersonalAiConclusion}"
+                                                <TextBlock Text="{Binding PersonalAiConclusion}"
                    TextWrapping="Wrap"
                    Foreground="{StaticResource TextPrimaryColor}"
                    Margin="0,6,0,10"/>
 
-                                            <TextBlock Text="{Binding PersonalAiRisk}"
+                                                <TextBlock Text="{Binding PersonalAiRisk}"
                    TextWrapping="Wrap"
                    Foreground="{StaticResource TextPrimaryColor}"
                    FontWeight="Bold"
                    Margin="0,0,0,10"/>
 
-                                            <TextBlock Text="{Binding PersonalAiRecommendations}"
+                                                <TextBlock Text="{Binding PersonalAiRecommendations}"
                    TextWrapping="Wrap"
                    Foreground="{StaticResource TextPrimaryColor}"/>
-                                        </StackPanel>
-                                    </Border>
-                                
-                                    <!-- ИСТОРИЯ ТЕСТОВ -->
-                                    <Border Style="{StaticResource CardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="История тестов"
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- ИСТОРИЯ ТЕСТОВ -->
+                                        <!-- ИСТОРИЯ ТЕСТОВ -->
+                                        <Border Style="{StaticResource CardStyle}">
+                                            <StackPanel>
+                                                <TextBlock Text="История тестов"
                    Style="{StaticResource CardTitleStyle}"/>
 
-                                            <Expander Header="Агрессивность"
+                                                <Expander Header="Агрессивность"
                   Margin="0,6,0,6"
                   Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding AggressionHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
+                  Background="{StaticResource BgCardColor}"
+                  Visibility="{Binding AggressionHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding AggressionHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}"
                                 BorderThickness="0,0,0,1"
                                 Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                            <Expander Header="Импульсивность"
+                                                <Expander Header="Импульсивность"
                   Margin="0,6,0,6"
                   Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding ImpulsivityHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="0,0,0,1"
-                                Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                  Background="{StaticResource BgCardColor}"
+                  Visibility="{Binding ImpulsivityHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding ImpulsivityHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                            <Expander Header="Депрессия"
-                  Margin="0,6,0,6"
-                  Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding DepressionHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="0,0,0,1"
-                                Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                                                <Expander Header="Депрессия" Margin="0,6,0,6" Foreground="{StaticResource TextPrimaryColor}" Background="{StaticResource BgCardColor}" Visibility="{Binding DepressionHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding DepressionHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                            <Expander Header="Стрессоустойчивость"
-                  Margin="0,6,0,6"
-                  Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding StressHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="0,0,0,1"
-                                Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                                                <Expander Header="Стрессоустойчивость" Margin="0,6,0,6" Foreground="{StaticResource TextPrimaryColor}" Background="{StaticResource BgCardColor}" Visibility="{Binding StressHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding StressHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                            <Expander Header="Адаптация"
-                  Margin="0,6,0,6"
-                  Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding AdaptationHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="0,0,0,1"
-                                Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                                                <Expander Header="Адаптация" Margin="0,6,0,6" Foreground="{StaticResource TextPrimaryColor}" Background="{StaticResource BgCardColor}" Visibility="{Binding AdaptationHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding AdaptationHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                            <Expander Header="Тревожность"
-                  Margin="0,6,0,6"
-                  Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding AnxietyHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="0,0,0,1"
-                                Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                                                <Expander Header="Тревожность" Margin="0,6,0,6" Foreground="{StaticResource TextPrimaryColor}" Background="{StaticResource BgCardColor}" Visibility="{Binding AnxietyHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding AnxietyHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                            <Expander Header="Устойчивость"
-                  Margin="0,6,0,6"
-                  Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding ResilienceHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="0,0,0,1"
-                                Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                                                <Expander Header="Устойчивость" Margin="0,6,0,6" Foreground="{StaticResource TextPrimaryColor}" Background="{StaticResource BgCardColor}" Visibility="{Binding ResilienceHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding ResilienceHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                            <Expander Header="Враждебность"
-                  Margin="0,6,0,0"
-                  Foreground="{StaticResource TextPrimaryColor}"
-                  Background="{StaticResource BgCardColor}">
-                                                <ItemsControl ItemsSource="{Binding HostilityHistory}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border BorderBrush="{StaticResource BorderColor}"
-                                BorderThickness="0,0,0,1"
-                                Padding="0,6">
-                                                                <StackPanel>
-                                                                    <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}"
-                                           Foreground="{StaticResource TextPrimaryColor}"/>
-                                                                    <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}"
-                                           Foreground="{StaticResource TextSecondaryColor}"/>
-                                                                </StackPanel>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </Expander>
+                                                <Expander Header="Враждебность" Margin="0,6,0,0" Foreground="{StaticResource TextPrimaryColor}" Background="{StaticResource BgCardColor}" Visibility="{Binding HostilityHistory.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                                    <ItemsControl ItemsSource="{Binding HostilityHistory}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                                    <StackPanel>
+                                                                        <TextBlock Text="{Binding Score, StringFormat=Баллы: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Risk, StringFormat=Риск: {0}}" Foreground="{StaticResource TextPrimaryColor}"/>
+                                                                        <TextBlock Text="{Binding Date, StringFormat=Дата: {0}}" Foreground="{StaticResource TextSecondaryColor}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Expander>
 
-                                        </StackPanel>
-                                    </Border>
-                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
-                                <!-- АНАЛИТИКА ПО ОТРЯДАМ -->
-                                <StackPanel Visibility="{Binding IsUnitAnalyticsVisible}">
+                                    <!-- АНАЛИТИКА ПО ОТРЯДАМ -->
+                                    <StackPanel Visibility="{Binding IsUnitAnalyticsVisible}">
 
-                                    <Border Style="{StaticResource CardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="Распределение риска"
+                                        <Border Style="{StaticResource CardStyle}">
+                                            <StackPanel>
+                                                <TextBlock Text="Распределение риска"
                        Style="{StaticResource CardTitleStyle}"/>
 
-                                            <TextBlock Text="Диаграмма отражает общее распределение участников по уровням риска (низкий, средний, высокий) на основе результатов психологической диагностики. Она позволяет оценить текущую психологическую обстановку в группе. Преобладание высокого уровня риска указывает на неблагоприятную ситуацию и необходимость усиленного контроля и профилактических мероприятий. Сбалансированное распределение свидетельствует о стабильном состоянии контингента."
+                                                <TextBlock Text="Диаграмма отражает общее распределение участников по уровням риска (низкий, средний, высокий) на основе результатов психологической диагностики. Она позволяет оценить текущую психологическую обстановку в группе. Преобладание высокого уровня риска указывает на неблагоприятную ситуацию и необходимость усиленного контроля и профилактических мероприятий. Сбалансированное распределение свидетельствует о стабильном состоянии контингента."
                                                        TextWrapping="Wrap"
                                                        Opacity="0.7"
                                                        FontSize="12"
                                                        Margin="0,6,0,10"
                                                        Foreground="{StaticResource TextPrimaryColor}"/>
 
-                                            <Grid Margin="10">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="20"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
+                                                <Grid Margin="10">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="20"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
 
 
-                                                <StackPanel Grid.Column="0"
+                                                    <StackPanel Grid.Column="0"
                             HorizontalAlignment="Center">
 
 
-                                                    <lvc:PieChart Series="{Binding RiskDistributionSeries}"
+                                                        <lvc:PieChart Series="{Binding RiskDistributionSeries}"
                                   Width="260"
                                   Height="260"
                                   LegendPosition="Right">
 
 
-                                                        <lvc:PieChart.LegendTextPaint>
-                                                            <paint:SolidColorPaint Color="{x:Static skia:SKColors.White}"/>
-                                                        </lvc:PieChart.LegendTextPaint>
+                                                            <lvc:PieChart.LegendTextPaint>
+                                                                <paint:SolidColorPaint Color="{x:Static skia:SKColors.White}"/>
+                                                            </lvc:PieChart.LegendTextPaint>
 
-                                                    </lvc:PieChart>
+                                                        </lvc:PieChart>
 
-                                                    <ComboBox ItemsSource="{Binding Units}"
+                                                        <ComboBox ItemsSource="{Binding Units}"
                               Style="{StaticResource DarkComboBox}"
                               Height="32"
                               Width="220"
                               SelectedItem="{Binding SelectedUnit, Mode=TwoWay}"
                               Margin="0,10,0,10"/>
 
-                                                    <TextBlock Text="{Binding UnitStats}"
+                                                        <TextBlock Text="{Binding UnitStats}"
                                Foreground="{StaticResource TextPrimaryColor}"
                                FontSize="13"
                                Margin="0,0,0,4"
                                HorizontalAlignment="Center"/>
 
-                                                    <TextBlock Text="{Binding UnitRisk}"
+                                                        <TextBlock Text="{Binding UnitRisk}"
                                Foreground="{StaticResource TextPrimaryColor}"
                                FontSize="14"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"/>
-                                                </StackPanel>
+                                                    </StackPanel>
 
-                                                <Border Grid.Column="2"
+                                                    <Border Grid.Column="2"
                         Background="{StaticResource BgCardColor}"
                         BorderBrush="{StaticResource BorderColor}"
                         BorderThickness="1"
                         Padding="12">
 
-                                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                                        <StackPanel>
+                                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                                            <StackPanel>
 
-                                                            <TextBlock Text="Низкий риск:"
+                                                                <TextBlock Text="Низкий риск:"
                                        Foreground="#4FC3F7"
                                        FontSize="14"
                                        FontWeight="Bold"
                                        Margin="0,0,0,6"/>
 
-                                                            <ItemsControl ItemsSource="{Binding LowRiskPeople}">
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <TextBlock Text="{Binding}"
+                                                                <ItemsControl ItemsSource="{Binding LowRiskPeople}">
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding}"
                                                    Foreground="{StaticResource TextPrimaryColor}"
                                                    Margin="0,0,0,3"/>
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
 
-                                                            <TextBlock Text="Средний риск:"
+                                                                <TextBlock Text="Средний риск:"
                                        Foreground="#FF7043"
                                        FontSize="14"
                                        FontWeight="Bold"
                                        Margin="0,12,0,6"/>
 
-                                                            <ItemsControl ItemsSource="{Binding MediumRiskPeople}">
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <TextBlock Text="{Binding}"
+                                                                <ItemsControl ItemsSource="{Binding MediumRiskPeople}">
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding}"
                                                    Foreground="{StaticResource TextPrimaryColor}"
                                                    Margin="0,0,0,3"/>
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
 
-                                                            <TextBlock Text="Высокий риск:"
+                                                                <TextBlock Text="Высокий риск:"
                                        Foreground="#8BC34A"
                                        FontSize="14"
                                        FontWeight="Bold"
                                        Margin="0,12,0,6"/>
 
-                                                            <ItemsControl ItemsSource="{Binding HighRiskPeople}">
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <TextBlock Text="{Binding}"
+                                                                <ItemsControl ItemsSource="{Binding HighRiskPeople}">
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <TextBlock Text="{Binding}"
                                                    Foreground="{StaticResource TextPrimaryColor}"
                                                    Margin="0,0,0,3"/>
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
 
-                                                        </StackPanel>
-                                                    </ScrollViewer>
-                                                </Border>
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
+                                                            </StackPanel>
+                                                        </ScrollViewer>
+                                                    </Border>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
 
-                                </StackPanel>
+                                    </StackPanel>
 
-                                <!-- ОБЩАЯ АНАЛИТИКА -->
-                                <StackPanel Visibility="{Binding IsGeneralAnalyticsVisible}">
+                                    <!-- ОБЩАЯ АНАЛИТИКА -->
+                                    <StackPanel Visibility="{Binding IsGeneralAnalyticsVisible}">
 
-                                    <Border Style="{StaticResource CardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="Риск по отрядам"
+                                        <Border Style="{StaticResource CardStyle}">
+                                            <StackPanel>
+                                                <TextBlock Text="Риск по отрядам"
    Style="{StaticResource CardTitleStyle}"/>
-                                            <TextBlock Text="Диаграмма отображает распределение уровней риска по отдельным отрядам и позволяет выявить группы с наиболее выраженными проблемами. Высокие значения риска в конкретных отрядах свидетельствуют о возможных неблагоприятных психологических условиях, требующих внимания специалистов. Низкие показатели указывают на более стабильную обстановку."
+                                                <TextBlock Text="Диаграмма отображает распределение уровней риска по отдельным отрядам и позволяет выявить группы с наиболее выраженными проблемами. Высокие значения риска в конкретных отрядах свидетельствуют о возможных неблагоприятных психологических условиях, требующих внимания специалистов. Низкие показатели указывают на более стабильную обстановку."
                                                        TextWrapping="Wrap"
                                                        Opacity="0.7"
                                                        FontSize="12"
                                                        Margin="0,6,0,10"
                                                        Foreground="{StaticResource TextPrimaryColor}"/>
-                                            <lvc:CartesianChart Height="250"
+                                                <lvc:CartesianChart Height="250"
             Series="{Binding RiskByUnitSeries}"
             XAxes="{Binding UnitXAxis}"
             YAxes="{Binding RiskYAxis}"/>
-                                        </StackPanel>
-                                    </Border>
+                                            </StackPanel>
+                                        </Border>
 
-                                    <Border Style="{StaticResource CardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="Первоходы vs Второходы"
+                                        <Border Style="{StaticResource CardStyle}">
+                                            <StackPanel>
+                                                <TextBlock Text="Первоходы vs Второходы"
    Style="{StaticResource CardTitleStyle}"/>
-                                            <TextBlock Text="Диаграмма показывает различия в уровне риска между первично осуждёнными и лицами, имеющими повторные судимости. Сравнительный анализ позволяет выявить влияние криминального опыта на психологическое состояние и использовать эти данные для разработки более точных мер психологического сопровождения."
+                                                <TextBlock Text="Диаграмма показывает различия в уровне риска между первично осуждёнными и лицами, имеющими повторные судимости. Сравнительный анализ позволяет выявить влияние криминального опыта на психологическое состояние и использовать эти данные для разработки более точных мер психологического сопровождения."
                                                        TextWrapping="Wrap"
                                                        Opacity="0.7"
                                                        FontSize="12"
                                                        Margin="0,6,0,10"
                                                        Foreground="{StaticResource TextPrimaryColor}"/>
-                                            <lvc:CartesianChart Height="260"
+                                                <lvc:CartesianChart Height="260"
             Series="{Binding RecidivismSeries}"
             XAxes="{Binding RecidivismXAxis}"
             YAxes="{Binding RiskYAxis}"/>
-                                        </StackPanel>
-                                    </Border>
+                                            </StackPanel>
+                                        </Border>
 
-                                    <Border Style="{StaticResource CardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="ТОП отряды по улучшению"
+                                        <Border Style="{StaticResource CardStyle}">
+                                            <StackPanel>
+                                                <TextBlock Text="ТОП отряды по улучшению"
    Style="{StaticResource CardTitleStyle}"/>
-                                            <TextBlock Text="Диаграмма отражает отряды, в которых наблюдается наибольшее улучшение психологических показателей за определённый период. Снижение негативных характеристик и рост позитивных показателей свидетельствуют об эффективности проводимой работы. Такой анализ помогает выявлять успешные практики и применять их в других подразделениях."
+                                                <TextBlock Text="Диаграмма отражает отряды, в которых наблюдается наибольшее улучшение психологических показателей за определённый период. Снижение негативных характеристик и рост позитивных показателей свидетельствуют об эффективности проводимой работы. Такой анализ помогает выявлять успешные практики и применять их в других подразделениях."
                                                        TextWrapping="Wrap"
                                                        Opacity="0.7"
                                                        FontSize="12"
                                                        Margin="0,6,0,10"
                                                        Foreground="{StaticResource TextPrimaryColor}"/>
-                                            <lvc:CartesianChart Height="260"
+                                                <lvc:CartesianChart Height="260"
             Series="{Binding TopUnitsSeries}"
             XAxes="{Binding TopUnitsXAxis}"
             YAxes="{Binding RiskYAxis}"/>
-                                            <ListBox ItemsSource="{Binding TopPeople}"
+                                                <ListBox ItemsSource="{Binding TopPeople}"
  Background="Transparent"
  Foreground="White"/>
-                                        </StackPanel>
-                                    </Border>
+                                            </StackPanel>
+                                        </Border>
 
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </TabItem>
+                            </ScrollViewer>
+                        </TabItem>
 
-                </TabControl>
+                    </TabControl>
+                </Grid>
             </Border>
         </ScrollViewer>
     </Grid>

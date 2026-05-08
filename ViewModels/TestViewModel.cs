@@ -175,6 +175,21 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        private bool _isCompleted;
+        public bool IsCompleted
+        {
+            get => _isCompleted;
+            set
+            {
+                _isCompleted = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TestTitleWithCheck));
+            }
+        }
+
+        public string TestTitleWithCheck =>
+            IsCompleted ? $"✓ {TestTitle}" : TestTitle;
+
         private async Task FinishTest()
         {
             int sum = Questions.Sum(q => q.Answer);

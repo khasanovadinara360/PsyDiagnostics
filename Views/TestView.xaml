@@ -9,7 +9,6 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Заголовок теста, формат и прогресс -->
         <StackPanel Grid.Row="0" Margin="10">
             <TextBlock Text="{Binding TestTitle}"
                        FontSize="20"
@@ -27,7 +26,6 @@
                          Margin="0,5"/>
         </StackPanel>
 
-        <!-- Вопрос -->
         <StackPanel Grid.Row="1"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Top"
@@ -45,7 +43,6 @@
                        TextAlignment="Center"/>
         </StackPanel>
 
-        <!-- Ответы -->
         <ItemsControl Grid.Row="1"
                       ItemsSource="{Binding CurrentQuestion.Answers}"
                       HorizontalAlignment="Center"
@@ -56,6 +53,7 @@
                                 HorizontalAlignment="Center"/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
+
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Button Content="{Binding Text}"
@@ -73,8 +71,7 @@
                                 <Setter Property="Background" Value="#2C2C40"/>
                                 <Setter Property="BorderBrush" Value="#4A4A6A"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsSelected}"
-                                                 Value="True">
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                         <Setter Property="Background" Value="#3A3A60"/>
                                         <Setter Property="BorderBrush" Value="#6A6AC0"/>
                                     </DataTrigger>
@@ -86,35 +83,13 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <!-- Нижняя панель: слева На главную (после результатов), справа Завершить -->
         <Grid Grid.Row="2" Margin="10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0"
-                    Content="На главную"
-                    Command="{Binding DataContext.GoHomeCommand,
-                                      RelativeSource={RelativeSource AncestorType=Window}}"
-                    HorizontalAlignment="Left"
-                    Padding="15,8">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding DataContext.CanGoHomeAfterTests,
-                                                       RelativeSource={RelativeSource AncestorType=Window}}"
-                                         Value="True">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-
-            <Button Grid.Column="2"
+            <Button Grid.Column="1"
                     Content="Завершить"
                     Padding="15,8"
                     Background="#4060C0"
