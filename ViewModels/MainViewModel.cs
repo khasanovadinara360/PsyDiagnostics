@@ -1,4 +1,4 @@
-﻿using PsyDiagnostics.Helpers;
+using PsyDiagnostics.Helpers;
 using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
 using PsyDiagnostics.Views;
@@ -50,6 +50,58 @@ namespace PsyDiagnostics.ViewModels
     {
         private readonly DatabaseService _db = new DatabaseService();
 
+        private string _topBarTitle = "PsyDiagnostics";
+
+
+        private string _psychologistFullName;
+        public string PsychologistFullName
+        {
+            get => _psychologistFullName;
+            set
+            {
+                _psychologistFullName = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TopBarTitle));
+            }
+        }
+
+        private string _psychologistLoginFullName;
+        public string PsychologistLoginFullName
+        {
+            get => _psychologistLoginFullName;
+            set
+            {
+                _psychologistLoginFullName = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _loginError;
+        public string LoginError
+        {
+            get => _loginError;
+            set
+            {
+                _loginError = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string TopBarTitle
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(PsychologistFullName))
+                    return $"Психолог: {PsychologistFullName}";
+
+                return _topBarTitle;
+            }
+            set
+            {
+                _topBarTitle = value;
+                OnPropertyChanged();
+            }
+        }
         public ParticipantViewModel ParticipantVm { get; }
 
         private string _searchId;
@@ -74,6 +126,9 @@ namespace PsyDiagnostics.ViewModels
                     _current.PropertyChanged += Current_PropertyChanged;
 
                 ParticipantVm.CurrentParticipant = _current;
+                TopBarTitle = _current != null
+    ? GetShortName(_current.FullName)
+    : "PsyDiagnostics";
 
                 SelectedArticle = AllArticles
                     .FirstOrDefault(a => a.Number?.Trim() == _current?.ArticleNumber?.Trim());
@@ -112,6 +167,19 @@ namespace PsyDiagnostics.ViewModels
             {
                 DataContext = vm
             };
+        }
+
+        private string GetShortName(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                return "PsyDiagnostics";
+
+            var parts = fullName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length < 3)
+                return fullName;
+
+            return $"{parts[0]} {parts[1][0]}.{parts[2][0]}.";
         }
 
         public bool IsPsychologist => CurrentRole == UserRole.Psychologist;
@@ -477,7 +545,7 @@ namespace PsyDiagnostics.ViewModels
 
                 var item = new TestHistoryItem
                 {
-                    TestName = r.TestName,
+                    TestName = TranslateTestName(r.TestName),
                     Score = r.Score,
                     Risk = risk,
                     Date = r.Date,
@@ -526,15 +594,46 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(HostilityHistory));
         }
 
+
+        private string TranslateTestName(string name)
+        {
+            return name switch
+            {
+                "Aggression" => "Агрессивность",
+                "Impulsivity" => "Импульсивность",
+                "Depression" => "Депрессивное состояние",
+                "Stress" => "Стрессоустойчивость",
+                "Adaptation" => "Социальная адаптация",
+                "Anxiety" => "Тревожность",
+                "Resilience" => "Психологическая устойчивость",
+                "Hostility" => "Враждебность",
+
+                _ => name
+            };
+        }
+
         private void ExportPdf()
         {
-            if (Current == null)
+            try
             {
-                MessageBox.Show("Нет участника");
-                return;
-            }
+                if (Current == null)
+                {
+                    MessageBox.Show("Нет участника");
+                    return;
+                }
 
-            MessageBox.Show("Выгрузка PDF пока не реализована.");
+                LoadTestHistory();
+
+                PdfReportService.GenerateTestingReport(
+                    Current,
+                    TestHistory,
+                    UnitRisk
+                );
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка при выгрузке PDF:\n" + ex.Message);
+            }
         }
 
         private string _unitRisk;
@@ -861,10 +960,33 @@ namespace PsyDiagnostics.ViewModels
 
         private void PrisonerStartTest()
         {
-            Search();
+            var id = SearchId?.Trim();
 
-            if (Current == null)
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                MessageBox.Show(
+                    "Введите ID заключённого",
+                    "Ошибка",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
+            }
+
+            var participant = _db.GetParticipant(id);
+
+            if (participant == null)
+            {
+                MessageBox.Show(
+                    $"ID {id} не найден в системе.",
+                    "Заключённый не найден",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                return;
+            }
+
+            Current = participant;
 
             GoToTest();
         }
@@ -1329,6 +1451,20 @@ namespace PsyDiagnostics.ViewModels
         private void SelectRole(UserRole role)
         {
             CurrentRole = role;
+
+            if (role == UserRole.Psychologist)
+            {
+                PsychologistLoginFullName = "";
+                LoginError = "";
+
+                CurrentView = new PsychologistLoginView
+                {
+                    DataContext = this
+                };
+
+                return;
+            }
+
             ShowParticipant();
         }
 
@@ -1356,5 +1492,50 @@ namespace PsyDiagnostics.ViewModels
         public bool CanSave =>
             Current != null &&
             Current.IsValid();
+
+        public void LoginPsychologist(string password)
+        {
+            LoginError = "";
+
+            if (string.IsNullOrWhiteSpace(PsychologistLoginFullName))
+            {
+                LoginError = "Введите ФИО";
+
+                _db.AddPsychologistLoginLog(
+                    "Не указано",
+                    false,
+                    "Попытка входа без ФИО"
+                );
+
+                return;
+            }
+
+            if (password != "123")
+            {
+                LoginError = "Неверный пароль";
+
+                _db.AddPsychologistLoginLog(
+                    PsychologistLoginFullName.Trim(),
+                    false,
+                    "Неверный пароль"
+                );
+
+                return;
+            }
+
+            PsychologistFullName = PsychologistLoginFullName.Trim();
+
+            _db.AddPsychologistLoginLog(
+                PsychologistFullName,
+                true,
+                "Успешный вход"
+            );
+
+            TopBarTitle = $"Психолог: {PsychologistFullName}";
+
+            ShowParticipant();
+        }
+
+
     }
 }

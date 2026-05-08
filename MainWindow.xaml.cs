@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Input;
 using PsyDiagnostics.ViewModels;
 
@@ -9,6 +10,7 @@ namespace PsyDiagnostics
         public MainWindow()
         {
             InitializeComponent();
+
             DataContext = new MainViewModel();
         }
 
@@ -38,6 +40,29 @@ namespace PsyDiagnostics
             }
 
             DragMove();
+        }
+
+        public void SetParticipantTitle(string fullName)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.TopBarTitle = GetShortName(fullName);
+            }
+        }
+
+        private string GetShortName(string fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName))
+                return "PsyDiagnostics";
+
+            var parts = fullName.Split(
+                new[] { ' ' },
+                StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length < 3)
+                return fullName;
+
+            return $"{parts[0]} {parts[1][0]}.{parts[2][0]}.";
         }
     }
 }

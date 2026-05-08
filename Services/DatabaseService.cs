@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.Sqlite;
+using Microsoft.Data.Sqlite;
 using PsyDiagnostics.Models;
 using System;
 using System.Collections.Generic;
@@ -87,6 +87,21 @@ namespace PsyDiagnostics.Services
     ";
 
             cmd.ExecuteNonQuery();
+
+
+            cmd.CommandText = @"
+CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    FullName TEXT NOT NULL,
+    LoginDate TEXT NOT NULL,
+    LoginTime TEXT NOT NULL,
+    IsSuccess INTEGER NOT NULL,
+    Note TEXT
+);";
+
+            cmd.ExecuteNonQuery();
+
+
 
             AddColumnIfNotExists(db, "Participants", "Citizenship", "INTEGER");
 
@@ -869,5 +884,39 @@ namespace PsyDiagnostics.Services
 
             return list;
         }
+        public void AddPsychologistLoginLog(string fullName, bool isSuccess, string note = "")
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    FullName TEXT NOT NULL,
+    LoginDate TEXT NOT NULL,
+    LoginTime TEXT NOT NULL,
+    IsSuccess INTEGER NOT NULL,
+    Note TEXT
+);";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+INSERT INTO PsychologistLoginLogs
+(FullName, LoginDate, LoginTime, IsSuccess, Note)
+VALUES
+($fullName, $loginDate, $loginTime, $isSuccess, $note);";
+
+            cmd.Parameters.AddWithValue("$fullName", fullName ?? "");
+            cmd.Parameters.AddWithValue("$loginDate", DateTime.Now.ToString("dd.MM.yyyy"));
+            cmd.Parameters.AddWithValue("$loginTime", DateTime.Now.ToString("HH:mm:ss"));
+            cmd.Parameters.AddWithValue("$isSuccess", isSuccess ? 1 : 0);
+            cmd.Parameters.AddWithValue("$note", note ?? "");
+
+            cmd.ExecuteNonQuery();
+        }
+
+
     }
 }

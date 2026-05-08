@@ -1,0 +1,54 @@
+<UserControl x:Class="PsyDiagnostics.Views.PsychologistLoginView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Background="#1E1E28">
+
+        <Border Width="420"
+                Padding="30"
+                CornerRadius="15"
+                Background="#252532"
+                BorderBrush="#323244"
+                BorderThickness="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+            <StackPanel>
+
+                <TextBlock Text="Авторизация психолога"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           Margin="0,0,0,25"/>
+
+                <TextBlock Text="ФИО"
+                           Foreground="#9FA4B5"/>
+
+                <TextBox Height="38"
+                         Margin="0,5,0,15"
+                         Text="{Binding PsychologistLoginFullName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <TextBlock Text="Пароль"
+                           Foreground="#9FA4B5"/>
+
+                <PasswordBox x:Name="PasswordBox"
+                             Height="38"
+                             Margin="0,5,0,15"/>
+
+                <TextBlock Text="{Binding LoginError}"
+                           Foreground="#FFFF5370"
+                           Margin="0,0,0,10"/>
+
+                <Button Content="Войти"
+                        Height="40"
+                        Background="#4E5DFF"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Click="Login_Click"/>
+
+            </StackPanel>
+
+        </Border>
+
+    </Grid>
+</UserControl>

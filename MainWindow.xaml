@@ -20,7 +20,7 @@
               Background="#FF1E1E28"
               MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
 
-            <TextBlock Text="PsyDiagnostics"
+            <TextBlock Text="{Binding TopBarTitle}"
                        VerticalAlignment="Center"
                        Margin="12,0,0,0"
                        Foreground="#FFF5F5F7"
