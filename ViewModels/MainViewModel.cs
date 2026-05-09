@@ -9,7 +9,6 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
-using System.ComponentModel;
 using System.Windows.Input;
 using LiveChartsCore.SkiaSharpView.WPF;
 using LiveChartsCore.SkiaSharpView;
@@ -17,7 +16,6 @@ using LiveChartsCore;
 using LiveChartsCore.Painting;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
-using QuestPDF.Infrastructure;
 using LiveChartsCore.Kernel.Sketches;
 
 namespace PsyDiagnostics.ViewModels
@@ -480,42 +478,102 @@ namespace PsyDiagnostics.ViewModels
 
         public void ShowResult(Dictionary<string, int> results)
         {
-            if (Current == null)
+            try
             {
-                MessageBox.Show("Нет участника");
-                return;
+                if (Current == null)
+                {
+                    MessageBox.Show("Нет участника");
+                    return;
+                }
+
+                if (results == null || results.Count == 0)
+                {
+                    MessageBox.Show("Нет результатов тестирования для сохранения");
+                    return;
+                }
+
+                SaveResultsToDatabase(results);
+
+                LoadTestHistory();
+                BuildPersonalChart();
+                BuildPersonalAiSummary();
+                UpdateChart();
+                BuildRiskByUnitsChart();
+                BuildRecidivismChart();
+                BuildTopUnitsChart();
+
+                string text = "РЕЗУЛЬТАТЫ СОХРАНЕНЫ:\n\n";
+
+                foreach (var r in results)
+                {
+                    string risk = GetRiskTextByScore(r.Value);
+                    text += $"{TranslateTestName(r.Key)}\n" +
+                            $"Баллы: {r.Value}\n" +
+                            $"Уровень: {risk}\n\n";
+                }
+
+                MessageBox.Show(text);
+
+                CanGoHomeAfterTests = true;
             }
-
-            var report = _db.GetFullReport(Current.PrisonerId);
-
-            if (report.aiResults == null || report.aiResults.Count == 0)
+            catch (Exception ex)
             {
-                MessageBox.Show("Нет результатов");
-                return;
+                MessageBox.Show("Ошибка сохранения результатов тестирования:\n" + ex.Message);
             }
+        }
 
-            string text = "РЕЗУЛЬТАТЫ:\n\n";
+        private void SaveResultsToDatabase(Dictionary<string, int> results)
+        {
+            double aggression = GetResultScore(results, "Aggression");
+            double impulsivity = GetResultScore(results, "Impulsivity");
+            double depression = GetResultScore(results, "Depression");
+            double stress = GetResultScore(results, "Stress");
+            double adaptation = GetResultScore(results, "Adaptation");
+            double anxiety = GetResultScore(results, "Anxiety");
+            double resilience = GetResultScore(results, "Resilience");
+            double hostility = GetResultScore(results, "Hostility");
 
-            foreach (var r in report.aiResults)
+            foreach (var item in results)
             {
-                string risk = r.Prediction == 1
-                    ? "Высокий риск"
-                    : "Низкий риск";
+                int score = item.Value;
+                double probability = Math.Max(0, Math.Min(1, score / 30.0));
+                int prediction = score >= 21 ? 1 : 0;
 
-                text += $"{r.TestName}\n" +
-                        $"Баллы: {r.Score}\n" +
-                        $"Прогноз: {risk}\n" +
-                        $"Дата: {r.Date}\n\n";
+                _db.SaveTestResult(
+                    Current.PrisonerId?.ToString(),
+                    Current.Unit,
+                    item.Key,
+                    score,
+                    prediction,
+                    probability,
+                    aggression,
+                    impulsivity,
+                    depression,
+                    stress,
+                    adaptation,
+                    anxiety,
+                    resilience,
+                    hostility
+                );
             }
+        }
 
-            MessageBox.Show(text);
+        private double GetResultScore(Dictionary<string, int> results, string testName)
+        {
+            return results != null && results.TryGetValue(testName, out int value)
+                ? value
+                : 0;
+        }
 
-            LoadTestHistory();
+        private string GetRiskTextByScore(int score)
+        {
+            if (score <= 10)
+                return "Низкий риск";
 
-            // после теста тоже обновим график/список
-            UpdateChart();
+            if (score <= 20)
+                return "Средний риск";
 
-            CanGoHomeAfterTests = true;
+            return "Высокий риск";
         }
 
         private void LoadTestHistory()
@@ -545,7 +603,7 @@ namespace PsyDiagnostics.ViewModels
 
                 var item = new TestHistoryItem
                 {
-                    TestName = TranslateTestName(r.TestName),
+                    TestName = r.TestName,
                     Score = r.Score,
                     Risk = risk,
                     Date = r.Date,
@@ -594,22 +652,20 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(HostilityHistory));
         }
 
-
         private string TranslateTestName(string name)
         {
-            return name switch
+            switch (name)
             {
-                "Aggression" => "Агрессивность",
-                "Impulsivity" => "Импульсивность",
-                "Depression" => "Депрессивное состояние",
-                "Stress" => "Стрессоустойчивость",
-                "Adaptation" => "Социальная адаптация",
-                "Anxiety" => "Тревожность",
-                "Resilience" => "Психологическая устойчивость",
-                "Hostility" => "Враждебность",
-
-                _ => name
-            };
+                case "Aggression": return "Агрессивность";
+                case "Impulsivity": return "Импульсивность";
+                case "Depression": return "Депрессивное состояние";
+                case "Stress": return "Стрессоустойчивость";
+                case "Adaptation": return "Социальная адаптация";
+                case "Anxiety": return "Тревожность";
+                case "Resilience": return "Психологическая устойчивость";
+                case "Hostility": return "Враждебность";
+                default: return name;
+            }
         }
 
         private void ExportPdf()
@@ -1500,37 +1556,19 @@ namespace PsyDiagnostics.ViewModels
             if (string.IsNullOrWhiteSpace(PsychologistLoginFullName))
             {
                 LoginError = "Введите ФИО";
-
-                _db.AddPsychologistLoginLog(
-                    "Не указано",
-                    false,
-                    "Попытка входа без ФИО"
-                );
-
+                _db.AddPsychologistLoginLog("Не указано", false, "Попытка входа без ФИО");
                 return;
             }
 
-            if (password != "123")
+            if (password != "1234")
             {
                 LoginError = "Неверный пароль";
-
-                _db.AddPsychologistLoginLog(
-                    PsychologistLoginFullName.Trim(),
-                    false,
-                    "Неверный пароль"
-                );
-
+                _db.AddPsychologistLoginLog(PsychologistLoginFullName.Trim(), false, "Неверный пароль");
                 return;
             }
 
             PsychologistFullName = PsychologistLoginFullName.Trim();
-
-            _db.AddPsychologistLoginLog(
-                PsychologistFullName,
-                true,
-                "Успешный вход"
-            );
-
+            _db.AddPsychologistLoginLog(PsychologistFullName, true, "Успешный вход");
             TopBarTitle = $"Психолог: {PsychologistFullName}";
 
             ShowParticipant();

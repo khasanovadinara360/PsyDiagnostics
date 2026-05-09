@@ -116,6 +116,14 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
             AddColumnIfNotExists(db, "TestResults", "Probability", "REAL");
             AddColumnIfNotExists(db, "TestResults", "RiskScore", "REAL");
             AddColumnIfNotExists(db, "TestResults", "CreatedAt", "TEXT");
+            AddColumnIfNotExists(db, "TestResults", "Aggression", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "Impulsivity", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "Depression", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "Stress", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "Adaptation", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "Anxiety", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "Resilience", "REAL");
+            AddColumnIfNotExists(db, "TestResults", "Hostility", "REAL");
         }
 
         private void AddColumnIfNotExists(SqliteConnection db, string tableName, string columnName, string columnType)
@@ -320,31 +328,78 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
             cmd.ExecuteNonQuery();
         }
 
-        public void SaveTestResult(string prisonerId, string unit, string testName, int score, int prediction, double probability)
+        public void SaveTestResult(
+            string prisonerId,
+            string unit,
+            string testName,
+            int score,
+            int prediction,
+            double probability,
+            double aggression = 0,
+            double impulsivity = 0,
+            double depression = 0,
+            double stress = 0,
+            double adaptation = 0,
+            double anxiety = 0,
+            double resilience = 0,
+            double hostility = 0)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
             InitializeDatabase(db);
 
-            var cmd = db.CreateCommand();
-
             double risk = probability * 100;
+            string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            cmd.CommandText = @"
-    INSERT INTO AiResults 
-    (PrisonerId, Unit, TestName, Score, Prediction, Probability, RiskScore, Date)
-    VALUES ($id,$unit,$test,$score,$pred,$prob,$risk,$date)";
+            using var tx = db.BeginTransaction();
 
-            cmd.Parameters.AddWithValue("$id", prisonerId);
-            cmd.Parameters.AddWithValue("$unit", unit ?? "");
-            cmd.Parameters.AddWithValue("$test", testName);
-            cmd.Parameters.AddWithValue("$score", score);
-            cmd.Parameters.AddWithValue("$pred", prediction);
-            cmd.Parameters.AddWithValue("$prob", probability);
-            cmd.Parameters.AddWithValue("$risk", risk);
-            cmd.Parameters.AddWithValue("$date", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+            var aiCmd = db.CreateCommand();
+            aiCmd.Transaction = tx;
+            aiCmd.CommandText = @"
+INSERT INTO AiResults
+(PrisonerId, Unit, TestName, Score, Prediction, Probability, RiskScore, Date)
+VALUES
+($id, $unit, $test, $score, $pred, $prob, $risk, $date);";
 
-            cmd.ExecuteNonQuery();
+            aiCmd.Parameters.AddWithValue("$id", prisonerId ?? "");
+            aiCmd.Parameters.AddWithValue("$unit", unit ?? "");
+            aiCmd.Parameters.AddWithValue("$test", testName ?? "");
+            aiCmd.Parameters.AddWithValue("$score", score);
+            aiCmd.Parameters.AddWithValue("$pred", prediction);
+            aiCmd.Parameters.AddWithValue("$prob", probability);
+            aiCmd.Parameters.AddWithValue("$risk", risk);
+            aiCmd.Parameters.AddWithValue("$date", now);
+            aiCmd.ExecuteNonQuery();
+
+            var testCmd = db.CreateCommand();
+            testCmd.Transaction = tx;
+            testCmd.CommandText = @"
+INSERT INTO TestResults
+(PrisonerId, Unit, TestName, Score, Prediction, Probability, RiskScore, CreatedAt,
+ Aggression, Impulsivity, Depression, Stress, Adaptation, Anxiety, Resilience, Hostility)
+VALUES
+($id, $unit, $test, $score, $pred, $prob, $risk, $date,
+ $agg, $imp, $dep, $stress, $adapt, $anx, $res, $host);";
+
+            testCmd.Parameters.AddWithValue("$id", prisonerId ?? "");
+            testCmd.Parameters.AddWithValue("$unit", unit ?? "");
+            testCmd.Parameters.AddWithValue("$test", testName ?? "");
+            testCmd.Parameters.AddWithValue("$score", score);
+            testCmd.Parameters.AddWithValue("$pred", prediction);
+            testCmd.Parameters.AddWithValue("$prob", probability);
+            testCmd.Parameters.AddWithValue("$risk", risk);
+            testCmd.Parameters.AddWithValue("$date", now);
+            testCmd.Parameters.AddWithValue("$agg", aggression);
+            testCmd.Parameters.AddWithValue("$imp", impulsivity);
+            testCmd.Parameters.AddWithValue("$dep", depression);
+            testCmd.Parameters.AddWithValue("$stress", stress);
+            testCmd.Parameters.AddWithValue("$adapt", adaptation);
+            testCmd.Parameters.AddWithValue("$anx", anxiety);
+            testCmd.Parameters.AddWithValue("$res", resilience);
+            testCmd.Parameters.AddWithValue("$host", hostility);
+            testCmd.ExecuteNonQuery();
+
+            tx.Commit();
         }
 
         public (Participant participant, List<TestResultRecord> aiResults) GetFullReport(string id)
