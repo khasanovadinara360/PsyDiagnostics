@@ -83,21 +83,56 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <Grid Grid.Row="2" Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <DockPanel Grid.Row="2"
+           Margin="10"
+           LastChildFill="False">
 
-            <Button Grid.Column="1"
-                    Content="Завершить"
-                    Padding="15,8"
-                    Background="#4060C0"
-                    Foreground="White"
-                    BorderBrush="#4060C0"
-                    Visibility="{Binding FinishButtonVisibility}"
-                    Command="{Binding FinishCommand}"
-                    HorizontalAlignment="Right"/>
-        </Grid>
+            <Button Content="На главную"
+            DockPanel.Dock="Left"
+            Padding="18,8"
+            Background="#2C2C40"
+            Foreground="White"
+            BorderBrush="#4A4A6A"
+            BorderThickness="1"
+            Command="{Binding DataContext.GoHomeCommand,
+                              RelativeSource={RelativeSource AncestorType=Window}}">
+
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Setter Property="Background" Value="#2C2C40"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="BorderBrush" Value="#4A4A6A"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding DataContext.CanGoHomeAfterTests,
+                                           RelativeSource={RelativeSource AncestorType=Window}}"
+                                 Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#3A3A60"/>
+                                <Setter Property="BorderBrush" Value="#6A6AC0"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+
+            <Button Content="Завершить"
+            DockPanel.Dock="Right"
+            Padding="18,8"
+            Background="#4060C0"
+            Foreground="White"
+            BorderBrush="#4060C0"
+            BorderThickness="1"
+            Visibility="{Binding FinishButtonVisibility}"
+            Command="{Binding FinishCommand}"/>
+
+        </DockPanel>
+
     </Grid>
 </UserControl>

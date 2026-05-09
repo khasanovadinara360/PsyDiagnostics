@@ -378,20 +378,39 @@ namespace PsyDiagnostics.ViewModels
 
         private void ShowParticipant()
         {
+            try
+            {
+                using var db = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=psy.db");
+                db.Open();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ошибка подключения к базе данных SQLite.\n\n" + ex.Message,
+                    "Ошибка БД",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+
+                return;
+            }
+
             ParticipantVm.OnNavigateToTest = participant =>
             {
                 Current = participant;
                 GoToTest();
             };
 
-            CurrentView = new ParticipantView { DataContext = this };
+            CurrentView = new ParticipantView
+            {
+                DataContext = this
+            };
         }
 
         public void ShowParticipantPage()
         {
             ShowParticipant();
         }
-
         private void GoToTest()
         {
             if (Current == null)
