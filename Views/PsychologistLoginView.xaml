@@ -40,12 +40,13 @@
                            Margin="0,0,0,10"/>
 
                 <Button Content="Войти"
-                        Height="40"
-                        Background="#4E5DFF"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Click="Login_Click"/>
-
+        Height="40"
+        Background="#4E5DFF"
+        Foreground="White"
+        BorderThickness="0"
+        Click="Login_Click"
+        IsDefault="True"/>
+                
             </StackPanel>
 
         </Border>

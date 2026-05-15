@@ -251,6 +251,104 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
             return p;
         }
 
+        public Participant GetParticipantByName(string name)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd = db.CreateCommand();
+            cmd.CommandText = "SELECT * FROM Participants WHERE UPPER(FullName) LIKE UPPER($name) ORDER BY FullName LIMIT 1";
+            cmd.Parameters.AddWithValue("$name", $"%{name?.Trim() ?? ""}%");
+
+            using var r = cmd.ExecuteReader();
+
+            if (!r.Read())
+                return null;
+
+            var count = Convert.ToInt32(r["ChildrenCount"]);
+
+            var articleNumber = r["ArticleNumber"]?.ToString();
+            var articlePart = r["ArticlePart"]?.ToString() ?? "";
+            var articlePoint = r["ArticlePoint"]?.ToString() ?? "";
+
+            if (articlePart.Length > 1)
+                articlePart = articlePart.Remove(0, 2);
+
+            if (articlePoint.Length > 1)
+                articlePoint = articlePoint.Remove(0, 2);
+
+            var p = new Participant
+            {
+                PrisonerId = r["PrisonerId"]?.ToString(),
+                FullName = r["FullName"]?.ToString(),
+
+                Gender = EnumTry(r["Gender"], Gender.НеВыбрано),
+
+                BirthDate = DateTime.TryParse(r["BirthDate"]?.ToString(), out var d)
+                    ? d
+                    : DateTime.Today,
+
+                BirthPlace = r["BirthPlace"]?.ToString(),
+                Nationality = r["Nationality"]?.ToString(),
+                Residence = r["Residence"]?.ToString(),
+
+                Citizenship = EnumTry(r["Citizenship"], Citizenship.НеВыбрано),
+
+                EducationLevel = EnumTryUnchecked(r["EducationLevel"], EducationSurvey.НеВыбрано),
+
+                FamilyUpbringing = EnumTryUnchecked(r["FamilyUpbringing"], FamilyUpbringing.НеВыбрано),
+                MaritalStatus = EnumTryUnchecked(r["MaritalStatus"], MaritalStatus.НеЖенат),
+
+                HasCloseRelatives = EnumTryUnchecked(r["HasCloseRelatives"], YesNo.Нет),
+                ChildrenCount = count,
+
+                HasChildren = count > 0
+                    ? ChildrenPresence.Да
+                    : ChildrenPresence.Нет,
+
+                WillKeepContact = EnumTryUnchecked(r["WillKeepContact"], YesNo.Нет),
+
+                HasProfession = EnumTry(r["HasProfession"], ProfessionPresence.Нет),
+                Profession = r["Profession"]?.ToString(),
+
+                Religion = EnumTryUnchecked(r["Religion"], Religion.НеВыбрано),
+
+                ArmyService = EnumTryUnchecked(r["ArmyService"], default(ArmyService)),
+                ArmyBranch = r["ArmyBranch"]?.ToString(),
+                CombatParticipation = EnumTryUnchecked(r["CombatParticipation"], CombatParticipation.Нет),
+
+                SomaticDiseases = EnumTryUnchecked(r["SomaticDiseases"], SomaticDiseases.Нет),
+                Disability = EnumTryUnchecked(r["Disability"], Disability.Нет),
+                MentalDiseases = EnumTryUnchecked(r["MentalDiseases"], MentalDiseases.Нет),
+                PsychiatristRegistry = EnumTryUnchecked(r["PsychiatristRegistry"], PsychiatristRegistry.Нет),
+                Gambling = EnumTryUnchecked(r["Gambling"], Gambling.Нет),
+
+                Obligations = EnumTryUnchecked(r["Obligations"], Obligations.Нет),
+                NarcologistRegistry = EnumTryUnchecked(r["NarcologistRegistry"], NarcologistRegistry.Нет),
+                DrugUse = EnumTryUnchecked(r["DrugUse"], DrugUse.Нет),
+
+                ArticleNumber = articleNumber,
+                ArticlePart = articlePart,
+                ArticlePoint = articlePoint,
+
+                SentenceTerm = TryInt(r["SentenceTerm"]),
+                CrimeType = EnumTryUnchecked(r["CrimeType"], CrimeType.НеВыбрано),
+                Recidivism = EnumTryUnchecked(r["Recidivism"], Recidivism.Нет),
+
+                Unit = r["Unit"]?.ToString(),
+                Category = EnumTryUnchecked(r["Category"], Category.НеВыбрано),
+
+                CurrentFeelings = EnumTry(r["CurrentFeelings"], CurrentFeelings.НеВыбрано),
+                AttitudeToUIS = EnumTryUnchecked(r["AttitudeToUIS"], AttitudeToUIS.НеВыбрано),
+                SuicideAttempts = EnumTryUnchecked(r["SuicideAttempts"], SuicideAttempts.Нет),
+                SelfHarmScars = EnumTryUnchecked(r["SelfHarmScars"], SelfHarmScars.Нет),
+                RelativesSuicide = EnumTryUnchecked(r["RelativesSuicide"], RelativesSuicide.Нет)
+            };
+
+            return p;
+        }
+
         public void SaveParticipant(Participant p)
         {
             using var db = new SqliteConnection(_conn);
@@ -476,6 +574,217 @@ VALUES
             }
 
             return temp.Values.ToList();
+        }
+
+        public List<ParticipantSearchResult> SearchParticipants(
+    string fio,
+    Citizenship citizenship,
+    string city,
+    int? ageFrom,
+    int? ageTo,
+    string articleNumber,
+    int? sentenceFrom,
+    int? sentenceTo,
+    string unit,
+    string risk)
+        {
+            var result = new List<ParticipantSearchResult>();
+
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+SELECT 
+    p.PrisonerId,
+    p.FullName,
+    p.BirthDate,
+    p.Citizenship,
+    p.Residence,
+    p.ArticleNumber,
+    p.SentenceTerm,
+    p.Unit,
+    ar.AvgRiskScore
+
+FROM Participants p
+
+LEFT JOIN (
+    SELECT 
+        PrisonerId,
+        AVG(RiskScore) AS AvgRiskScore
+    FROM AiResults
+    GROUP BY PrisonerId
+) ar ON ar.PrisonerId = p.PrisonerId
+
+WHERE 1 = 1
+";
+
+            // Гражданство
+            if (citizenship != Citizenship.НеВыбрано)
+            {
+                cmd.CommandText += " AND p.Citizenship = @citizenship";
+                cmd.Parameters.AddWithValue("@citizenship", (int)citizenship);
+            }
+
+            // Город: можно выбрать из списка или ввести часть названия вручную
+            if (!string.IsNullOrWhiteSpace(city))
+            {
+                cmd.CommandText += " AND p.Residence LIKE @city";
+                cmd.Parameters.AddWithValue("@city", "%" + city.Trim() + "%");
+            }
+
+            // Статья: можно выбрать из списка или ввести часть статьи вручную
+            if (!string.IsNullOrWhiteSpace(articleNumber))
+            {
+                cmd.CommandText += " AND p.ArticleNumber LIKE @article";
+                cmd.Parameters.AddWithValue("@article", "%" + articleNumber.Trim() + "%");
+            }
+
+            // Отряд: можно выбрать из списка или ввести вручную
+            if (!string.IsNullOrWhiteSpace(unit))
+            {
+                cmd.CommandText += " AND p.Unit LIKE @unit";
+                cmd.Parameters.AddWithValue("@unit", "%" + unit.Trim() + "%");
+            }
+
+            // Срок в интерфейсе переводится в месяцы.
+            // В БД SentenceTerm хранится в годах, поэтому сравниваем SentenceTerm * 12.
+            if (sentenceFrom.HasValue)
+            {
+                cmd.CommandText += " AND (p.SentenceTerm * 12) >= @sentenceFrom";
+                cmd.Parameters.AddWithValue("@sentenceFrom", sentenceFrom.Value);
+            }
+
+            if (sentenceTo.HasValue)
+            {
+                cmd.CommandText += " AND (p.SentenceTerm * 12) <= @sentenceTo";
+                cmd.Parameters.AddWithValue("@sentenceTo", sentenceTo.Value);
+            }
+
+            using var reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var birthDateText = reader["BirthDate"]?.ToString();
+
+                int age = 0;
+
+                if (DateTime.TryParse(birthDateText, out var birthDate))
+                {
+                    age = DateTime.Today.Year - birthDate.Year;
+
+                    if (birthDate > DateTime.Today.AddYears(-age))
+                        age--;
+                }
+
+                var fullName = reader["FullName"]?.ToString() ?? "";
+
+                // Поиск по ФИО без учета регистра
+                if (!string.IsNullOrWhiteSpace(fio) &&
+                    !fullName.Contains(fio.Trim(),
+                        StringComparison.CurrentCultureIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Возраст от
+                if (ageFrom.HasValue && age < ageFrom.Value)
+                    continue;
+
+                // Возраст до
+                if (ageTo.HasValue && age > ageTo.Value)
+                    continue;
+
+                // Риск
+                string riskText = "Нет данных";
+
+                if (reader["AvgRiskScore"] != DBNull.Value)
+                {
+                    double avgRiskScore =
+                        Convert.ToDouble(reader["AvgRiskScore"]);
+
+                    riskText = GetRiskByScore(avgRiskScore);
+                }
+
+                if (!string.IsNullOrWhiteSpace(risk) &&
+                    risk != "Не выбрано" &&
+                    riskText != risk)
+                {
+                    continue;
+                }
+
+                result.Add(new ParticipantSearchResult
+                {
+                    PrisonerId = reader["PrisonerId"]?.ToString(),
+                    FullName = fullName,
+                    Citizenship = (Citizenship)Convert.ToInt32(reader["Citizenship"]),
+                    Age = age,
+                    Residence = reader["Residence"]?.ToString(),
+                    ArticleNumber = reader["ArticleNumber"]?.ToString(),
+                    SentenceTerm = reader["SentenceTerm"] == DBNull.Value
+                        ? 0
+                        : Convert.ToInt32(reader["SentenceTerm"]),
+                    Unit = reader["Unit"]?.ToString(),
+                    Risk = riskText
+                });
+            }
+
+            return result;
+        }
+
+        private string GetRiskByScore(double score)
+        {
+            // Если риск хранится как 0 или 1
+            if (score >= 0 && score <= 1)
+                score *= 100;
+
+            // Если риск хранится как балл теста 0–30
+            else if (score > 1 && score <= 30)
+                score = score / 30.0 * 100;
+
+            // Если риск уже 0–100, ничего не меняем
+
+            if (score <= 32)
+                return "Низкий";
+
+            if (score <= 66)
+                return "Средний";
+
+            return "Высокий";
+        }
+
+        public List<string> GetDistinctValues(string columnName)
+        {
+            var result = new List<string>();
+
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = $@"
+SELECT DISTINCT [{columnName}]
+FROM Participants
+WHERE [{columnName}] IS NOT NULL
+AND TRIM([{columnName}]) <> ''
+ORDER BY [{columnName}]
+";
+
+            using var reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                if (reader.IsDBNull(0))
+                    continue;
+
+                var value = reader.GetValue(0)?.ToString();
+
+                if (!string.IsNullOrWhiteSpace(value))
+                    result.Add(value);
+            }
+
+            return result;
         }
 
         public void SeedTestParticipants(int count = 50)

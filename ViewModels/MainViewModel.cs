@@ -200,7 +200,6 @@ namespace PsyDiagnostics.ViewModels
         public Array CrimeTypes => Enum.GetValues(typeof(CrimeType));
         public Array Recidivisms => Enum.GetValues(typeof(Recidivism));
         public Array Categories => Enum.GetValues(typeof(Category));
-        public Array Citizenships => Enum.GetValues(typeof(Citizenship));
 
         public ICommand SearchCommand { get; }
         public ICommand SaveCommand { get; }
@@ -212,6 +211,8 @@ namespace PsyDiagnostics.ViewModels
         public ICommand SelectPrisonerRoleCommand { get; }
         public ICommand AddTestCommand { get; }
         public ICommand PrisonerStartTestCommand { get; }
+        public ICommand ExtendedSearchCommand { get; }
+        public ICommand ClearSearchFiltersCommand { get; }
 
         private object _currentView;
         public object CurrentView
@@ -251,6 +252,240 @@ namespace PsyDiagnostics.ViewModels
                                  || a.Title.ToLower().Contains(lower))
                         .ToList();
                 }
+            }
+        }
+
+
+        private string _searchFio;
+        public string SearchFio
+        {
+            get => _searchFio;
+            set
+            {
+                _searchFio = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                if (!string.IsNullOrWhiteSpace(_searchFio) && _searchFio.Length >= 2)
+                    ExtendedSearch();
+                else
+                    SearchResults.Clear();
+            }
+        }
+
+        private string _filterCountry;
+        public string FilterCountry
+        {
+            get => _filterCountry;
+            set
+            {
+                _filterCountry = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private string _filterCity = "Не выбрано";
+        public string FilterCity
+        {
+            get => _filterCity;
+            set
+            {
+                _filterCity = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _filterArticle = "Не выбрано";
+        public string FilterArticle
+        {
+            get => _filterArticle;
+            set
+            {
+                _filterArticle = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _ageFromText = "Не выбрано";
+        public string AgeFromText
+        {
+            get => _ageFromText;
+            set
+            {
+                _ageFromText = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _ageToText = "Не выбрано";
+        public string AgeToText
+        {
+            get => _ageToText;
+            set
+            {
+                _ageToText = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _sentenceFromNumberText = "Не выбрано";
+        public string SentenceFromNumberText
+        {
+            get => _sentenceFromNumberText;
+            set
+            {
+                _sentenceFromNumberText = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _sentenceFromUnit = "Не выбрано";
+        public string SentenceFromUnit
+        {
+            get => _sentenceFromUnit;
+            set
+            {
+                _sentenceFromUnit = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _sentenceToNumberText = "Не выбрано";
+        public string SentenceToNumberText
+        {
+            get => _sentenceToNumberText;
+            set
+            {
+                _sentenceToNumberText = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _sentenceToUnit = "Не выбрано";
+        public string SentenceToUnit
+        {
+            get => _sentenceToUnit;
+            set
+            {
+                _sentenceToUnit = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private ObservableCollection<ParticipantSearchResult> _searchResults
+            = new ObservableCollection<ParticipantSearchResult>();
+
+        public ObservableCollection<ParticipantSearchResult> SearchResults
+        {
+            get => _searchResults;
+            set
+            {
+                _searchResults = value;
+                OnPropertyChanged();
+            }
+        }
+
+
+        private ParticipantSearchResult _selectedSearchResult;
+        public ParticipantSearchResult SelectedSearchResult
+        {
+            get => _selectedSearchResult;
+            set
+            {
+                _selectedSearchResult = value;
+                OnPropertyChanged();
+
+                if (_selectedSearchResult == null)
+                    return;
+
+                _isFillingSearchFields = true;
+
+                SearchId = _selectedSearchResult.PrisonerId;
+                SearchFio = _selectedSearchResult.FullName;
+                FilterCitizenship = _selectedSearchResult.Citizenship;
+                FilterCity = _selectedSearchResult.Residence;
+                FilterArticle = _selectedSearchResult.ArticleNumber;
+                AgeFromText = _selectedSearchResult.Age.ToString();
+                AgeToText = _selectedSearchResult.Age.ToString();
+
+                // В БД срок хранится в годах, поэтому при выборе строки заполняем срок как "лет".
+                SentenceFromNumberText = _selectedSearchResult.SentenceTerm > 0
+                    ? _selectedSearchResult.SentenceTerm.ToString()
+                    : "Не выбрано";
+                SentenceFromUnit = _selectedSearchResult.SentenceTerm > 0
+                    ? "лет"
+                    : "Не выбрано";
+                SentenceToNumberText = _selectedSearchResult.SentenceTerm > 0
+                    ? _selectedSearchResult.SentenceTerm.ToString()
+                    : "Не выбрано";
+                SentenceToUnit = _selectedSearchResult.SentenceTerm > 0
+                    ? "лет"
+                    : "Не выбрано";
+
+                FilterUnit = string.IsNullOrWhiteSpace(_selectedSearchResult.Unit)
+                    ? "Не выбрано"
+                    : _selectedSearchResult.Unit;
+
+                FilterRisk = string.IsNullOrWhiteSpace(_selectedSearchResult.Risk)
+                    ? "Не выбрано"
+                    : _selectedSearchResult.Risk;
+
+                _isFillingSearchFields = false;
+
+                SearchCommand.Execute(null);
+            }
+        }
+
+        private Visibility _searchResultsVisibility = Visibility.Collapsed;
+        public Visibility SearchResultsVisibility
+        {
+            get => _searchResultsVisibility;
+            set
+            {
+                _searchResultsVisibility = value;
+                OnPropertyChanged();
             }
         }
 
@@ -297,6 +532,27 @@ namespace PsyDiagnostics.ViewModels
         public ObservableCollection<TestHistoryItem> AnxietyHistory { get; set; } = new();
         public ObservableCollection<TestHistoryItem> ResilienceHistory { get; set; } = new();
         public ObservableCollection<TestHistoryItem> HostilityHistory { get; set; } = new();
+        public Array CitizenshipValues => Enum.GetValues(typeof(Citizenship));
+        public ObservableCollection<string> Cities { get; set; } = new();
+        public ObservableCollection<string> Articles { get; set; } = new();
+        public ObservableCollection<object> SentenceValues { get; set; } = new();
+        public ObservableCollection<string> Units { get; set; } = new();
+        public ObservableCollection<object> AgeValues { get; set; } = new();
+        public ObservableCollection<object> TermNumberValues { get; set; } = new();
+
+        public ObservableCollection<string> TermUnitValues { get; set; } = new()
+{
+    "Не выбрано",
+    "месяцев",
+    "лет"
+};
+        public ObservableCollection<string> RiskValues { get; set; } = new()
+{
+    "Не выбрано",
+    "Низкий",
+    "Средний",
+    "Высокий"
+};
 
         private bool _canGoHomeAfterTests;
         public bool CanGoHomeAfterTests
@@ -326,14 +582,31 @@ namespace PsyDiagnostics.ViewModels
             {
                 SelectRole(UserRole.Prisoner);
             });
+            ExtendedSearchCommand = new RelayCommand(ExtendedSearch);
+            ClearSearchFiltersCommand = new RelayCommand(ClearSearchFilters);
             PrisonerStartTestCommand = new RelayCommand(_ => PrisonerStartTest());
             AddTestCommand = new RelayCommand(_ => AddTest());
             AllArticles = JsonHelper.LoadArticles();
             FilteredArticles = AllArticles;
 
 
-            Units = _db.GetUnits();
-            OnPropertyChanged(nameof(Units));
+            _isInitializingFilters = true;
+            LoadSearchFilters();
+            LoadSentenceValues();
+
+            FilterCitizenship = Citizenship.НеВыбрано;
+            FilterCity = "Не выбрано";
+            FilterArticle = "Не выбрано";
+            FilterUnit = "Не выбрано";
+            FilterRisk = "Не выбрано";
+            AgeFromText = "Не выбрано";
+            AgeToText = "Не выбрано";
+            SentenceFromNumberText = "Не выбрано";
+            SentenceFromUnit = "Не выбрано";
+            SentenceToNumberText = "Не выбрано";
+            SentenceToUnit = "Не выбрано";
+
+            _isInitializingFilters = false;
 
             if (Units.Any())
                 SelectedUnit = Units.First();
@@ -376,6 +649,96 @@ namespace PsyDiagnostics.ViewModels
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
+
+        private void LoadSearchFilters()
+        {
+            Cities = new ObservableCollection<string>();
+            Cities.Add("Не выбрано");
+
+            foreach (var city in _db.GetDistinctValues("Residence"))
+                Cities.Add(city);
+
+            Articles = new ObservableCollection<string>();
+            Articles.Add("Не выбрано");
+
+            foreach (var article in _db.GetDistinctValues("ArticleNumber"))
+                Articles.Add(article);
+
+            Units = new ObservableCollection<string>();
+            Units.Add("Не выбрано");
+
+            foreach (var unit in _db.GetDistinctValues("Unit"))
+                Units.Add(unit);
+
+            OnPropertyChanged(nameof(Units));
+            OnPropertyChanged(nameof(Cities));
+            OnPropertyChanged(nameof(Articles));
+        }
+
+        private bool _isInitializingFilters;
+        private void LoadSentenceValues()
+        {
+            AgeValues.Clear();
+            AgeValues.Add("Не выбрано");
+
+            for (int i = 16; i <= 100; i++)
+                AgeValues.Add(i.ToString());
+
+            TermNumberValues.Clear();
+            TermNumberValues.Add("Не выбрано");
+
+            // Срок можно вводить вручную, а список даёт быстрый выбор от 1 до 35.
+            for (int i = 1; i <= 35; i++)
+                TermNumberValues.Add(i.ToString());
+
+            OnPropertyChanged(nameof(AgeValues));
+            OnPropertyChanged(nameof(TermNumberValues));
+        }
+
+        private string _filterUnit = "Не выбрано";
+        public string FilterUnit
+        {
+            get => _filterUnit;
+            set
+            {
+                _filterUnit = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _filterRisk = "Не выбрано";
+        public string FilterRisk
+        {
+            get => _filterRisk;
+            set
+            {
+                _filterRisk = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+
+        private string _searchMessage;
+        public string SearchMessage
+        {
+            get => _searchMessage;
+            set
+            {
+                _searchMessage = value;
+                OnPropertyChanged();
+            }
+        }
+
         private void ShowParticipant()
         {
             try
@@ -411,6 +774,113 @@ namespace PsyDiagnostics.ViewModels
         {
             ShowParticipant();
         }
+
+        private void ExtendedSearch()
+        {
+            var city = IsEmptyFilter(FilterCity)
+                ? null
+                : FilterCity;
+
+            var article = IsEmptyFilter(FilterArticle)
+                ? null
+                : FilterArticle;
+
+            var unit = IsEmptyFilter(FilterUnit)
+                ? null
+                : FilterUnit;
+
+            var risk = IsEmptyFilter(FilterRisk)
+                ? null
+                : FilterRisk;
+
+            int? ageFrom = ParseNullableInt(AgeFromText);
+            int? ageTo = ParseNullableInt(AgeToText);
+
+            int? sentenceFrom = GetTermInMonths(SentenceFromNumberText, SentenceFromUnit);
+            int? sentenceTo = GetTermInMonths(SentenceToNumberText, SentenceToUnit);
+
+            var results = _db.SearchParticipants(
+                SearchFio,
+                FilterCitizenship,
+                city,
+                ageFrom,
+                ageTo,
+                article,
+                sentenceFrom,
+                sentenceTo,
+                unit,
+                risk
+            );
+
+            SearchResults = new ObservableCollection<ParticipantSearchResult>(results);
+
+            SearchMessage = SearchResults.Count == 0
+                ? "Пользователь с такими данными не найден"
+                : string.Empty;
+        }
+
+        private bool IsEmptyFilter(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) || value == "Не выбрано";
+        }
+
+        private int? ParseNullableInt(string value)
+        {
+            if (IsEmptyFilter(value))
+                return null;
+
+            return int.TryParse(value, out var number)
+                ? number
+                : null;
+        }
+
+        private int? GetTermInMonths(string numberText, string unitText)
+        {
+            if (!int.TryParse(numberText, out var number))
+                return null;
+
+            if (unitText == "месяцев")
+                return number;
+
+            if (unitText == "лет")
+                return number * 12;
+
+            return null;
+        }
+
+
+        private void ClearSearchFilters()
+        {
+            _isFillingSearchFields = true;
+
+            SearchId = string.Empty;
+            SearchFio = string.Empty;
+
+            FilterCitizenship = Citizenship.НеВыбрано;
+            FilterCity = "Не выбрано";
+            FilterArticle = "Не выбрано";
+            FilterUnit = "Не выбрано";
+            FilterRisk = "Не выбрано";
+
+            AgeFromText = "Не выбрано";
+            AgeToText = "Не выбрано";
+
+            SentenceFromNumberText = "Не выбрано";
+            SentenceFromUnit = "Не выбрано";
+            SentenceToNumberText = "Не выбрано";
+            SentenceToUnit = "Не выбрано";
+
+            SelectedSearchResult = null;
+
+            SearchResults.Clear();
+            SearchMessage = string.Empty;
+
+            // очищает личные, социальные и криминальные поля
+            ParticipantVm.CurrentParticipant = new Participant();
+
+            _isFillingSearchFields = false;
+        }
+
         private void GoToTest()
         {
             if (Current == null)
@@ -577,6 +1047,7 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+
         private double GetResultScore(Dictionary<string, int> results, string testName)
         {
             return results != null && results.TryGetValue(testName, out int value)
@@ -721,6 +1192,24 @@ namespace PsyDiagnostics.ViewModels
                 OnPropertyChanged();
             }
         }
+
+        private Citizenship _filterCitizenship = Citizenship.НеВыбрано;
+        public Citizenship FilterCitizenship
+        {
+            get => _filterCitizenship;
+            set
+            {
+                _filterCitizenship = value;
+                OnPropertyChanged();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private bool _isFillingSearchFields;
 
         private string _unitStats;
         public string UnitStats
@@ -982,7 +1471,6 @@ namespace PsyDiagnostics.ViewModels
                     "мониторинг факторов дезадаптации, агрессии, тревожности и иных проблемных показателей.";
             }
         }
-        public List<string> Units { get; set; }
 
         private string _selectedUnit;
         public string SelectedUnit
@@ -1431,31 +1919,44 @@ namespace PsyDiagnostics.ViewModels
         {
             try
             {
-                var id = SearchId?.Trim();
-                if (string.IsNullOrWhiteSpace(id))
+                var query = SearchId?.Trim();
+                if (string.IsNullOrWhiteSpace(query))
                 {
-                    MessageBox.Show("Введите ID");
+                    MessageBox.Show("Введите ID или ФИО");
                     return;
                 }
 
-                var found = _db.GetParticipant(id);
+                // Проверяем, является ли запрос ID (цифры)
+                bool isIdSearch = int.TryParse(query, out _);
+                Participant found;
+
+                if (isIdSearch)
+                {
+                    // Точный поиск по ID
+                    found = _db.GetParticipant(query);
+                }
+                else
+                {
+                    // Поиск по ФИО (LIKE '%query%')
+                    found = _db.GetParticipantByName(query);
+                }
 
                 if (found == null)
                 {
                     Current = new Participant
                     {
-                        PrisonerId = id,
+                        PrisonerId = query,
                         BirthDate = DateTime.Today
                     };
 
-                    MessageBox.Show("Не найден");
+                    MessageBox.Show($"Не найден: {query}");
                     return;
                 }
 
                 Current = found;
 
                 var article = AllArticles
-    .FirstOrDefault(a => a.Number?.Trim() == Current.ArticleNumber?.Trim());
+                    .FirstOrDefault(a => a.Number?.Trim() == Current.ArticleNumber?.Trim());
 
                 SelectedArticle = article;
 
@@ -1579,7 +2080,7 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            if (password != "1234")
+            if (password != "12")
             {
                 LoginError = "Неверный пароль";
                 _db.AddPsychologistLoginLog(PsychologistLoginFullName.Trim(), false, "Неверный пароль");
