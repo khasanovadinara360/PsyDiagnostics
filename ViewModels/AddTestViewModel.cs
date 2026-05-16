@@ -1,4 +1,5 @@
-﻿using PsyDiagnostics.Helpers;
+﻿using Newtonsoft.Json;
+using PsyDiagnostics.Helpers;
 using PsyDiagnostics.Models;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Text.Json;
 using System.Text.Unicode;
 using System.Windows;
 using System.Windows.Input;
+using Newtonsoft.Json;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -368,7 +370,7 @@ namespace PsyDiagnostics.ViewModels
                     try
                     {
                         var json = File.ReadAllText(file);
-                        var test = JsonSerializer.Deserialize<Test>(json, new JsonSerializerOptions
+                        var test = System.Text.Json.JsonSerializer.Deserialize<Test>(json, new JsonSerializerOptions
                         {
                             PropertyNameCaseInsensitive = true
                         });
@@ -497,7 +499,7 @@ namespace PsyDiagnostics.ViewModels
                     try
                     {
                         var json = File.ReadAllText(file);
-                        var test = JsonSerializer.Deserialize<Test>(json, new JsonSerializerOptions
+                        var test = System.Text.Json.JsonSerializer.Deserialize<Test>(json, new JsonSerializerOptions
                         {
                             PropertyNameCaseInsensitive = true
                         });
@@ -565,7 +567,7 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            var test = new Test
+            var newTest = new Test
             {
                 Name = TestName.Trim(),
                 LowMax = 32,
@@ -573,22 +575,43 @@ namespace PsyDiagnostics.ViewModels
                 Questions = _questions.ToList()
             };
 
-            var folder = GetWritableTestsFolder();
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "tests.json");
 
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            var json = JsonSerializer.Serialize(test, new JsonSerializerOptions
+            if (!File.Exists(path))
             {
-                WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic)
-            });
+                MessageBox.Show("Файл Data/tests.json не найден");
+                return;
+            }
 
-            File.WriteAllText(Path.Combine(folder, $"{test.Name}.json"), json);
+            var json = File.ReadAllText(path);
+
+            var tests = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Test>>(json)
+                        ?? new List<Test>();
+
+            var existing = tests.FirstOrDefault(t => t.Name == newTest.Name);
+
+            if (existing != null)
+            {
+                existing.LowMax = newTest.LowMax;
+                existing.MediumMax = newTest.MediumMax;
+                existing.Questions = newTest.Questions;
+            }
+            else
+            {
+                tests.Add(newTest);
+            }
+
+            var updatedJson = Newtonsoft.Json.JsonConvert.SerializeObject(
+                tests,
+                Newtonsoft.Json.Formatting.Indented
+            );
+
+            File.WriteAllText(path, updatedJson);
 
             LoadExistingTests();
 
             MessageBox.Show("Тест успешно сохранён");
+
             _main.ShowParticipantPage();
         }
     }

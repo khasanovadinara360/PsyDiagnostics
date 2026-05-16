@@ -17,6 +17,7 @@ using LiveChartsCore.Painting;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using LiveChartsCore.Kernel.Sketches;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -158,6 +159,10 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        public void ReloadTestsAfterAdding()
+        {
+            
+        }
         private void AddTest()
         {
             var vm = new AddTestViewModel(this);
