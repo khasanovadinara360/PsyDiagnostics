@@ -518,6 +518,19 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        private bool _isFilterPanelVisible = false;
+        public bool IsFilterPanelVisible
+        {
+            get => _isFilterPanelVisible;
+            set
+            {
+                _isFilterPanelVisible = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public ICommand ToggleFilterPanelCommand { get; }
+
         public List<string> AvailableParts => SelectedArticle?.Parts ?? new List<string>();
         public List<string> AvailablePoints => SelectedArticle?.Points ?? new List<string>();
 
@@ -578,15 +591,9 @@ namespace PsyDiagnostics.ViewModels
             CalculateRiskCommand = new RelayCommand(_ => CalculateRisk());
             GoHomeCommand = new RelayCommand(_ => GoHome());
             ExportPdfCommand = new RelayCommand(_ => ExportPdf());
-            SelectPsychologistRoleCommand = new RelayCommand(_ =>
-            {
-                SelectRole(UserRole.Psychologist);
-            });
-
-            SelectPrisonerRoleCommand = new RelayCommand(_ =>
-            {
-                SelectRole(UserRole.Prisoner);
-            });
+            SelectPsychologistRoleCommand = new RelayCommand(_ => {SelectRole(UserRole.Psychologist);});
+            SelectPrisonerRoleCommand = new RelayCommand(_ => {SelectRole(UserRole.Prisoner);});
+            ToggleFilterPanelCommand = new RelayCommand(_ => {IsFilterPanelVisible = !IsFilterPanelVisible;});
             ExtendedSearchCommand = new RelayCommand(ExtendedSearch);
             ClearSearchFiltersCommand = new RelayCommand(ClearSearchFilters);
             PrisonerStartTestCommand = new RelayCommand(_ => PrisonerStartTest());

@@ -236,49 +236,84 @@
 
         <!-- Поиск и фильтрация -->
         <StackPanel Grid.Row="0"
-            Visibility="{Binding PsychologistVisibility}">
+                Visibility="{Binding PsychologistVisibility}">
 
             <!-- Поиск по ID -->
             <TextBlock Text="ID заключенного"
-               Foreground="{StaticResource TextSecondaryColor}"/>
+                   Foreground="{StaticResource TextSecondaryColor}"/>
 
             <StackPanel Orientation="Horizontal" Margin="0,5,0,10">
+
                 <TextBox Text="{Binding SearchId, UpdateSourceTrigger=PropertyChanged}"
-                 Width="200"
-                 Padding="6,0"
-                 Height="32"
-                 BorderBrush="{StaticResource AccentColor}"
-                 BorderThickness="1">
+             Width="200"
+             Padding="6,0"
+             Height="32"
+             BorderBrush="{StaticResource AccentColor}"
+             BorderThickness="1">
+
                     <TextBox.InputBindings>
                         <KeyBinding Key="Enter"
-                            Command="{Binding SearchCommand}"/>
+                        Command="{Binding SearchCommand}"/>
                     </TextBox.InputBindings>
                 </TextBox>
 
                 <Button Content="Найти"
-                Command="{Binding SearchCommand}"
-                Margin="10,0,0,0"
-                Padding="10,0"
+            Command="{Binding SearchCommand}"
+            Margin="10,0,0,0"
+            Padding="10,0"
+            Height="32"
+            Background="{StaticResource AccentColor}"
+            BorderBrush="Transparent"/>
+
+                <Button Content="Сохранить"
+            Command="{Binding SaveCommand}"
+            Margin="10,0,0,0"
+            Padding="10,0"
+            Height="32"/>
+
+                <Button Content="Добавить тест"
+            Command="{Binding AddTestCommand}"
+            Margin="10,0,0,0"
+            Padding="10,0"
+            Height="32"/>
+            </StackPanel>
+
+            <!-- КНОПКА СВЕРНУТЬ ФИЛЬТРЫ -->
+            <Button Content="Расширенный поиск"
+                Command="{Binding ToggleFilterPanelCommand}"
+                Width="180"
                 Height="32"
+                Margin="0,0,0,8"
+                HorizontalAlignment="Left"
                 Background="{StaticResource AccentColor}"
                 BorderBrush="Transparent"/>
-            </StackPanel>
 
             <!-- Расширенный поиск -->
             <Border Background="#2A2A40"
-            BorderBrush="{StaticResource BorderColor}"
-            BorderThickness="1"
-            CornerRadius="8"
-            Padding="10"
-            Margin="0,0,0,10">
+                BorderBrush="{StaticResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="10"
+                Margin="0,0,0,10">
+
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible"/>
+
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsFilterPanelVisible}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
 
                 <StackPanel>
-
                     <TextBlock Text="Расширенный поиск"
-                       FontSize="15"
-                       FontWeight="SemiBold"
-                       Foreground="{StaticResource TextPrimaryColor}"
-                       Margin="0,0,0,8"/>
+                           FontSize="15"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryColor}"
+                           Margin="0,0,0,8"/>
 
                     <WrapPanel>
 
@@ -353,7 +388,7 @@
               SelectedItem="{Binding AgeToText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
               IsEditable="False"/>
                         </StackPanel>
-                        
+
                         <!-- Статья УК РФ -->
                         <StackPanel Margin="0,0,10,8">
                             <TextBlock Text="Статья УК РФ"
@@ -570,29 +605,10 @@
                             <DataGridTextColumn Header="Риск"
                     Binding="{Binding Risk}"
                     Width="90"/>
-
                         </DataGrid.Columns>
                     </DataGrid>
-
                 </StackPanel>
             </Border>
-
-            <!-- Основные кнопки -->
-            <StackPanel Orientation="Horizontal" Margin="0,10">
-                <Button Content="Сохранить"
-                Command="{Binding SaveCommand}"
-                Visibility="{Binding PsychologistVisibility}"
-                Margin="5,0"
-                Padding="10,0"
-                Height="32"/>
-
-                <Button Content="Добавить тест"
-                Command="{Binding AddTestCommand}"
-                Visibility="{Binding PsychologistVisibility}"
-                Margin="5,0"
-                Padding="10,0"
-                Height="32"/>
-            </StackPanel>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -996,34 +1012,48 @@
 
 
                         <!-- Тестирование -->
-                        <TabItem Header="Тестирование" Height="NaN" Margin="0,0,8,0" Visibility="{Binding PsychologistVisibility}">
+                        <TabItem Header="Тестирование"
+         Margin="0,0,8,0"
+         Visibility="{Binding PsychologistVisibility}">
+
                             <Grid Margin="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="384*"/>
-                                    <ColumnDefinition Width="923*"/>
-                                </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
-                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
+                                <!-- Заголовок + кнопка отчета -->
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <TextBlock Grid.Row="0"
-                   Text="Пройденные тесты"
-                   Foreground="{StaticResource TextPrimaryColor}"
-                   FontSize="14"
-                   Margin="0,0,0,10" Grid.ColumnSpan="2"/>
+                                    <TextBlock Grid.Column="0"
+                       Text="Пройденные тесты"
+                       Foreground="{StaticResource TextPrimaryColor}"
+                       FontSize="14"
+                       VerticalAlignment="Center"/>
 
-                                <!-- 🔥 БЛОК РИСКА ПО ОТРЯДУ -->
+                                    <Button Grid.Column="1"
+                    Content="Выгрузить отчет в PDF"
+                    Command="{Binding ExportPdfCommand}"
+                    Width="170"
+                    Height="32"
+                    Margin="10,0,0,0"
+                    Background="{StaticResource AccentColor}"
+                    BorderBrush="Transparent"/>
+                                </Grid>
+
+                                <!-- Блок риска по отряду -->
                                 <Border Grid.Row="1"
                 Background="#2A2A40"
                 Padding="10"
                 CornerRadius="8"
                 Margin="0,0,0,10"
                 BorderBrush="{StaticResource BorderColor}"
-                BorderThickness="1" Grid.ColumnSpan="2">
+                BorderThickness="1">
 
                                     <StackPanel>
                                         <TextBlock Text="Риск по отряду"
@@ -1033,10 +1063,10 @@
                            Margin="0,0,0,5"/>
 
                                         <TextBlock Text="{Binding UnitRisk}"
-           Foreground="{Binding UnitRiskColor}"
-           FontSize="13"
-           FontWeight="Bold"
-           Margin="0,0,0,5"/>
+                           Foreground="{Binding UnitRiskColor}"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           Margin="0,0,0,5"/>
 
                                         <TextBlock Text="{Binding UnitStats}"
                            Foreground="{StaticResource TextSecondaryColor}"
@@ -1045,21 +1075,21 @@
                                     </StackPanel>
                                 </Border>
 
-                                <DataGrid Grid.Row="1"
+                                <!-- Таблица пройденных тестов -->
+                                <DataGrid Grid.Row="2"
                   ItemsSource="{Binding TestHistory}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
                   IsReadOnly="True"
                   HeadersVisibility="Column"
-                  Margin="0,93,0,10"
                   BorderThickness="1"
                   GridLinesVisibility="None"
                   Background="{StaticResource BgCardColor}"
                   Foreground="{StaticResource TextPrimaryColor}"
                   BorderBrush="{StaticResource BorderColor}"
                   AlternatingRowBackground="#FF2A2A38"
-                  AlternationCount="2" Grid.ColumnSpan="2" Grid.RowSpan="2">
+                  AlternationCount="2">
 
                                     <DataGrid.Resources>
                                         <Style x:Key="CenterCellText" TargetType="TextBlock">
@@ -1135,19 +1165,7 @@
                                     Width="150"
                                     ElementStyle="{StaticResource CenterCellText}"/>
                                     </DataGrid.Columns>
-
                                 </DataGrid>
-
-                                <StackPanel Grid.Row="2"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Left" Grid.Column="1" Margin="774,44,0,0" Grid.RowSpan="2">
-                                    <Button Content="Выгрузить отчет в PDF"
-                    Command="{Binding ExportPdfCommand}"
-                    Background="{StaticResource AccentColor}"
-                    BorderBrush="Transparent"
-                    Height="32"
-                    Padding="12,0"/>
-                                </StackPanel>
                             </Grid>
                         </TabItem>
 
