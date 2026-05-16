@@ -447,19 +447,24 @@ namespace PsyDiagnostics.ViewModels
                 FilterCitizenship = _selectedSearchResult.Citizenship;
                 FilterCity = _selectedSearchResult.Residence;
                 FilterArticle = _selectedSearchResult.ArticleNumber;
-                AgeFromText = _selectedSearchResult.Age.ToString();
+                AgeFromText = "16";
                 AgeToText = _selectedSearchResult.Age.ToString();
 
-                // В БД срок хранится в годах, поэтому при выборе строки заполняем срок как "лет".
+                // В БД срок хранится в годах, поэтому при выборе строки
+                // ставим диапазон: от 2 месяцев → до срока осужденного
+
                 SentenceFromNumberText = _selectedSearchResult.SentenceTerm > 0
-                    ? _selectedSearchResult.SentenceTerm.ToString()
+                    ? "2"
                     : "Не выбрано";
+
                 SentenceFromUnit = _selectedSearchResult.SentenceTerm > 0
-                    ? "лет"
+                    ? "месяцев"
                     : "Не выбрано";
+
                 SentenceToNumberText = _selectedSearchResult.SentenceTerm > 0
                     ? _selectedSearchResult.SentenceTerm.ToString()
                     : "Не выбрано";
+
                 SentenceToUnit = _selectedSearchResult.SentenceTerm > 0
                     ? "лет"
                     : "Не выбрано";
@@ -862,8 +867,8 @@ namespace PsyDiagnostics.ViewModels
             FilterUnit = "Не выбрано";
             FilterRisk = "Не выбрано";
 
-            AgeFromText = "Не выбрано";
-            AgeToText = "Не выбрано";
+            AgeFromText = "16";
+            AgeToText = "36";
 
             SentenceFromNumberText = "Не выбрано";
             SentenceFromUnit = "Не выбрано";
@@ -875,7 +880,6 @@ namespace PsyDiagnostics.ViewModels
             SearchResults.Clear();
             SearchMessage = string.Empty;
 
-            // очищает личные, социальные и криминальные поля
             ParticipantVm.CurrentParticipant = new Participant();
 
             _isFillingSearchFields = false;

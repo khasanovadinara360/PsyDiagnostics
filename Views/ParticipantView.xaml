@@ -336,10 +336,8 @@
               Height="32"
               Style="{StaticResource DarkComboBox}"
               ItemsSource="{Binding AgeValues}"
-              Text="{Binding AgeFromText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-              IsEditable="True"
-              IsTextSearchEnabled="True"
-              StaysOpenOnEdit="True"/>
+              SelectedItem="{Binding AgeFromText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              IsEditable="False"/>
                         </StackPanel>
 
                         <!-- Возраст до -->
@@ -352,12 +350,10 @@
               Height="32"
               Style="{StaticResource DarkComboBox}"
               ItemsSource="{Binding AgeValues}"
-              Text="{Binding AgeToText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-              IsEditable="True"
-              IsTextSearchEnabled="True"
-              StaysOpenOnEdit="True"/>
+              SelectedItem="{Binding AgeToText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              IsEditable="False"/>
                         </StackPanel>
-
+                        
                         <!-- Статья УК РФ -->
                         <StackPanel Margin="0,0,10,8">
                             <TextBlock Text="Статья УК РФ"
