@@ -98,6 +98,39 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        private string _selectedAddedQuestion;
+        public string SelectedAddedQuestion
+        {
+            get => _selectedAddedQuestion;
+            set
+            {
+                _selectedAddedQuestion = value;
+                OnPropertyChanged();
+
+                if (string.IsNullOrWhiteSpace(value))
+                    return;
+
+                int index = QuestionsPreview.IndexOf(value);
+
+                if (index < 0 || index >= _questions.Count)
+                    return;
+
+                FillQuestionFields(_questions[index]);
+                IsEditingQuestion = true;
+            }
+        }
+
+        private bool _isEditingQuestion;
+        public bool IsEditingQuestion
+        {
+            get => _isEditingQuestion;
+            set
+            {
+                _isEditingQuestion = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ObservableCollection<string> ExistingTests { get; set; } = new();
         public ObservableCollection<string> QuestionsPreview { get; set; } = new();
 
@@ -105,6 +138,9 @@ namespace PsyDiagnostics.ViewModels
         public ICommand SaveTestCommand { get; }
         public ICommand DeleteTestCommand { get; }
         public ICommand BackCommand { get; }
+        public ICommand SaveQuestionChangesCommand { get; }
+        public ICommand DeleteQuestionCommand { get; }
+        public ICommand EditQuestionCommand { get; }
 
         public AddTestViewModel(MainViewModel main)
         {
@@ -114,12 +150,42 @@ namespace PsyDiagnostics.ViewModels
             SaveTestCommand = new RelayCommand(_ => SaveTest());
             DeleteTestCommand = new RelayCommand(_ => DeleteTest());
             BackCommand = new RelayCommand(_ => _main.ShowParticipantPage());
-
+            SaveQuestionChangesCommand = new RelayCommand(_ => SaveQuestionChanges());
+            DeleteQuestionCommand = new RelayCommand(_ => DeleteQuestion());
+            EditQuestionCommand = new RelayCommand(_ => EditQuestion());
             LoadExistingTests();
+        }
+
+        private void EditQuestion()
+        {
+            if (string.IsNullOrWhiteSpace(SelectedAddedQuestion))
+            {
+                MessageBox.Show("Выберите вопрос для изменения");
+                return;
+            }
+
+            int index = QuestionsPreview.IndexOf(SelectedAddedQuestion);
+
+            if (index < 0 || index >= _questions.Count)
+                return;
+
+            FillQuestionFields(_questions[index]);
+            IsEditingQuestion = true;
         }
 
         private void AddQuestion()
         {
+            if (!int.TryParse(QuestionsCountText, out int maxQuestions) || maxQuestions <= 0)
+            {
+                MessageBox.Show("Введите корректное количество вопросов");
+                return;
+            }
+
+            if (_questions.Count >= maxQuestions)
+            {
+                MessageBox.Show($"Нельзя добавить больше {maxQuestions} вопросов."); return;
+            }
+
             if (string.IsNullOrWhiteSpace(QuestionText))
             {
                 MessageBox.Show("Введите текст вопроса");
@@ -146,6 +212,79 @@ namespace PsyDiagnostics.ViewModels
 
             _questions.Add(question);
             QuestionsPreview.Add(BuildQuestionPreview(_questions.Count, question));
+
+            ClearQuestionFields();
+        }
+
+        private void SaveQuestionChanges()
+        {
+            if (string.IsNullOrWhiteSpace(SelectedAddedQuestion))
+            {
+                MessageBox.Show("Выберите вопрос для изменения");
+                return;
+            }
+
+            int index = QuestionsPreview.IndexOf(SelectedAddedQuestion);
+
+            if (index < 0 || index >= _questions.Count)
+                return;
+
+            if (string.IsNullOrWhiteSpace(QuestionText))
+            {
+                MessageBox.Show("Введите текст вопроса");
+                return;
+            }
+
+            var answers = new List<Answer>();
+
+            AddAnswerIfValid(answers, Answer1Text, Answer1ValueText);
+            AddAnswerIfValid(answers, Answer2Text, Answer2ValueText);
+            AddAnswerIfValid(answers, Answer3Text, Answer3ValueText);
+
+            if (answers.Count == 0)
+            {
+                MessageBox.Show("Добавьте хотя бы один ответ");
+                return;
+            }
+
+            _questions[index].Text = QuestionText.Trim();
+            _questions[index].Answers = answers;
+
+            QuestionsPreview[index] = BuildQuestionPreview(index + 1, _questions[index]);
+
+            ClearQuestionFields();
+
+            MessageBox.Show("Вопрос изменён");
+        }
+
+        private void DeleteQuestion()
+        {
+            if (string.IsNullOrWhiteSpace(SelectedAddedQuestion))
+            {
+                MessageBox.Show("Выберите вопрос для удаления");
+                return;
+            }
+
+            int index = QuestionsPreview.IndexOf(SelectedAddedQuestion);
+
+            if (index < 0 || index >= _questions.Count)
+                return;
+
+            _questions.RemoveAt(index);
+            QuestionsPreview.RemoveAt(index);
+
+            for (int i = 0; i < QuestionsPreview.Count; i++)
+                QuestionsPreview[i] = BuildQuestionPreview(i + 1, _questions[i]);
+
+            ClearQuestionFields();
+
+            MessageBox.Show("Вопрос удалён");
+        }
+
+        private void ClearQuestionFields()
+        {
+            SelectedAddedQuestion = null;
+            IsEditingQuestion = false;
 
             QuestionText = "";
             Answer1Text = "Нет";
@@ -267,7 +406,6 @@ namespace PsyDiagnostics.ViewModels
                     ExistingTests.Add(test.Name);
             }
         }
-
         private void LoadTestIntoEditor(string testName)
         {
             var test = LoadAllTestsFromFolder()
@@ -320,7 +458,6 @@ namespace PsyDiagnostics.ViewModels
             Answer3Text = question.Answers != null && question.Answers.Count > 2 ? question.Answers[2].Text : "";
             Answer3ValueText = question.Answers != null && question.Answers.Count > 2 ? question.Answers[2].Value.ToString() : "";
         }
-
 
         private void DeleteTest()
         {

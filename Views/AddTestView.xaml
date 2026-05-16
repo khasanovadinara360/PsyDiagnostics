@@ -36,6 +36,12 @@
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
+        <Style TargetType="ListBoxItem">
+            <Setter Property="MinHeight" Value="42"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+
         <Style TargetType="Button">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
@@ -175,6 +181,7 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
@@ -182,13 +189,42 @@
                                Text="Добавленные вопросы"
                                FontSize="16"
                                FontWeight="Bold"
-                               Margin="0,0,0,10"/>
+                               Margin="0,0,0,8"/>
 
-                    <ListBox Grid.Row="1"
+                    <StackPanel Grid.Row="1"
+                                Orientation="Horizontal"
+                                Margin="0,0,0,10">
+
+                        <Button Content="Сохранить вопрос"
+                                Command="{Binding SaveQuestionChangesCommand}"
+                                Height="34"
+                                Width="145"
+                                Margin="0,0,8,0"
+                                Background="#4E5DFF"
+                                BorderBrush="Transparent"/>
+
+                        <Button Content="Удалить вопрос"
+                                Command="{Binding DeleteQuestionCommand}"
+                                Height="34"
+                                Width="120"
+                                Background="#B63A3A"
+                                BorderBrush="Transparent"/>
+                    </StackPanel>
+
+                    <ListBox Grid.Row="2"
                              ItemsSource="{Binding QuestionsPreview}"
+                             SelectedItem="{Binding SelectedAddedQuestion, Mode=TwoWay}"
                              Background="#252532"
                              BorderBrush="#323244"
-                             BorderThickness="1"/>
+                             BorderThickness="1"
+                             MaxHeight="430"
+                             ScrollViewer.VerticalScrollBarVisibility="Visible"
+                             ScrollViewer.CanContentScroll="False">
+                        <ListBox.InputBindings>
+                            <MouseBinding MouseAction="LeftDoubleClick"
+                                          Command="{Binding EditQuestionCommand}"/>
+                        </ListBox.InputBindings>
+                    </ListBox>
                 </Grid>
             </Border>
 
