@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.IO;
 
 namespace PsyDiagnostics.Services
 {
@@ -427,20 +428,20 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
         }
 
         public void SaveTestResult(
-            string prisonerId,
-            string unit,
-            string testName,
-            int score,
-            int prediction,
-            double probability,
-            double aggression = 0,
-            double impulsivity = 0,
-            double depression = 0,
-            double stress = 0,
-            double adaptation = 0,
-            double anxiety = 0,
-            double resilience = 0,
-            double hostility = 0)
+    string prisonerId,
+    string unit,
+    string testName,
+    int score,
+    int prediction,
+    double probability,
+    double aggression = 0,
+    double impulsivity = 0,
+    double depression = 0,
+    double stress = 0,
+    double adaptation = 0,
+    double anxiety = 0,
+    double resilience = 0,
+    double hostility = 0)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
@@ -448,6 +449,9 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
 
             double risk = probability * 100;
             string now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            string columnName = GetSafeColumnName(testName);
+            EnsureTestResultColumn(db, columnName);
 
             using var tx = db.BeginTransaction();
 
@@ -471,13 +475,15 @@ VALUES
 
             var testCmd = db.CreateCommand();
             testCmd.Transaction = tx;
-            testCmd.CommandText = @"
+            testCmd.CommandText = $@"
 INSERT INTO TestResults
 (PrisonerId, Unit, TestName, Score, Prediction, Probability, RiskScore, CreatedAt,
- Aggression, Impulsivity, Depression, Stress, Adaptation, Anxiety, Resilience, Hostility)
+ Aggression, Impulsivity, Depression, Stress, Adaptation, Anxiety, Resilience, Hostility,
+ [{columnName}])
 VALUES
 ($id, $unit, $test, $score, $pred, $prob, $risk, $date,
- $agg, $imp, $dep, $stress, $adapt, $anx, $res, $host);";
+ $agg, $imp, $dep, $stress, $adapt, $anx, $res, $host,
+ $customScore);";
 
             testCmd.Parameters.AddWithValue("$id", prisonerId ?? "");
             testCmd.Parameters.AddWithValue("$unit", unit ?? "");
@@ -495,9 +501,55 @@ VALUES
             testCmd.Parameters.AddWithValue("$anx", anxiety);
             testCmd.Parameters.AddWithValue("$res", resilience);
             testCmd.Parameters.AddWithValue("$host", hostility);
+            testCmd.Parameters.AddWithValue("$customScore", score);
             testCmd.ExecuteNonQuery();
 
             tx.Commit();
+        }
+
+        private string GetSafeColumnName(string testName)
+        {
+            if (string.IsNullOrWhiteSpace(testName))
+                return "CustomTest";
+
+            var result = testName.Trim();
+
+            foreach (var ch in Path.GetInvalidFileNameChars())
+                result = result.Replace(ch.ToString(), "");
+
+            result = result
+                .Replace(" ", "_")
+                .Replace("-", "_")
+                .Replace(".", "_")
+                .Replace(",", "_")
+                .Replace("«", "")
+                .Replace("»", "")
+                .Replace("(", "")
+                .Replace(")", "");
+
+            return result;
+        }
+
+        private void EnsureTestResultColumn(SqliteConnection db, string columnName)
+        {
+            var checkCmd = db.CreateCommand();
+            checkCmd.CommandText = "PRAGMA table_info(TestResults);";
+
+            using var reader = checkCmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var existingName = reader["name"]?.ToString();
+
+                if (existingName == columnName)
+                    return;
+            }
+
+            var alterCmd = db.CreateCommand();
+            alterCmd.CommandText =
+                $"ALTER TABLE TestResults ADD COLUMN [{columnName}] REAL DEFAULT 0;";
+
+            alterCmd.ExecuteNonQuery();
         }
 
         public (Participant participant, List<TestResultRecord> aiResults) GetFullReport(string id)
@@ -603,6 +655,8 @@ SELECT
     p.Citizenship,
     p.Residence,
     p.ArticleNumber,
+    p.ArticlePart,
+    p.ArticlePoint,
     p.SentenceTerm,
     p.Unit,
     ar.AvgRiskScore
@@ -620,36 +674,30 @@ LEFT JOIN (
 WHERE 1 = 1
 ";
 
-            // Гражданство
             if (citizenship != Citizenship.НеВыбрано)
             {
                 cmd.CommandText += " AND p.Citizenship = @citizenship";
                 cmd.Parameters.AddWithValue("@citizenship", (int)citizenship);
             }
 
-            // Город: можно выбрать из списка или ввести часть названия вручную
             if (!string.IsNullOrWhiteSpace(city))
             {
                 cmd.CommandText += " AND p.Residence LIKE @city";
                 cmd.Parameters.AddWithValue("@city", "%" + city.Trim() + "%");
             }
 
-            // Статья: можно выбрать из списка или ввести часть статьи вручную
             if (!string.IsNullOrWhiteSpace(articleNumber))
             {
                 cmd.CommandText += " AND p.ArticleNumber LIKE @article";
                 cmd.Parameters.AddWithValue("@article", "%" + articleNumber.Trim() + "%");
             }
 
-            // Отряд: можно выбрать из списка или ввести вручную
             if (!string.IsNullOrWhiteSpace(unit))
             {
                 cmd.CommandText += " AND p.Unit LIKE @unit";
                 cmd.Parameters.AddWithValue("@unit", "%" + unit.Trim() + "%");
             }
 
-            // Срок в интерфейсе переводится в месяцы.
-            // В БД SentenceTerm хранится в годах, поэтому сравниваем SentenceTerm * 12.
             if (sentenceFrom.HasValue)
             {
                 cmd.CommandText += " AND (p.SentenceTerm * 12) >= @sentenceFrom";
@@ -680,30 +728,23 @@ WHERE 1 = 1
 
                 var fullName = reader["FullName"]?.ToString() ?? "";
 
-                // Поиск по ФИО без учета регистра
                 if (!string.IsNullOrWhiteSpace(fio) &&
-                    !fullName.Contains(fio.Trim(),
-                        StringComparison.CurrentCultureIgnoreCase))
+                    !fullName.Contains(fio.Trim(), StringComparison.CurrentCultureIgnoreCase))
                 {
                     continue;
                 }
 
-                // Возраст от
                 if (ageFrom.HasValue && age < ageFrom.Value)
                     continue;
 
-                // Возраст до
                 if (ageTo.HasValue && age > ageTo.Value)
                     continue;
 
-                // Риск
                 string riskText = "Нет данных";
 
                 if (reader["AvgRiskScore"] != DBNull.Value)
                 {
-                    double avgRiskScore =
-                        Convert.ToDouble(reader["AvgRiskScore"]);
-
+                    double avgRiskScore = Convert.ToDouble(reader["AvgRiskScore"]);
                     riskText = GetRiskByScore(avgRiskScore);
                 }
 
@@ -721,10 +762,15 @@ WHERE 1 = 1
                     Citizenship = (Citizenship)Convert.ToInt32(reader["Citizenship"]),
                     Age = age,
                     Residence = reader["Residence"]?.ToString(),
+
                     ArticleNumber = reader["ArticleNumber"]?.ToString(),
+                    ArticlePart = reader["ArticlePart"]?.ToString(),
+                    ArticlePoint = reader["ArticlePoint"]?.ToString(),
+
                     SentenceTerm = reader["SentenceTerm"] == DBNull.Value
                         ? 0
                         : Convert.ToInt32(reader["SentenceTerm"]),
+
                     Unit = reader["Unit"]?.ToString(),
                     Risk = riskText
                 });
@@ -733,6 +779,36 @@ WHERE 1 = 1
             return result;
         }
 
+        public void EnsureTestResultColumn(string testName)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var safeColumnName = testName
+                .Replace(" ", "_")
+                .Replace("-", "_")
+                .Replace(".", "_")
+                .Replace(",", "_")
+                .Replace("«", "")
+                .Replace("»", "");
+
+            var checkCmd = db.CreateCommand();
+            checkCmd.CommandText = "PRAGMA table_info(TestResults);";
+
+            using var reader = checkCmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var columnName = reader["name"]?.ToString();
+
+                if (columnName == safeColumnName)
+                    return;
+            }
+
+            var alterCmd = db.CreateCommand();
+            alterCmd.CommandText = $"ALTER TABLE TestResults ADD COLUMN [{safeColumnName}] REAL DEFAULT 0;";
+            alterCmd.ExecuteNonQuery();
+        }
         private string GetRiskByScore(double score)
         {
             // Если риск хранится как 0 или 1

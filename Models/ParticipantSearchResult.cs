@@ -18,6 +18,8 @@ namespace PsyDiagnostics.Models
         public string Residence { get; set; }
 
         public string ArticleNumber { get; set; }
+        public string ArticlePart { get; set; }
+        public string ArticlePoint { get; set; }
 
         public int SentenceTerm { get; set; }
 

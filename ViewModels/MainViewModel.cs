@@ -4,10 +4,11 @@ using PsyDiagnostics.Services;
 using PsyDiagnostics.Views;
 using PsyDiagnostics.ViewModels;
 using System;
+using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using LiveChartsCore.SkiaSharpView.WPF;
@@ -161,7 +162,7 @@ namespace PsyDiagnostics.ViewModels
 
         public void ReloadTestsAfterAdding()
         {
-            
+
         }
         private void AddTest()
         {
@@ -218,6 +219,8 @@ namespace PsyDiagnostics.ViewModels
         public ICommand PrisonerStartTestCommand { get; }
         public ICommand ExtendedSearchCommand { get; }
         public ICommand ClearSearchFiltersCommand { get; }
+        public ICommand ShowArticleInfoCommand { get; }
+        public ICommand SwitchToPrisonerModeCommand { get; }
 
         private object _currentView;
         public object CurrentView
@@ -307,6 +310,128 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        private List<ArticleInfoItem> LoadArticleInfoItems()
+        {
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "articles_info.json");
+
+            if (!File.Exists(path))
+                return new List<ArticleInfoItem>();
+
+            var json = File.ReadAllText(path);
+
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<List<ArticleInfoItem>>(json)
+                   ?? new List<ArticleInfoItem>();
+        }
+
+        private void UpdateArticleParts()
+        {
+            _isUpdatingArticleDetails = true;
+
+            ArticleParts.Clear();
+            ArticlePoints.Clear();
+
+            ArticleParts.Add("Не выбрано");
+            ArticlePoints.Add("Не выбрано");
+
+            FilterArticlePart = "Не выбрано";
+            FilterArticlePoint = "Не выбрано";
+
+            if (string.IsNullOrWhiteSpace(FilterArticle) ||
+                FilterArticle == "Не выбрано")
+            {
+                _isUpdatingArticleDetails = false;
+                return;
+            }
+
+            var path = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Data",
+                "articles_info.json");
+
+            if (!File.Exists(path))
+            {
+                _isUpdatingArticleDetails = false;
+                return;
+            }
+
+            var json = File.ReadAllText(path);
+
+            var articles =
+                Newtonsoft.Json.JsonConvert.DeserializeObject<List<ArticleInfoItem>>(json)
+                ?? new List<ArticleInfoItem>();
+
+            var article = articles.FirstOrDefault(x => x.Number == FilterArticle);
+
+            if (article?.Parts != null)
+            {
+                foreach (var part in article.Parts)
+                {
+                    if (!string.IsNullOrWhiteSpace(part.Part) &&
+                        !ArticleParts.Contains(part.Part))
+                    {
+                        ArticleParts.Add(part.Part);
+                    }
+                }
+            }
+
+            _isUpdatingArticleDetails = false;
+        }
+
+        private void UpdateArticlePoints()
+        {
+            _isUpdatingArticleDetails = true;
+
+            ArticlePoints.Clear();
+            ArticlePoints.Add("Не выбрано");
+
+            FilterArticlePoint = "Не выбрано";
+
+            if (string.IsNullOrWhiteSpace(FilterArticle) ||
+                FilterArticle == "Не выбрано" ||
+                string.IsNullOrWhiteSpace(FilterArticlePart) ||
+                FilterArticlePart == "Не выбрано")
+            {
+                _isUpdatingArticleDetails = false;
+                return;
+            }
+
+            var path = Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Data",
+                "articles_info.json");
+
+            if (!File.Exists(path))
+            {
+                _isUpdatingArticleDetails = false;
+                return;
+            }
+
+            var json = File.ReadAllText(path);
+
+            var articles =
+                Newtonsoft.Json.JsonConvert.DeserializeObject<List<ArticleInfoItem>>(json)
+                ?? new List<ArticleInfoItem>();
+
+            var article = articles.FirstOrDefault(x => x.Number == FilterArticle);
+
+            var part = article?.Parts?
+                .FirstOrDefault(x => x.Part == FilterArticlePart);
+
+            if (part?.Points != null)
+            {
+                foreach (var point in part.Points)
+                {
+                    if (!string.IsNullOrWhiteSpace(point.Point) &&
+                        !ArticlePoints.Contains(point.Point))
+                    {
+                        ArticlePoints.Add(point.Point);
+                    }
+                }
+            }
+
+            _isUpdatingArticleDetails = false;
+        }
+
         private string _filterArticle = "Не выбрано";
         public string FilterArticle
         {
@@ -315,6 +440,57 @@ namespace PsyDiagnostics.ViewModels
             {
                 _filterArticle = value;
                 OnPropertyChanged();
+
+                UpdateArticleParts();
+                UpdateArticleTooltip();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _filterArticlePart = "Не выбрано";
+        public string FilterArticlePart
+        {
+            get => _filterArticlePart;
+            set
+            {
+                _filterArticlePart = value;
+                OnPropertyChanged();
+
+                if (_isUpdatingArticleDetails)
+                    return;
+
+                UpdateArticlePoints();
+                UpdateArticleTooltip();
+
+                if (_isInitializingFilters || _isFillingSearchFields)
+                    return;
+
+                ExtendedSearch();
+            }
+        }
+
+        private string _filterArticlePoint = "Не выбрано";
+        public string FilterArticlePoint
+        {
+            get => _filterArticlePoint;
+            set
+            {
+                if ((string.IsNullOrWhiteSpace(FilterArticlePart) || FilterArticlePart == "Не выбрано") &&
+                    !string.IsNullOrWhiteSpace(value) &&
+                    value != "Не выбрано")
+                {
+                    MessageBox.Show("Сначала выберите часть статьи, затем пункт.");
+                    value = "Не выбрано";
+                }
+
+                _filterArticlePoint = value;
+                OnPropertyChanged();
+
+                UpdateArticleTooltip();
 
                 if (_isInitializingFilters || _isFillingSearchFields)
                     return;
@@ -419,6 +595,8 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
+        private bool _isUpdatingArticleDetails;
+
         private ObservableCollection<ParticipantSearchResult> _searchResults
             = new ObservableCollection<ParticipantSearchResult>();
 
@@ -451,9 +629,27 @@ namespace PsyDiagnostics.ViewModels
                 SearchFio = _selectedSearchResult.FullName;
                 FilterCitizenship = _selectedSearchResult.Citizenship;
                 FilterCity = _selectedSearchResult.Residence;
-                FilterArticle = _selectedSearchResult.ArticleNumber;
                 AgeFromText = "16";
                 AgeToText = _selectedSearchResult.Age.ToString();
+
+
+                FilterArticle = string.IsNullOrWhiteSpace(_selectedSearchResult.ArticleNumber)
+                    ? "Не выбрано"
+                    : _selectedSearchResult.ArticleNumber;
+
+                UpdateArticleParts();
+
+                FilterArticlePart = string.IsNullOrWhiteSpace(_selectedSearchResult.ArticlePart)
+                    ? "Не выбрано"
+                    : _selectedSearchResult.ArticlePart;
+
+                UpdateArticlePoints();
+
+                FilterArticlePoint = string.IsNullOrWhiteSpace(_selectedSearchResult.ArticlePoint)
+                    ? "Не выбрано"
+                    : _selectedSearchResult.ArticlePoint;
+
+                UpdateArticleTooltip();
 
                 // В БД срок хранится в годах, поэтому при выборе строки
                 // ставим диапазон: от 2 месяцев → до срока осужденного
@@ -562,26 +758,38 @@ namespace PsyDiagnostics.ViewModels
         public ObservableCollection<string> Units { get; set; } = new();
         public ObservableCollection<object> AgeValues { get; set; } = new();
         public ObservableCollection<object> TermNumberValues { get; set; } = new();
-
         public ObservableCollection<string> TermUnitValues { get; set; } = new()
-{
-    "Не выбрано",
-    "месяцев",
-    "лет"
-};
+        {
+            "Не выбрано",
+            "месяцев",
+            "лет"
+        };
         public ObservableCollection<string> RiskValues { get; set; } = new()
-{
-    "Не выбрано",
-    "Низкий",
-    "Средний",
-    "Высокий"
-};
+        {
+            "Не выбрано",
+            "Низкий",
+            "Средний",
+            "Высокий"
+        };
+        public ObservableCollection<string> ArticleParts { get; set; } = new();
+        public ObservableCollection<string> ArticlePoints { get; set; } = new();
 
         private bool _canGoHomeAfterTests;
         public bool CanGoHomeAfterTests
         {
             get => _canGoHomeAfterTests;
             set { _canGoHomeAfterTests = value; OnPropertyChanged(); }
+        }
+
+        private void UpdateArticleDetailsLists()
+        {
+            UpdateArticleParts();
+
+            if (!string.IsNullOrWhiteSpace(FilterArticlePart) &&
+                FilterArticlePart != "Не выбрано")
+            {
+                UpdateArticlePoints();
+            }
         }
 
         public TestMode SelectedMode { get; set; }
@@ -596,13 +804,15 @@ namespace PsyDiagnostics.ViewModels
             CalculateRiskCommand = new RelayCommand(_ => CalculateRisk());
             GoHomeCommand = new RelayCommand(_ => GoHome());
             ExportPdfCommand = new RelayCommand(_ => ExportPdf());
-            SelectPsychologistRoleCommand = new RelayCommand(_ => {SelectRole(UserRole.Psychologist);});
-            SelectPrisonerRoleCommand = new RelayCommand(_ => {SelectRole(UserRole.Prisoner);});
-            ToggleFilterPanelCommand = new RelayCommand(_ => {IsFilterPanelVisible = !IsFilterPanelVisible;});
+            SelectPsychologistRoleCommand = new RelayCommand(_ => { SelectRole(UserRole.Psychologist); });
+            SelectPrisonerRoleCommand = new RelayCommand(_ => { SelectRole(UserRole.Prisoner); });
+            ToggleFilterPanelCommand = new RelayCommand(_ => { IsFilterPanelVisible = !IsFilterPanelVisible; });
             ExtendedSearchCommand = new RelayCommand(ExtendedSearch);
             ClearSearchFiltersCommand = new RelayCommand(ClearSearchFilters);
             PrisonerStartTestCommand = new RelayCommand(_ => PrisonerStartTest());
             AddTestCommand = new RelayCommand(_ => AddTest());
+            ShowArticleInfoCommand = new RelayCommand(_ => ShowArticleInfo());
+            SwitchToPrisonerModeCommand = new RelayCommand(_ => SwitchToPrisonerMode());
             AllArticles = JsonHelper.LoadArticles();
             FilteredArticles = AllArticles;
 
@@ -633,6 +843,11 @@ namespace PsyDiagnostics.ViewModels
             BuildRiskByUnitsChart();
             BuildRecidivismChart();
             BuildTopUnitsChart();
+        }
+
+        private void SwitchToPrisonerMode()
+        {
+            SelectRole(UserRole.Prisoner);
         }
         public SolidColorPaint PersonalLegendTextPaint { get; set; } = new SolidColorPaint(SKColors.White);
         public Array AnalyticsSections => Enum.GetValues(typeof(AnalyticsSection));
@@ -666,7 +881,13 @@ namespace PsyDiagnostics.ViewModels
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
-
+        public class ArticleInfo
+        {
+            public string Number { get; set; }
+            public string Part { get; set; }
+            public string Point { get; set; }
+            public string Title { get; set; }
+        }
         private void LoadSearchFilters()
         {
             Cities = new ObservableCollection<string>();
@@ -693,6 +914,128 @@ namespace PsyDiagnostics.ViewModels
         }
 
         private bool _isInitializingFilters;
+
+        private void ShowArticleInfo()
+        {
+            if (string.IsNullOrWhiteSpace(FilterArticle) || FilterArticle == "Не выбрано")
+            {
+                MessageBox.Show("Выберите статью УК РФ");
+                return;
+            }
+
+            UpdateArticleTooltip();
+
+            MessageBox.Show(
+                ArticleTooltipText,
+                "Информация по статье УК РФ",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        public class ArticleInfoItem
+        {
+            public string Number { get; set; }
+            public string Title { get; set; }
+
+            public List<ArticlePartItem> Parts { get; set; }
+        }
+
+        public class ArticlePartItem
+        {
+            public string Code { get; set; }
+            public string Part { get; set; }
+            public string Text { get; set; }
+
+            public List<ArticlePointItem> Points { get; set; }
+        }
+
+        public class ArticlePointItem
+        {
+            public string Code { get; set; }
+            public string Point { get; set; }
+            public string Text { get; set; }
+        }
+
+        private string _articleTooltipText = "Выберите статью";
+        public string ArticleTooltipText
+        {
+            get => _articleTooltipText;
+            set
+            {
+                _articleTooltipText = value;
+                OnPropertyChanged();
+            }
+        }
+        private void UpdateArticleTooltip()
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(FilterArticle) ||
+                    FilterArticle == "Не выбрано")
+                {
+                    ArticleTooltipText = "Выберите статью УК РФ";
+                    return;
+                }
+
+                var articles = LoadArticleInfoItems();
+                var article = articles.FirstOrDefault(x => x.Number == FilterArticle);
+
+                if (article == null)
+                {
+                    ArticleTooltipText = $"Статья {FilterArticle}\nРасшифровка не найдена";
+                    return;
+                }
+
+                var part = article.Parts?.FirstOrDefault(x => x.Part == FilterArticlePart);
+
+                if (part == null)
+                {
+                    ArticleTooltipText = $"Статья {article.Number} - {article.Title}";
+                    return;
+                }
+
+                ArticlePointItem point = null;
+
+                if (!string.IsNullOrWhiteSpace(FilterArticlePoint) &&
+                    FilterArticlePoint != "Не выбрано")
+                {
+                    point = part.Points?.FirstOrDefault(x => x.Point == FilterArticlePoint);
+
+                    if (point == null)
+                    {
+                        ArticleTooltipText =
+                            $"Статья {article.Number}, часть {part.Part}\nПункт «{FilterArticlePoint}» не найден";
+                        return;
+                    }
+                }
+
+                string text = point != null
+                    ? point.Text ?? ""
+                    : part.Text ?? "";
+
+                text = text
+                    .Replace("\r", " ")
+                    .Replace("\n", " ")
+                    .Trim();
+
+                text = text.Trim(' ', ';', '.', '-');
+
+                if (!string.IsNullOrWhiteSpace(article.Title) &&
+                    !text.StartsWith(article.Title, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    text = $"{article.Title} {text}";
+                }
+
+                ArticleTooltipText =
+                    $"Статья {article.Number}, часть {part.Part}" +
+                    (point == null ? "" : $", пункт «{point.Point}»") +
+                    $" - {text}.";
+            }
+            catch
+            {
+                ArticleTooltipText = "Ошибка загрузки статьи";
+            }
+        }
         private void LoadSentenceValues()
         {
             AgeValues.Clear();
@@ -875,12 +1218,23 @@ namespace PsyDiagnostics.ViewModels
 
             FilterCitizenship = Citizenship.НеВыбрано;
             FilterCity = "Не выбрано";
+
             FilterArticle = "Не выбрано";
+
+            ArticleParts.Clear();
+            ArticlePoints.Clear();
+            ArticleParts.Add("Не выбрано");
+            ArticlePoints.Add("Не выбрано");
+
+            FilterArticlePart = "Не выбрано";
+            FilterArticlePoint = "Не выбрано";
+            ArticleTooltipText = "Выберите статью УК РФ";
+
             FilterUnit = "Не выбрано";
             FilterRisk = "Не выбрано";
 
-            AgeFromText = "16";
-            AgeToText = "36";
+            AgeFromText = "Не выбрано";
+            AgeToText = "Не выбрано";
 
             SentenceFromNumberText = "Не выбрано";
             SentenceFromUnit = "Не выбрано";

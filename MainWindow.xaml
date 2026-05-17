@@ -27,22 +27,31 @@
                        FontSize="13"/>
 
             <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right">
+            HorizontalAlignment="Right">
+
+                <Button Content="Режим заключенный"
+            Width="150"
+            Height="32"
+            Margin="0,0,8,0"
+            Background="#FF4E5DFF"
+            Foreground="White"
+            BorderBrush="Transparent"
+            Command="{Binding SwitchToPrisonerModeCommand}"/>
 
                 <Button Content="—"
-                        Width="45"
-                        Height="32"
-                        Click="Minimize_Click"/>
+            Width="45"
+            Height="32"
+            Click="Minimize_Click"/>
 
                 <Button Content="□"
-                        Width="45"
-                        Height="32"
-                        Click="Maximize_Click"/>
+            Width="45"
+            Height="32"
+            Click="Maximize_Click"/>
 
                 <Button Content="×"
-                        Width="45"
-                        Height="32"
-                        Click="Close_Click"/>
+            Width="45"
+            Height="32"
+            Click="Close_Click"/>
             </StackPanel>
         </Grid>
 

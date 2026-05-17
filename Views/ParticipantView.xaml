@@ -389,20 +389,80 @@
               IsEditable="False"/>
                         </StackPanel>
 
-                        <!-- Статья УК РФ -->
-                        <StackPanel Margin="0,0,10,8">
-                            <TextBlock Text="Статья УК РФ"
-               Foreground="{StaticResource TextSecondaryColor}"/>
+                        <!-- Статья / часть / пункт УК РФ -->
+                        <StackPanel Margin="0,0,10,8" Width="270">
 
-                            <ComboBox Width="130"
-              Margin="0,3,6,3"
-              Height="32"
-              Style="{StaticResource DarkComboBox}"
-              ItemsSource="{Binding Articles}"
-              Text="{Binding FilterArticle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-              IsEditable="True"
-              IsTextSearchEnabled="True"
-              StaysOpenOnEdit="True"/>
+                            <DockPanel Margin="0,0,0,3">
+                                <TextBlock Text="Статья УК РФ"
+                   Foreground="{StaticResource TextSecondaryColor}"
+                   VerticalAlignment="Center"/>
+
+                                <Button Content="?"
+                Width="22"
+                Height="22"
+                Margin="6,0,0,0"
+                Padding="0"
+                FontWeight="Bold"
+                Background="{StaticResource AccentColor}"
+                BorderBrush="Transparent"
+                DockPanel.Dock="Right">
+                                    <Button.ToolTip>
+                                        <ToolTip MaxWidth="520"
+             Placement="Mouse"
+             Background="#2A2A40"
+             Foreground="White"
+             BorderBrush="{StaticResource AccentColor}"
+             BorderThickness="1"
+             Padding="10">
+
+                                            <TextBlock Text="{Binding ArticleTooltipText}"
+                   TextWrapping="Wrap"
+                   Width="480"
+                   FontSize="13"
+                   LineHeight="20"/>
+                                        </ToolTip>
+                                    </Button.ToolTip>
+                                </Button>
+                            </DockPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="77"/>
+                                    <ColumnDefinition Width="3"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="80"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ComboBox Grid.Column="0"
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding Articles}"
+                  Text="{Binding FilterArticle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  IsEditable="True"
+                  IsTextSearchEnabled="True"
+                  StaysOpenOnEdit="True"/>
+
+                                <ComboBox Grid.Column="2"
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding ArticleParts}"
+                  SelectedItem="{Binding FilterArticlePart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  IsEditable="False" Grid.ColumnSpan="2"/>
+
+                                <ComboBox Grid.Column="5"
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding ArticlePoints}"
+                  SelectedItem="{Binding FilterArticlePoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  IsEditable="False"/>
+                            </Grid>
+
+                            <TextBlock Text="статья / часть / пункт"
+               FontSize="10"
+               Foreground="{StaticResource TextSecondaryColor}"
+               Margin="2,2,0,0"/>
                         </StackPanel>
 
                         <!-- Отряд -->
