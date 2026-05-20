@@ -319,17 +319,39 @@ namespace PsyDiagnostics.Models
             {
                 switch (columnName)
                 {
+                    // =========================
+                    // ЛИЧНЫЕ
+                    // =========================
+
                     case nameof(FullName):
                         if (string.IsNullOrWhiteSpace(FullName))
                             return "Введите ФИО";
+
                         var parts = FullName.Trim().Split(' ');
+
                         if (parts.Length < 3)
                             return "Минимум фамилия, имя и отчество";
                         break;
 
+                    case nameof(Gender):
+                        if (Gender == 0)
+                            return "Выберите пол";
+                        break;
+
                     case nameof(BirthDate):
+                        if (BirthDate == DateTime.MinValue)
+                            return "Укажите дату рождения";
+
                         if (BirthDate > DateTime.Now)
-                            return "Дата в будущем";
+                            return "Дата рождения не может быть в будущем";
+
+                        if (Age < 16)
+                            return "Возраст должен быть не менее 16 лет";
+                        break;
+
+                    case nameof(Citizenship):
+                        if (Citizenship == 0)
+                            return "Выберите гражданство";
                         break;
 
                     case nameof(BirthPlace):
@@ -337,22 +359,137 @@ namespace PsyDiagnostics.Models
                             return "Введите место рождения";
                         break;
 
+                    case nameof(Residence):
+                        if (string.IsNullOrWhiteSpace(Residence))
+                            return "Введите место проживания";
+                        break;
+
                     case nameof(Nationality):
-                        // можно без ошибок, но чтобы не было пустого имени
                         if (string.IsNullOrWhiteSpace(Nationality))
-                            return "Введите национальность";
+                            return "Выберите национальность";
+                        break;
+
+                    case nameof(FamilyUpbringing):
+                        if (FamilyUpbringing == 0)
+                            return "Укажите воспитание в семье";
+                        break;
+
+                    case nameof(MaritalStatus):
+                        if (MaritalStatus == 0)
+                            return "Выберите семейное положение";
+                        break;
+
+                    case nameof(HasCloseRelatives):
+                        if (HasCloseRelatives == 0)
+                            return "Укажите наличие близких родственников";
+                        break;
+
+                    case nameof(HasChildren):
+                        if (HasChildren == 0)
+                            return "Укажите наличие детей";
+                        break;
+
+                    case nameof(ChildrenCount):
+                        if (HasChildren.ToString().Contains("Yes") &&
+                            ChildrenCount <= 0)
+                            return "Введите количество детей";
+                        break;
+
+                    case nameof(WillKeepContact):
+                        if (WillKeepContact == 0)
+                            return "Укажите поддержание связи с родственниками";
+                        break;
+
+                    case nameof(EducationLevel):
+                        if (EducationLevel == 0)
+                            return "Выберите образование";
+                        break;
+
+                    case nameof(HasProfession):
+                        if (HasProfession == 0)
+                            return "Укажите наличие профессии";
                         break;
 
                     case nameof(Profession):
-                        if (string.IsNullOrWhiteSpace(Profession))
+                        if (HasProfession.ToString().Contains("Has") &&
+                            string.IsNullOrWhiteSpace(Profession))
                             return "Введите профессию";
                         break;
+
+                    case nameof(Religion):
+                        if (Religion == 0)
+                            return "Выберите вероисповедание";
+                        break;
+
+                    // =========================
+                    // СОЦИАЛЬНЫЕ
+                    // =========================
+
+                    case nameof(ArmyService):
+                        if (ArmyService == 0)
+                            return "Укажите службу в армии";
+                        break;
+
+                    case nameof(CombatParticipation):
+                        if (CombatParticipation == 0)
+                            return "Укажите участие в боевых действиях";
+                        break;
+
+                    case nameof(SomaticDiseases):
+                        if (SomaticDiseases == 0)
+                            return "Укажите наличие соматических заболеваний";
+                        break;
+
+                    case nameof(Disability):
+                        if (Disability == 0)
+                            return "Укажите наличие инвалидности";
+                        break;
+
+                    case nameof(MentalDiseases):
+                        if (MentalDiseases == 0)
+                            return "Укажите наличие психических заболеваний";
+                        break;
+
+                    case nameof(PsychiatristRegistry):
+                        if (PsychiatristRegistry == 0)
+                            return "Укажите учет у психиатра";
+                        break;
+
+                    case nameof(Gambling):
+                        if (Gambling == 0)
+                            return "Укажите участие в азартных играх";
+                        break;
+
+                    case nameof(Obligations):
+                        if (Obligations == 0)
+                            return "Укажите наличие обязательств";
+                        break;
+
+                    case nameof(NarcologistRegistry):
+                        if (NarcologistRegistry == 0)
+                            return "Укажите учет у нарколога";
+                        break;
+
+                    case nameof(DrugUse):
+                        if (DrugUse == 0)
+                            return "Укажите употребление наркотических веществ";
+                        break;
+
+                    // =========================
+                    // КРИМИНАЛЬНЫЕ
+                    // =========================
 
                     case nameof(ArticleNumber):
                         if (string.IsNullOrWhiteSpace(ArticleNumber))
                             return "Введите статью";
+
                         if (!Regex.IsMatch(ArticleNumber, @"^\d+$"))
                             return "Только цифры";
+                        break;
+
+                    case nameof(ArticlePart):
+                        if (string.IsNullOrWhiteSpace(ArticlePart))
+                            return "Выберите часть статьи";
                         break;
 
                     case nameof(SentenceTerm):
@@ -360,11 +497,50 @@ namespace PsyDiagnostics.Models
                             return "Срок должен быть больше 0";
                         break;
 
-                    //case nameof(Unit):
-                    //    if (!Regex.IsMatch(Unit ?? "", @"^\d+$"))
-                    //        return "Только цифры";
-                    //    break;
+                    case nameof(CurrentFeelings):
+                        if (CurrentFeelings == 0)
+                            return "Укажите текущее эмоциональное состояние";
+                        break;
 
+                    case nameof(AttitudeToUIS):
+                        if (AttitudeToUIS == 0)
+                            return "Укажите отношение к пребыванию в УИС";
+                        break;
+
+                    case nameof(SuicideAttempts):
+                        if (SuicideAttempts == 0)
+                            return "Укажите наличие попыток суицида";
+                        break;
+
+                    case nameof(SelfHarmScars):
+                        if (SelfHarmScars == 0)
+                            return "Укажите наличие самоповреждений";
+                        break;
+
+                    case nameof(RelativesSuicide):
+                        if (RelativesSuicide == 0)
+                            return "Укажите случаи суицида у родственников";
+                        break;
+
+                    case nameof(CrimeType):
+                        if (CrimeType == 0)
+                            return "Выберите тип преступления";
+                        break;
+
+                    case nameof(Recidivism):
+                        if (Recidivism == 0)
+                            return "Выберите рецидив";
+                        break;
+
+                    case nameof(Unit):
+                        if (string.IsNullOrWhiteSpace(Unit))
+                            return "Введите отряд";
+                        break;
+
+                    case nameof(Category):
+                        if (Category == 0)
+                            return "Выберите категорию";
+                        break;
                 }
 
                 return null;
@@ -376,21 +552,56 @@ namespace PsyDiagnostics.Models
 
             var props = new[]
             {
+        // ЛИЧНЫЕ
         nameof(FullName),
+        nameof(Gender),
         nameof(BirthDate),
+        nameof(Citizenship),
         nameof(BirthPlace),
+        nameof(Residence),
         nameof(Nationality),
+        nameof(FamilyUpbringing),
+        nameof(MaritalStatus),
+        nameof(HasCloseRelatives),
+        nameof(HasChildren),
+        nameof(ChildrenCount),
+        nameof(WillKeepContact),
+        nameof(EducationLevel),
+        nameof(HasProfession),
         nameof(Profession),
+        nameof(Religion),
+
+        // СОЦИАЛЬНЫЕ
+        nameof(ArmyService),
+        nameof(CombatParticipation),
+        nameof(SomaticDiseases),
+        nameof(Disability),
+        nameof(MentalDiseases),
+        nameof(PsychiatristRegistry),
+        nameof(Gambling),
+        nameof(Obligations),
+        nameof(NarcologistRegistry),
+        nameof(DrugUse),
+
+        // КРИМИНАЛЬНЫЕ
         nameof(ArticleNumber),
         nameof(ArticlePart),
         nameof(SentenceTerm),
+        nameof(CurrentFeelings),
+        nameof(AttitudeToUIS),
+        nameof(SuicideAttempts),
+        nameof(SelfHarmScars),
+        nameof(RelativesSuicide),
+        nameof(CrimeType),
+        nameof(Recidivism),
         nameof(Unit),
-        nameof(PreviousConvictions)
+        nameof(Category)
     };
 
             foreach (var prop in props)
             {
                 var error = this[prop];
+
                 if (!string.IsNullOrEmpty(error))
                     errors.Add(error);
             }

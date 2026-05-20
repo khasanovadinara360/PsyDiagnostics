@@ -20,6 +20,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
 using LiveChartsCore.Kernel.Sketches;
 using static System.Net.Mime.MediaTypeNames;
+using System.Windows.Media;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -222,6 +223,7 @@ namespace PsyDiagnostics.ViewModels
         public ICommand ClearSearchFiltersCommand { get; }
         public ICommand ShowArticleInfoCommand { get; }
         public ICommand SwitchToPrisonerModeCommand { get; }
+        public ICommand ClearParticipantCommand { get; }
 
         private object _currentView;
         public object CurrentView
@@ -251,16 +253,23 @@ namespace PsyDiagnostics.ViewModels
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     FilteredArticles = AllArticles;
+                    SelectedArticle = null;
+                    return;
                 }
-                else
-                {
-                    var lower = value.ToLower();
 
-                    FilteredArticles = AllArticles
-                        .Where(a => a.Number.Contains(value)
-                                 || a.Title.ToLower().Contains(lower))
-                        .ToList();
-                }
+                var text = value.Trim();
+                var lower = text.ToLower();
+
+                FilteredArticles = AllArticles
+                    .Where(a => a.Number.Contains(text)
+                             || a.Title.ToLower().Contains(lower))
+                    .ToList();
+
+                var exactArticle = AllArticles
+                    .FirstOrDefault(a => a.Number == text);
+
+                if (exactArticle != null)
+                    SelectedArticle = exactArticle;
             }
         }
 
@@ -705,18 +714,26 @@ namespace PsyDiagnostics.ViewModels
                 _selectedArticle = value;
                 OnPropertyChanged();
 
-                if (value == null)
+                if (value == null || ParticipantVm?.CurrentParticipant == null)
                     return;
 
-                if (Current != null)
-                {
-                    Current.ArticleNumber = value.Number;
-                    Current.ArticlePart = value.Parts?.FirstOrDefault();
-                    Current.ArticlePoint = value.Points?.FirstOrDefault();
-                }
+                var p = ParticipantVm.CurrentParticipant;
+
+                p.ArticleNumber = value.Number;
+
+                if (AvailableParts.Count > 0)
+                    p.ArticlePart = AvailableParts[0];
+                else
+                    p.ArticlePart = string.Empty;
+
+                if (AvailablePoints.Count > 0)
+                    p.ArticlePoint = AvailablePoints[0];
+                else
+                    p.ArticlePoint = string.Empty;
 
                 OnPropertyChanged(nameof(AvailableParts));
                 OnPropertyChanged(nameof(AvailablePoints));
+                OnPropertyChanged(nameof(ParticipantVm));
             }
         }
 
@@ -814,6 +831,7 @@ namespace PsyDiagnostics.ViewModels
             AddTestCommand = new RelayCommand(_ => AddTest());
             ShowArticleInfoCommand = new RelayCommand(_ => ShowArticleInfo());
             SwitchToPrisonerModeCommand = new RelayCommand(_ => SwitchToPrisonerMode());
+            ClearParticipantCommand = new RelayCommand(_ => ClearParticipant());
             AllArticles = JsonHelper.LoadArticles();
             FilteredArticles = AllArticles;
 
@@ -846,6 +864,115 @@ namespace PsyDiagnostics.ViewModels
             BuildTopUnitsChart();
         }
 
+        private void ClearParticipant()
+        {
+            if (ParticipantVm?.CurrentParticipant == null)
+                return;
+
+            var p = ParticipantVm.CurrentParticipant;
+
+            SearchId = string.Empty;
+
+            p.PrisonerId = string.Empty;
+            p.FullName = string.Empty;
+            p.Gender = 0;
+            p.BirthDate = DateTime.Now;
+            p.BirthPlace = string.Empty;
+            p.Nationality = string.Empty;
+            p.Residence = string.Empty;
+
+            p.FamilyUpbringing = 0;
+            p.MaritalStatus = 0;
+            p.HasCloseRelatives = 0;
+            p.HasChildren = 0;
+            p.ChildrenCount = 0;
+            p.WillKeepContact = 0;
+            p.EducationLevel = 0;
+            p.HasProfession = 0;
+            p.Profession = string.Empty;
+            p.Religion = 0;
+
+            p.ArmyService = 0;
+            p.ArmyBranch = string.Empty;
+            p.CombatParticipation = 0;
+            p.SomaticDiseases = 0;
+            p.Disability = 0;
+            p.MentalDiseases = 0;
+            p.PsychiatristRegistry = 0;
+            p.Gambling = 0;
+            p.Obligations = 0;
+            p.NarcologistRegistry = 0;
+            p.DrugUse = 0;
+
+            // криминальные
+            p.ArticleNumber = string.Empty;
+            p.ArticlePart = string.Empty;
+            p.ArticlePoint = string.Empty;
+            p.SentenceTerm = 0;
+            p.CrimeType = 0;
+            p.Recidivism = 0;
+            p.Unit = string.Empty;
+            p.Category = 0;
+
+            // очистка статьи
+            ArticleSearch = string.Empty;
+            SelectedArticle = null;
+
+            AvailableParts.Clear();
+            AvailablePoints.Clear();
+            FilteredArticles.Clear();
+
+            // психологические
+            p.CurrentFeelings = 0;
+            p.AttitudeToUIS = 0;
+            p.SuicideAttempts = 0;
+            p.SelfHarmScars = 0;
+            p.RelativesSuicide = 0;
+
+            // тестирование
+            TestHistory.Clear();
+
+            // аналитика
+            UnitRisk = string.Empty;
+            UnitStats = string.Empty;
+
+            PersonalRiskSeries = new ISeries[] { };
+
+            DateXAxis = null;
+            PersonalYAxis = null;
+
+            PersonalAiConclusion = string.Empty;
+            PersonalAiRisk = string.Empty;
+            PersonalAiRecommendations = string.Empty;
+
+            // обновление UI
+            OnPropertyChanged(nameof(SearchId));
+            OnPropertyChanged(nameof(ParticipantVm));
+            OnPropertyChanged(nameof(TestHistory));
+
+            OnPropertyChanged(nameof(ArticleSearch));
+            OnPropertyChanged(nameof(SelectedArticle));
+            OnPropertyChanged(nameof(AvailableParts));
+            OnPropertyChanged(nameof(AvailablePoints));
+            OnPropertyChanged(nameof(FilteredArticles));
+
+            OnPropertyChanged(nameof(UnitRisk));
+            OnPropertyChanged(nameof(UnitStats));
+
+            OnPropertyChanged(nameof(PersonalRiskSeries));
+            OnPropertyChanged(nameof(DateXAxis));
+            OnPropertyChanged(nameof(PersonalYAxis));
+
+            OnPropertyChanged(nameof(PersonalAiConclusion));
+            OnPropertyChanged(nameof(PersonalAiRisk));
+            OnPropertyChanged(nameof(PersonalAiRecommendations));
+
+            MessageBox.Show(
+                "Успешно",
+                "Очистка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
         private void SwitchToPrisonerMode()
         {
             SelectRole(UserRole.Prisoner);
@@ -933,9 +1060,22 @@ namespace PsyDiagnostics.ViewModels
                 MessageBoxImage.Information);
         }
 
+        private Brush _loginMessageColor = Brushes.Red;
+
+        public Brush LoginMessageColor
+        {
+            get => _loginMessageColor;
+            set
+            {
+                _loginMessageColor = value;
+                OnPropertyChanged();
+            }
+        }
+
         public class ArticleInfoItem
         {
             public string Number { get; set; }
+
             public string Title { get; set; }
 
             public List<ArticlePartItem> Parts { get; set; }
@@ -944,8 +1084,13 @@ namespace PsyDiagnostics.ViewModels
         public class ArticlePartItem
         {
             public string Code { get; set; }
+
             public string Part { get; set; }
+
             public string Text { get; set; }
+
+            // ВОТ ЭТО
+            public string Sanction { get; set; }
 
             public List<ArticlePointItem> Points { get; set; }
         }
@@ -953,10 +1098,12 @@ namespace PsyDiagnostics.ViewModels
         public class ArticlePointItem
         {
             public string Code { get; set; }
-            public string Point { get; set; }
-            public string Text { get; set; }
-        }
 
+            public string Point { get; set; }
+
+            public string Text { get; set; }
+            public string Sanction { get; set; }
+        }
         private string _articleTooltipText = "Выберите статью";
         public string ArticleTooltipText
         {
@@ -1014,12 +1161,21 @@ namespace PsyDiagnostics.ViewModels
                     ? point.Text ?? ""
                     : part.Text ?? "";
 
+                string sanction = point != null
+                    ? point.Sanction ?? part.Sanction ?? ""
+                    : part.Sanction ?? "";
+
                 text = text
                     .Replace("\r", " ")
                     .Replace("\n", " ")
-                    .Trim();
+                    .Trim()
+                    .Trim(' ', ';', '.', '-');
 
-                text = text.Trim(' ', ';', '.', '-');
+                sanction = sanction
+                    .Replace("\r", " ")
+                    .Replace("\n", " ")
+                    .Trim()
+                    .Trim(' ', ';', '.', '-');
 
                 if (!string.IsNullOrWhiteSpace(article.Title) &&
                     !text.StartsWith(article.Title, StringComparison.CurrentCultureIgnoreCase))
@@ -1030,13 +1186,37 @@ namespace PsyDiagnostics.ViewModels
                 ArticleTooltipText =
                     $"Статья {article.Number}, часть {part.Part}" +
                     (point == null ? "" : $", пункт «{point.Point}»") +
-                    $" - {text}.";
+                    $"\n\n{text}" +
+                    (string.IsNullOrWhiteSpace(sanction)
+                        ? ""
+                        : $"\n\nСанкция: {sanction}.");
             }
             catch
             {
                 ArticleTooltipText = "Ошибка загрузки статьи";
             }
         }
+
+        private void SyncArticleFieldsToParticipant()
+        {
+            if (ParticipantVm?.CurrentParticipant == null)
+                return;
+
+            var p = ParticipantVm.CurrentParticipant;
+
+            p.ArticleNumber = FilterArticle == "Не выбрано"
+                ? string.Empty
+                : FilterArticle;
+
+            p.ArticlePart = FilterArticlePart == "Не выбрано"
+                ? string.Empty
+                : FilterArticlePart;
+
+            p.ArticlePoint = FilterArticlePoint == "Не выбрано"
+                ? string.Empty
+                : FilterArticlePoint;
+        }
+
         private void LoadSentenceValues()
         {
             AgeValues.Clear();
@@ -2420,17 +2600,25 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
+            SyncArticleFieldsToParticipant();
+
             var errors = Current.GetErrors();
+
             if (errors.Any())
             {
-                MessageBox.Show(string.Join("\n", errors), "Ошибки");
+                MessageBox.Show(
+                    string.Join("\n", errors),
+                    "Ошибки",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 return;
             }
 
             _db.SaveParticipant(Current);
+
             MessageBox.Show("Сохранено");
 
-            // после сохранения обновим визуализацию выбранного отряда
             LoadRiskPeople();
             UpdateChart();
         }
@@ -2724,7 +2912,7 @@ namespace PsyDiagnostics.ViewModels
             if (psychologist == null)
             {
                 LoginError = "Пользователь с таким логином не найден";
-
+                LoginMessageColor = Brushes.Red;
                 _db.AddPsychologistLoginLog(
                     "Не найден",
                     login,
@@ -2795,6 +2983,7 @@ namespace PsyDiagnostics.ViewModels
                 $"Пароль изменён на: {newPassword}");
 
             LoginError = "Пароль успешно изменён";
+            LoginMessageColor = Brushes.LimeGreen; ;
         }
     }
 }

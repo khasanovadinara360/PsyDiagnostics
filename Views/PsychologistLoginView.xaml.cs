@@ -1,12 +1,14 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using PsyDiagnostics.ViewModels;
-using Microsoft.VisualBasic;
 
 namespace PsyDiagnostics.Views
 {
     public partial class PsychologistLoginView : UserControl
     {
+        private bool _passwordVisible = false;
+
         public PsychologistLoginView()
         {
             InitializeComponent();
@@ -29,16 +31,13 @@ namespace PsyDiagnostics.Views
             if (DataContext is not MainViewModel vm)
                 return;
 
-            // Сначала проверяем логин
             if (string.IsNullOrWhiteSpace(vm.PsychologistLoginFullName))
             {
                 vm.LoginError = "Сначала введите логин";
                 return;
             }
 
-            // Проверяем существование логина
-            var psychologist =
-                vm.GetPsychologistByLogin(vm.PsychologistLoginFullName.Trim());
+            var psychologist = vm.GetPsychologistByLogin(vm.PsychologistLoginFullName.Trim());
 
             if (psychologist == null)
             {
@@ -46,16 +45,27 @@ namespace PsyDiagnostics.Views
                 return;
             }
 
-            // Только после этого открываем окно смены пароля
-            var window = new ResetPasswordWindow();
+            var resetView = new ResetPasswordView();
 
-            if (window.ShowDialog() == true)
+            var window = new Window
             {
-                vm.ResetPsychologistPassword(window.NewPassword);
+                Title = "Смена пароля",
+                Content = resetView,
+                Width = 420,
+                Height = 320,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 40)),
+                Owner = Window.GetWindow(this)
+            };
+
+            bool? result = window.ShowDialog();
+
+            if (result == true)
+            {
+                vm.ResetPsychologistPassword(resetView.NewPassword);
             }
         }
-
-        private bool _passwordVisible = false;
 
         private void TogglePassword_Click(object sender, RoutedEventArgs e)
         {

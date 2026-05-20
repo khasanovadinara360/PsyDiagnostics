@@ -43,6 +43,11 @@ namespace PsyDiagnostics.ViewModels
         public IReadOnlyList<Gender> Genders { get; } =
             Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
 
+        public IReadOnlyList<Citizenship> Citizenships { get; } =
+    Enum.GetValues(typeof(Citizenship)).Cast<Citizenship>().ToList();
+
+
+
         public IReadOnlyList<FamilyUpbringing> FamilyUpbringings { get; } =
             Enum.GetValues(typeof(FamilyUpbringing)).Cast<FamilyUpbringing>().ToList();
 

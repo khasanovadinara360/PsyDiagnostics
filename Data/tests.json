@@ -1,6 +1,6 @@
 [
   {
-    "Name": "Aggression",
+    "Name": "Уровень агрессивности",
     "LowMax": 40,
     "MediumMax": 70,
     "Questions": [
@@ -348,7 +348,7 @@
   },
 
   {
-    "Name": "Impulsivity",
+    "Name": "Импульсивность",
     "LowMax": 40,
     "MediumMax": 70,
     "Questions": [
@@ -696,7 +696,7 @@
   },
 
   {
-    "Name": "Depression",
+    "Name": "Депрессивное состояние",
     "LowMax": 40,
     "MediumMax": 70,
     "Questions": [
@@ -1044,7 +1044,7 @@
   },
 
   {
-    "Name": "Stress",
+    "Name": "Стрессоустойчивость",
     "LowMax": 40,
     "MediumMax": 70,
     "Questions": [
@@ -1389,8 +1389,9 @@
         ]
       }
     ]
-  },{
-    "Name": "Adaptation",
+  },
+  {
+    "Name": "Социальная адаптация",
     "LowMax": 40,
     "MediumMax": 70,
     "Questions": [
@@ -1738,12 +1739,12 @@
   },
 
   {
-    "Name": "Anxiety",
+    "Name": "Тревожность",
     "LowMax": 40,
     "MediumMax": 70,
     "Questions": [
       {
-        "Text": "Я тревожусь",
+        "Text": "Я подвержен к частой тревоге",
         "Answers": [
           {
             "Text": "Нет",

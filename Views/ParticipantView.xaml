@@ -4,7 +4,9 @@
              xmlns:helpers="clr-namespace:PsyDiagnostics.Helpers"
              xmlns:paint="clr-namespace:LiveChartsCore.SkiaSharpView.Painting;assembly=LiveChartsCore.SkiaSharpView"
              xmlns:skia="clr-namespace:SkiaSharp;assembly=SkiaSharp"
-             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF">
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             PreviewKeyDown="UserControl_PreviewKeyDown"
+             Focusable="True">
 
     <UserControl.Resources>
 
@@ -122,6 +124,8 @@
 
         <!-- Тёмный ComboBox -->
         <Style TargetType="ComboBox" x:Key="DarkComboBox">
+            <EventSetter Event="PreviewMouseDoubleClick"
+             Handler="ComboBox_DoubleClick"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
@@ -266,16 +270,21 @@
             BorderBrush="Transparent"/>
 
                 <Button Content="Сохранить"
-            Command="{Binding SaveCommand}"
-            Margin="10,0,0,0"
-            Padding="10,0"
-            Height="32"/>
+        Width="80"
+        Margin="0,0,10,0"
+        Command="{Binding SaveCommand}"/>
+
+                <Button Content="Очистить"
+        Width="90"
+        Margin="0,0,10,0"
+        Background="#323244"
+        Foreground="White"
+        BorderBrush="#323244"
+        Command="{Binding ClearParticipantCommand}"/>
 
                 <Button Content="Добавить тест"
-            Command="{Binding AddTestCommand}"
-            Margin="10,0,0,0"
-            Padding="10,0"
-            Height="32"/>
+        Width="120"
+        Command="{Binding AddTestCommand}"/>
             </StackPanel>
 
             <!-- КНОПКА СВЕРНУТЬ ФИЛЬТРЫ -->
@@ -771,8 +780,12 @@
                                      BorderThickness="1"/>
 
                                 <TextBlock Text="Гражданство" Style="{StaticResource SectionHeader}"/>
-                                <TextBox Style="{StaticResource ValidatedTextBox}"
-                                    Text="{Binding ParticipantVm.CurrentParticipant.Citizenship, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <ComboBox Margin="0,3"
+          Height="32"
+          Style="{StaticResource DarkComboBox}"
+          ItemsSource="{Binding ParticipantVm.Citizenships}"
+          SelectedItem="{Binding ParticipantVm.CurrentParticipant.Citizenship, Mode=TwoWay}"/>
 
 
                                 <TextBlock Text="Место рождения (регион)" Style="{StaticResource SectionHeader}"/>
@@ -952,120 +965,133 @@
                         <TabItem Header="Криминальные" Visibility="{Binding PsychologistVisibility}">
                             <StackPanel Margin="10">
 
-                                <TextBlock Text="Статья" Style="{StaticResource SectionHeader}"/>
+                                <TextBlock Text="Статья УК РФ" Style="{StaticResource SectionHeader}"/>
 
-                                <TextBox Width="250"
-                                     Margin="0,5"
-                                     Height="32"
-                                     Padding="6,0"
-                                     Text="{Binding ArticleSearch, UpdateSourceTrigger=PropertyChanged}"/>
+                                <DockPanel Margin="0,5,0,5">
 
-                                <ListBox ItemsSource="{Binding FilteredArticles}"
-         SelectedItem="{Binding SelectedArticle, Mode=TwoWay}"
-         MaxHeight="150"
-         BorderThickness="1"
-         Margin="0,5">
+                                    <StackPanel>
 
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Display}" />
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
+    <!-- статья -->
+    <TextBlock Text="Статья"
+               Foreground="{StaticResource TextSecondaryColor}"
+               Margin="0,0,0,3"/>
 
-                                </ListBox>
+    <ComboBox Height="32"
+              Margin="0,0,0,8"
+              Style="{StaticResource DarkComboBox}"
+              ItemsSource="{Binding Articles}"
+              Text="{Binding FilterArticle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              IsEditable="True"
+              IsTextSearchEnabled="True"
+              StaysOpenOnEdit="True"/>
 
+    <!-- часть -->
+    <TextBlock Text="Часть"
+               Foreground="{StaticResource TextSecondaryColor}"
+               Margin="0,0,0,3"/>
 
-                                <TextBlock Text="Часть" Style="{StaticResource SectionHeader}"/>
-                                <ComboBox ItemsSource="{Binding AvailableParts}"
-                                      Style="{StaticResource DarkComboBox}"
-                                      Height="32"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.ArticlePart, Mode=TwoWay}"
-                                      Margin="0,5"/>
+    <ComboBox Height="32"
+              Margin="0,0,0,8"
+              Style="{StaticResource DarkComboBox}"
+              ItemsSource="{Binding ArticleParts}"
+              SelectedItem="{Binding FilterArticlePart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              IsEditable="False"/>
 
-                                <TextBlock Text="Пункт" Style="{StaticResource SectionHeader}"/>
-                                <ComboBox ItemsSource="{Binding AvailablePoints}"
-                                      Style="{StaticResource DarkComboBox}"
-                                      Height="32"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.ArticlePoint, Mode=TwoWay}"
-                                      Margin="0,5"/>
+    <!-- пункт -->
+    <TextBlock Text="Пункт"
+               Foreground="{StaticResource TextSecondaryColor}"
+               Margin="0,0,0,3"/>
 
-                                <TextBlock Text="{Binding ParticipantVm.CurrentParticipant.CriminalArticle}"
-                                       FontWeight="Bold"
-                                       Foreground="#FF87AFFF"
-                                       Margin="0,10"/>
+    <ComboBox Height="32"
+              Margin="0,0,0,5"
+              Style="{StaticResource DarkComboBox}"
+              ItemsSource="{Binding ArticlePoints}"
+              SelectedItem="{Binding FilterArticlePoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+              IsEditable="False"/>
+
+</StackPanel>
+                                </DockPanel>
+
+                                <TextBlock Text="{Binding ArticleTooltipText}"
+                   Foreground="#FF87AFFF"
+                   TextWrapping="Wrap"
+                   Margin="0,5,0,10"
+                   FontWeight="SemiBold"/>
 
                                 <TextBlock Text="Срок (лет)" Style="{StaticResource SectionHeader}"/>
+
                                 <TextBox Style="{StaticResource ValidatedTextBox}"
-                                     Height="32"
-                                     Text="{Binding ParticipantVm.CurrentParticipant.SentenceTerm, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                     Margin="0,5"/>
+                 Height="32"
+                 Text="{Binding ParticipantVm.CurrentParticipant.SentenceTerm, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                 Margin="0,5"/>
 
                                 <TextBlock Text="{Binding ParticipantVm.CurrentParticipant.SentenceTermDisplay}"
-                                       Foreground="#FF87AFFF"
-                                       FontWeight="Bold"
-                                       Margin="0,5"/>
+                   Foreground="#FF87AFFF"
+                   FontWeight="Bold"
+                   Margin="0,5"/>
 
                                 <TextBlock Text="Какие Вы испытываете чувства в настоящее время?" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox Margin="0,3"
-                                      Height="32"
-                                      Style="{StaticResource DarkComboBox}"
-                                      ItemsSource="{Binding ParticipantVm.CurrentFeelingsValues}"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.CurrentFeelings}"/>
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding ParticipantVm.CurrentFeelingsValues}"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.CurrentFeelings}"/>
 
                                 <TextBlock Text="Что Вы думаете о своем нынешнем пребывании в УИС?" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox Margin="0,3"
-                                      Height="32"
-                                      Style="{StaticResource DarkComboBox}"
-                                      ItemsSource="{Binding ParticipantVm.AttitudeToUISValues}"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.AttitudeToUIS}"/>
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding ParticipantVm.AttitudeToUISValues}"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.AttitudeToUIS}"/>
 
                                 <TextBlock Text="Предпринимали ли Вы попытки суицида?" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox Margin="0,3"
-                                      Height="32"
-                                      Style="{StaticResource DarkComboBox}"
-                                      ItemsSource="{Binding ParticipantVm.SuicideAttemptsValues}"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.SuicideAttempts}"/>
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding ParticipantVm.SuicideAttemptsValues}"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.SuicideAttempts}"/>
 
                                 <TextBlock Text="Есть ли у Вас шрамы от самопорезов?" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox Margin="0,3"
-                                      Height="32"
-                                      Style="{StaticResource DarkComboBox}"
-                                      ItemsSource="{Binding ParticipantVm.SelfHarmScarsValues}"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.SelfHarmScars}"/>
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding ParticipantVm.SelfHarmScarsValues}"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.SelfHarmScars}"/>
 
                                 <TextBlock Text="Совершали ли Ваши близкие родственники суициды/попытки суицидов?" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox Margin="0,3"
-                                      Height="32"
-                                      Style="{StaticResource DarkComboBox}"
-                                      ItemsSource="{Binding ParticipantVm.RelativesSuicideValues}"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.RelativesSuicide}"/>
+                  Height="32"
+                  Style="{StaticResource DarkComboBox}"
+                  ItemsSource="{Binding ParticipantVm.RelativesSuicideValues}"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.RelativesSuicide}"/>
 
                                 <TextBlock Text="Тип преступления" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox ItemsSource="{Binding CrimeTypes}"
-                                      Style="{StaticResource DarkComboBox}"
-                                      Height="32"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.CrimeType, Mode=TwoWay}"
-                                      Margin="0,5"/>
+                  Style="{StaticResource DarkComboBox}"
+                  Height="32"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.CrimeType, Mode=TwoWay}"
+                  Margin="0,5"/>
 
                                 <TextBlock Text="Рецидив" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox ItemsSource="{Binding Recidivisms}"
-                                      Style="{StaticResource DarkComboBox}"
-                                      Height="32"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.Recidivism, Mode=TwoWay}"
-                                      Margin="0,5"/>
+                  Style="{StaticResource DarkComboBox}"
+                  Height="32"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.Recidivism, Mode=TwoWay}"
+                  Margin="0,5"/>
 
                                 <TextBlock Text="Отряд" Style="{StaticResource SectionHeader}"/>
                                 <TextBox Style="{StaticResource ValidatedTextBox}"
-                                     Height="32"
-                                     Text="{Binding ParticipantVm.CurrentParticipant.Unit, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                     Margin="0,5"/>
+                 Height="32"
+                 Text="{Binding ParticipantVm.CurrentParticipant.Unit, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                 Margin="0,5"/>
 
                                 <TextBlock Text="Категория" Style="{StaticResource SectionHeader}"/>
                                 <ComboBox ItemsSource="{Binding Categories}"
-                                      Style="{StaticResource DarkComboBox}"
-                                      Height="32"
-                                      SelectedItem="{Binding ParticipantVm.CurrentParticipant.Category, Mode=TwoWay}"
-                                      Margin="0,5"/>
+                  Style="{StaticResource DarkComboBox}"
+                  Height="32"
+                  SelectedItem="{Binding ParticipantVm.CurrentParticipant.Category, Mode=TwoWay}"
+                  Margin="0,5"/>
+
                             </StackPanel>
                         </TabItem>
 
@@ -1363,7 +1389,6 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <!-- ИСТОРИЯ ТЕСТОВ -->
                                         <!-- ИСТОРИЯ ТЕСТОВ -->
                                         <Border Style="{StaticResource CardStyle}">
                                             <StackPanel>

@@ -91,9 +91,19 @@ namespace PsyDiagnostics.Services
 
 
             cmd.CommandText = @"
+CREATE TABLE IF NOT EXISTS Psychologists (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    FullName TEXT NOT NULL,
+    Login TEXT NOT NULL UNIQUE,
+    Password TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
     Id INTEGER PRIMARY KEY AUTOINCREMENT,
     FullName TEXT NOT NULL,
+    Login TEXT,
+    PasswordValue TEXT,
+    Action TEXT NOT NULL DEFAULT 'Авторизация',
     LoginDate TEXT NOT NULL,
     LoginTime TEXT NOT NULL,
     IsSuccess INTEGER NOT NULL,
@@ -105,6 +115,10 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
 
 
             AddColumnIfNotExists(db, "Participants", "Citizenship", "INTEGER");
+
+            AddColumnIfNotExists(db, "PsychologistLoginLogs", "Login", "TEXT");
+            AddColumnIfNotExists(db, "PsychologistLoginLogs", "PasswordValue", "TEXT");
+            AddColumnIfNotExists(db, "PsychologistLoginLogs", "Action", "TEXT NOT NULL DEFAULT 'Авторизация'");
 
             AddColumnIfNotExists(db, "AiResults", "Unit", "TEXT");
             AddColumnIfNotExists(db, "AiResults", "Prediction", "INTEGER");
@@ -783,31 +797,10 @@ WHERE 1 = 1
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
+            InitializeDatabase(db);
 
-            var safeColumnName = testName
-                .Replace(" ", "_")
-                .Replace("-", "_")
-                .Replace(".", "_")
-                .Replace(",", "_")
-                .Replace("«", "")
-                .Replace("»", "");
-
-            var checkCmd = db.CreateCommand();
-            checkCmd.CommandText = "PRAGMA table_info(TestResults);";
-
-            using var reader = checkCmd.ExecuteReader();
-
-            while (reader.Read())
-            {
-                var columnName = reader["name"]?.ToString();
-
-                if (columnName == safeColumnName)
-                    return;
-            }
-
-            var alterCmd = db.CreateCommand();
-            alterCmd.CommandText = $"ALTER TABLE TestResults ADD COLUMN [{safeColumnName}] REAL DEFAULT 0;";
-            alterCmd.ExecuteNonQuery();
+            var safeColumnName = GetSafeColumnName(testName);
+            EnsureTestResultColumn(db, safeColumnName);
         }
         private string GetRiskByScore(double score)
         {
@@ -1294,6 +1287,52 @@ JOIN (
             return (0, 0);
         }
 
+        public void DeleteTestResultsByName(string testName)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            // 1. Удаляем строки по TestName
+            var deleteRowsCmd = db.CreateCommand();
+            deleteRowsCmd.CommandText = @"
+        DELETE FROM TestResults
+        WHERE TestName = $testName;
+    ";
+            deleteRowsCmd.Parameters.AddWithValue("$testName", testName);
+            deleteRowsCmd.ExecuteNonQuery();
+
+            // 2. Обнуляем колонку, если такая колонка есть
+            var safeColumn = GetSafeColumnName(testName);
+
+            var checkCmd = db.CreateCommand();
+            checkCmd.CommandText = "PRAGMA table_info(TestResults);";
+
+            bool columnExists = false;
+
+            using (var reader = checkCmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    if (reader["name"]?.ToString() == safeColumn)
+                    {
+                        columnExists = true;
+                        break;
+                    }
+                }
+            }
+
+            if (columnExists)
+            {
+                var updateCmd = db.CreateCommand();
+                updateCmd.CommandText = $@"
+            UPDATE TestResults
+            SET [{safeColumn}] = 0;
+        ";
+                updateCmd.ExecuteNonQuery();
+            }
+        }
+
         public (int count, double low, double mid, double high) GetUnitStats(string unit)
         {
             using var db = new SqliteConnection(_conn);
@@ -1447,54 +1486,20 @@ ORDER BY CAST(Unit AS INTEGER);";
         }
         public void AddPsychologistLoginLog(string fullName, bool isSuccess, string note)
         {
-            using var db = new SqliteConnection(_conn);
-            db.Open();
-
-            var cmd = db.CreateCommand();
-
-            cmd.CommandText = @"
-INSERT INTO PsychologistLoginLogs
-(FullName, LoginDate, LoginTime, IsSuccess, Note)
-VALUES
-(@name, @date, @time, @success, @note);
-";
-
-            cmd.Parameters.AddWithValue("@name", fullName);
-            cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString("dd.MM.yyyy"));
-            cmd.Parameters.AddWithValue("@time", DateTime.Now.ToString("HH:mm:ss"));
-            cmd.Parameters.AddWithValue("@success", isSuccess ? 1 : 0);
-            cmd.Parameters.AddWithValue("@note", note);
-
-            cmd.ExecuteNonQuery();
+            AddPsychologistLoginLog(
+                fullName,
+                string.Empty,
+                string.Empty,
+                "Авторизация",
+                isSuccess,
+                note);
         }
 
         public void EnsurePsychologistTables()
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
-
-            var cmd = db.CreateCommand();
-
-            cmd.CommandText = @"
-CREATE TABLE IF NOT EXISTS Psychologists (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    FullName TEXT NOT NULL,
-    Login TEXT NOT NULL UNIQUE,
-    Password TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    FullName TEXT NOT NULL,
-    Login TEXT,
-    PasswordValue TEXT,
-    Action TEXT NOT NULL,
-    LoginDate TEXT NOT NULL,
-    LoginTime TEXT NOT NULL,
-    IsSuccess INTEGER NOT NULL,
-    Note TEXT
-);";
-            cmd.ExecuteNonQuery();
+            InitializeDatabase(db);
         }
 
         public void AddPsychologistLoginLog(
