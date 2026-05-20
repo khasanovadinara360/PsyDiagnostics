@@ -358,42 +358,33 @@ namespace PsyDiagnostics.ViewModels
 
         private List<Test> LoadAllTestsFromFolder()
         {
-            var result = new List<Test>();
-
-            foreach (var folder in GetTestsFolders())
+            try
             {
-                if (!Directory.Exists(folder))
-                    continue;
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "tests.json");
 
-                foreach (var file in Directory.GetFiles(folder, "*.json"))
-                {
-                    try
+                if (!File.Exists(path))
+                    return new List<Test>();
+
+                var json = File.ReadAllText(path);
+
+                var tests = System.Text.Json.JsonSerializer.Deserialize<List<Test>>(json,
+                    new JsonSerializerOptions
                     {
-                        var json = File.ReadAllText(file);
-                        var test = System.Text.Json.JsonSerializer.Deserialize<Test>(json, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        PropertyNameCaseInsensitive = true
+                    });
 
-                        if (test != null)
-                        {
-                            if (string.IsNullOrWhiteSpace(test.Name))
-                                test.Name = Path.GetFileNameWithoutExtension(file);
-
-                            result.Add(test);
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
+                return tests?
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                    .GroupBy(x => x.Name)
+                    .Select(g => g.First())
+                    .OrderBy(x => x.Name)
+                    .ToList()
+                    ?? new List<Test>();
             }
-
-            return result
-                .GroupBy(x => x.Name)
-                .Select(g => g.First())
-                .OrderBy(x => x.Name)
-                .ToList();
+            catch
+            {
+                return new List<Test>();
+            }
         }
 
         private void LoadExistingTests()

@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using LiveChartsCore.SkiaSharpView.WPF;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore;
@@ -2439,31 +2440,305 @@ namespace PsyDiagnostics.ViewModels
             Current != null &&
             Current.IsValid();
 
+        private int _loginAttempts;
+        private DateTime? _blockedUntil;
+        private DispatcherTimer _blockTimer;
         public void LoginPsychologist(string password)
+        {
+            LoginError = "";
+
+            // Проверка блокировки
+            if (_blockedUntil.HasValue && DateTime.Now < _blockedUntil.Value)
+            {
+                var remain = _blockedUntil.Value - DateTime.Now;
+
+                LoginError =
+                    $"Вход временно заблокирован. Повторите через {remain.Minutes}:{remain.Seconds:00}";
+
+                return;
+            }
+
+            // Если время блокировки прошло — сбрасываем блокировку и попытки
+            if (_blockedUntil.HasValue && DateTime.Now >= _blockedUntil.Value)
+            {
+                _blockedUntil = null;
+                _loginAttempts = 0;
+            }
+
+            // Проверка логина
+            if (string.IsNullOrWhiteSpace(PsychologistLoginFullName))
+            {
+                LoginError = "Введите логин";
+
+                _db.AddPsychologistLoginLog(
+                    "Не указано",
+                    "",
+                    "",
+                    "Неуспешный вход",
+                    false,
+                    "Попытка входа без логина");
+
+                return;
+            }
+
+            // Проверка пустого пароля
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                LoginError = "Введите пароль";
+
+                _db.AddPsychologistLoginLog(
+                    "Не указано",
+                    PsychologistLoginFullName.Trim(),
+                    "",
+                    "Неуспешный вход",
+                    false,
+                    "Попытка входа без пароля");
+
+                return;
+            }
+
+            // Минимальная длина
+            if (password.Length < 8)
+            {
+                LoginError = "Пароль должен содержать минимум 8 символов";
+                return;
+            }
+
+            // Заглавная буква
+            if (!password.Any(char.IsUpper))
+            {
+                LoginError = "Пароль должен содержать заглавную букву";
+                return;
+            }
+
+            // Цифра
+            if (!password.Any(char.IsDigit))
+            {
+                LoginError = "Пароль должен содержать цифру";
+                return;
+            }
+
+            // Спецсимвол
+            if (!password.Any(ch => !char.IsLetterOrDigit(ch)))
+            {
+                LoginError = "Пароль должен содержать спецсимвол";
+                return;
+            }
+
+            // Пробелы
+            if (password.Contains(" "))
+            {
+                LoginError = "Пароль не должен содержать пробелы";
+                return;
+            }
+
+            string login = PsychologistLoginFullName.Trim();
+
+            // Получаем психолога по логину
+            var psychologist = _db.GetPsychologistByLogin(login);
+
+            if (psychologist == null)
+            {
+                LoginError = "Пользователь не найден";
+
+                _db.AddPsychologistLoginLog(
+                    "Не найден",
+                    login,
+                    password,
+                    "Неуспешный вход",
+                    false,
+                    "Пользователь не найден");
+
+                return;
+            }
+
+            // Неверный пароль
+            if (password != psychologist.Value.Password)
+            {
+                _loginAttempts++;
+
+                _db.AddPsychologistLoginLog(
+                    psychologist.Value.FullName,
+                    login,
+                    password,
+                    "Неуспешный вход",
+                    false,
+                    "Неверный пароль");
+
+                // Блокировка после 3 попыток
+                if (_loginAttempts >= 3)
+                {
+                    _blockedUntil = DateTime.Now.AddMinutes(1);
+
+                    StartBlockTimer();
+
+                    return;
+                }
+
+                int attemptsLeft = Math.Max(0, 3 - _loginAttempts);
+
+                LoginError =
+                    $"Неверный пароль. Осталось попыток: {attemptsLeft}";
+
+                return;
+            }
+
+            // Сброс блокировки
+            _loginAttempts = 0;
+            _blockedUntil = null;
+
+            // В верхний левый угол выводим ФИО, а не логин
+            PsychologistFullName = psychologist.Value.FullName;
+
+            // Лог успешного входа
+            _db.AddPsychologistLoginLog(
+                psychologist.Value.FullName,
+                login,
+                password,
+                "Успешный вход",
+                true,
+                "Авторизация выполнена");
+
+            TopBarTitle =
+                $"Психолог: {PsychologistFullName}";
+
+            LoginError = "";
+
+            ShowParticipant();
+        }
+
+        private void BlockTimer_Tick(object sender, EventArgs e)
+        {
+            if (!_blockedUntil.HasValue)
+            {
+                _blockTimer.Stop();
+                return;
+            }
+
+            var remain = _blockedUntil.Value - DateTime.Now;
+
+            if (remain <= TimeSpan.Zero)
+            {
+                _blockTimer.Stop();
+                _blockedUntil = null;
+                _loginAttempts = 0;
+                LoginError = "Блокировка снята. Повторите вход.";
+                return;
+            }
+
+            LoginError =
+                $"Вход временно заблокирован. Повторите через {remain.Minutes}:{remain.Seconds:00}";
+        }
+
+        private void StartBlockTimer()
+        {
+            if (_blockTimer != null)
+            {
+                _blockTimer.Stop();
+                _blockTimer.Tick -= BlockTimer_Tick;
+            }
+
+            _blockTimer = new DispatcherTimer();
+            _blockTimer.Interval = TimeSpan.FromSeconds(1);
+            _blockTimer.Tick += BlockTimer_Tick;
+            _blockTimer.Start();
+
+            BlockTimer_Tick(null, EventArgs.Empty);
+        }
+
+        public (string FullName, string Login, string Password)? GetPsychologistByLogin(string login)
+        {
+            return _db.GetPsychologistByLogin(login);
+        }
+        public void ResetPsychologistPassword(string newPassword)
         {
             LoginError = "";
 
             if (string.IsNullOrWhiteSpace(PsychologistLoginFullName))
             {
-                LoginError = "Введите ФИО";
-                _db.AddPsychologistLoginLog("Не указано", false, "Попытка входа без ФИО");
+                LoginError = "Введите логин для смены пароля";
                 return;
             }
 
-            if (password != "12")
+            string login = PsychologistLoginFullName.Trim();
+
+            // 1. Сначала проверяем существование логина
+            var psychologist = _db.GetPsychologistByLogin(login);
+
+            if (psychologist == null)
             {
-                LoginError = "Неверный пароль";
-                _db.AddPsychologistLoginLog(PsychologistLoginFullName.Trim(), false, "Неверный пароль");
+                LoginError = "Пользователь с таким логином не найден";
+
+                _db.AddPsychologistLoginLog(
+                    "Не найден",
+                    login,
+                    "",
+                    "Неуспешная смена пароля",
+                    false,
+                    "Попытка смены пароля для несуществующего логина");
+
                 return;
             }
 
-            PsychologistFullName = PsychologistLoginFullName.Trim();
-            _db.AddPsychologistLoginLog(PsychologistFullName, true, "Успешный вход");
-            TopBarTitle = $"Психолог: {PsychologistFullName}";
+            // 2. Только после этого проверяем новый пароль
+            if (string.IsNullOrWhiteSpace(newPassword))
+            {
+                LoginError = "Введите новый пароль";
+                return;
+            }
 
-            ShowParticipant();
+            if (newPassword.Length < 8)
+            {
+                LoginError = "Новый пароль должен содержать минимум 8 символов";
+                return;
+            }
+
+            if (!newPassword.Any(char.IsUpper))
+            {
+                LoginError = "Новый пароль должен содержать заглавную букву";
+                return;
+            }
+
+            if (!newPassword.Any(char.IsDigit))
+            {
+                LoginError = "Новый пароль должен содержать цифру";
+                return;
+            }
+
+            if (!newPassword.Any(ch => !char.IsLetterOrDigit(ch)))
+            {
+                LoginError = "Новый пароль должен содержать спецсимвол";
+                return;
+            }
+
+            if (newPassword.Contains(" "))
+            {
+                LoginError = "Новый пароль не должен содержать пробелы";
+                return;
+            }
+
+            // 3. Меняем пароль
+            bool changed = _db.ChangePsychologistPassword(
+                psychologist.Value.FullName,
+                login,
+                newPassword);
+
+            if (!changed)
+            {
+                LoginError = "Не удалось изменить пароль";
+                return;
+            }
+
+            // 4. Логируем смену пароля
+            _db.AddPsychologistLoginLog(
+                psychologist.Value.FullName,
+                login,
+                newPassword,
+                "Смена пароля",
+                true,
+                $"Пароль изменён на: {newPassword}");
+
+            LoginError = "Пароль успешно изменён";
         }
-
-
     }
 }

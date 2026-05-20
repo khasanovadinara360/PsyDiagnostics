@@ -1389,9 +1389,7 @@
         ]
       }
     ]
-  },
-
-  {
+  },{
     "Name": "Adaptation",
     "LowMax": 40,
     "MediumMax": 70,

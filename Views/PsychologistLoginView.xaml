@@ -1,8 +1,9 @@
 <UserControl x:Class="PsyDiagnostics.Views.PsychologistLoginView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#1E1E28">
 
-    <Grid Background="#1E1E28">
+    <Grid>
 
         <Border Width="420"
                 Padding="30"
@@ -21,32 +22,88 @@
                            Foreground="White"
                            Margin="0,0,0,25"/>
 
-                <TextBlock Text="ФИО"
+                <TextBlock Text="Логин"
                            Foreground="#9FA4B5"/>
 
                 <TextBox Height="38"
                          Margin="0,5,0,15"
+                         Padding="10,0"
+                         Background="#1E1E28"
+                         Foreground="White"
+                         BorderBrush="#323244"
+                         BorderThickness="1"
                          Text="{Binding PsychologistLoginFullName, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Text="Пароль"
                            Foreground="#9FA4B5"/>
 
-                <PasswordBox x:Name="PasswordBox"
+                <Grid Margin="0,5,0,5">
+
+                    <!-- Скрытый пароль -->
+                    <PasswordBox x:Name="PasswordBox"
+                                 Height="38"
+                                 Padding="10,0,40,0"
+                                 Background="#1E1E28"
+                                 Foreground="White"
+                                 BorderBrush="#323244"
+                                 BorderThickness="1"/>
+
+                    <!-- Видимый пароль -->
+                    <TextBox x:Name="VisiblePasswordBox"
                              Height="38"
-                             Margin="0,5,0,15"/>
+                             Padding="10,0,40,0"
+                             Background="#1E1E28"
+                             Foreground="White"
+                             BorderBrush="#323244"
+                             BorderThickness="1"
+                             Visibility="Collapsed"/>
+
+                    <!-- Глазик -->
+                    <Button x:Name="TogglePasswordButton"
+                            Width="32"
+                            Height="32"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0,0,3,0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="White"
+                            FontSize="16"
+                            Cursor="Hand"
+                            Content="👁"
+                            Click="TogglePassword_Click"/>
+
+                </Grid>
+
+                <TextBlock Text="Минимум 8 символов, заглавная буква, цифра и спецсимвол"
+                           Foreground="#9FA4B5"
+                           FontSize="11"
+                           Margin="0,0,0,10"/>
 
                 <TextBlock Text="{Binding LoginError}"
                            Foreground="#FFFF5370"
+                           TextWrapping="Wrap"
                            Margin="0,0,0,10"/>
 
                 <Button Content="Войти"
-        Height="40"
-        Background="#4E5DFF"
-        Foreground="White"
-        BorderThickness="0"
-        Click="Login_Click"
-        IsDefault="True"/>
-                
+                        Height="40"
+                        Background="#4E5DFF"
+                        Foreground="White"
+                        BorderThickness="0"
+                        FontWeight="SemiBold"
+                        Cursor="Hand"
+                        Click="Login_Click"
+                        IsDefault="True"
+                        Margin="0,0,0,10"/>
+
+                <Button Content="Забыли пароль?"
+                        Height="35"
+                        Background="#323244"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="ResetPassword_Click"/>
+
             </StackPanel>
 
         </Border>

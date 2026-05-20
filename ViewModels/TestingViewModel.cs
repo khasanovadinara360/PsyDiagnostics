@@ -60,8 +60,7 @@ namespace PsyDiagnostics.ViewModels
 
         private void ExportPdf()
         {
-            // Заглушка: позже сюда добавим реальную генерацию PDF
-            System.Windows.MessageBox.Show("Выгрузка PDF пока не реализована.");
+            
         }
     }
 }

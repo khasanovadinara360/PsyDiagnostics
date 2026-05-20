@@ -1124,34 +1124,40 @@ ORDER BY [{columnName}]
             InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
+
             cmd.CommandText = @"
-        SELECT p.FullName, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore, a.Unit
-        FROM AiResults a
-        JOIN Participants p ON TRIM(p.PrisonerId) = TRIM(a.PrisonerId)
-        WHERE TRIM(a.Unit) = TRIM($unit)
-          AND a.Date = (
-              SELECT MAX(a2.Date)
-              FROM AiResults a2
-              WHERE a2.PrisonerId = a.PrisonerId
-          )
-        ORDER BY RiskScore DESC, p.FullName ASC";
+SELECT 
+    p.FullName,
+    COALESCE(a.RiskScore, a.Score, 0) AS RiskScore,
+    a.Unit
+FROM AiResults a
+JOIN Participants p 
+    ON TRIM(p.PrisonerId) = TRIM(a.PrisonerId)
+WHERE TRIM(a.Unit) = TRIM($unit)
+AND a.Id = (
+    SELECT MAX(a2.Id)
+    FROM AiResults a2
+    WHERE TRIM(a2.PrisonerId) = TRIM(a.PrisonerId)
+)
+ORDER BY RiskScore DESC, p.FullName ASC";
+
             cmd.Parameters.AddWithValue("$unit", unit ?? "");
 
             var list = new List<(string, double, string)>();
 
             using var r = cmd.ExecuteReader();
+
             while (r.Read())
             {
                 list.Add((
-                    r["FullName"].ToString(),
-                    Convert.ToDouble(r["RiskScore"]),
-                    r["Unit"].ToString()
+                    r["FullName"]?.ToString(),
+                    r.IsDBNull(1) ? 0 : Convert.ToDouble(r["RiskScore"]),
+                    r["Unit"]?.ToString()
                 ));
             }
 
             return list;
         }
-
         public List<string> GetUnits()
         {
             using var db = new SqliteConnection(_conn);
@@ -1324,7 +1330,7 @@ ORDER BY [{columnName}]
 
             return list;
         }
-        public void AddPsychologistLoginLog(string fullName, bool isSuccess, string note = "")
+        public void AddPsychologistLoginLog(string fullName, bool isSuccess, string note)
         {
             using var db = new SqliteConnection(_conn);
             db.Open();
@@ -1332,23 +1338,75 @@ ORDER BY [{columnName}]
             var cmd = db.CreateCommand();
 
             cmd.CommandText = @"
+INSERT INTO PsychologistLoginLogs
+(FullName, LoginDate, LoginTime, IsSuccess, Note)
+VALUES
+(@name, @date, @time, @success, @note);
+";
+
+            cmd.Parameters.AddWithValue("@name", fullName);
+            cmd.Parameters.AddWithValue("@date", DateTime.Now.ToString("dd.MM.yyyy"));
+            cmd.Parameters.AddWithValue("@time", DateTime.Now.ToString("HH:mm:ss"));
+            cmd.Parameters.AddWithValue("@success", isSuccess ? 1 : 0);
+            cmd.Parameters.AddWithValue("@note", note);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public void EnsurePsychologistTables()
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+CREATE TABLE IF NOT EXISTS Psychologists (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    FullName TEXT NOT NULL,
+    Login TEXT NOT NULL UNIQUE,
+    Password TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
     Id INTEGER PRIMARY KEY AUTOINCREMENT,
     FullName TEXT NOT NULL,
+    Login TEXT,
+    PasswordValue TEXT,
+    Action TEXT NOT NULL,
     LoginDate TEXT NOT NULL,
     LoginTime TEXT NOT NULL,
     IsSuccess INTEGER NOT NULL,
     Note TEXT
 );";
             cmd.ExecuteNonQuery();
+        }
+
+        public void AddPsychologistLoginLog(
+    string fullName,
+    string login,
+    string passwordValue,
+    string action,
+    bool isSuccess,
+    string note = "")
+        {
+            EnsurePsychologistTables();
+
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
 
             cmd.CommandText = @"
 INSERT INTO PsychologistLoginLogs
-(FullName, LoginDate, LoginTime, IsSuccess, Note)
+(FullName, Login, PasswordValue, Action, LoginDate, LoginTime, IsSuccess, Note)
 VALUES
-($fullName, $loginDate, $loginTime, $isSuccess, $note);";
+($fullName, $login, $passwordValue, $action, $loginDate, $loginTime, $isSuccess, $note);";
 
             cmd.Parameters.AddWithValue("$fullName", fullName ?? "");
+            cmd.Parameters.AddWithValue("$login", login ?? "");
+            cmd.Parameters.AddWithValue("$passwordValue", passwordValue ?? "");
+            cmd.Parameters.AddWithValue("$action", action ?? "");
             cmd.Parameters.AddWithValue("$loginDate", DateTime.Now.ToString("dd.MM.yyyy"));
             cmd.Parameters.AddWithValue("$loginTime", DateTime.Now.ToString("HH:mm:ss"));
             cmd.Parameters.AddWithValue("$isSuccess", isSuccess ? 1 : 0);
@@ -1357,6 +1415,95 @@ VALUES
             cmd.ExecuteNonQuery();
         }
 
+        public string GetPsychologistPassword(string login)
+        {
+            EnsurePsychologistTables();
 
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+SELECT Password
+FROM Psychologists
+WHERE Login = $login
+LIMIT 1;";
+
+            cmd.Parameters.AddWithValue("$login", login?.Trim() ?? "");
+
+            var result = cmd.ExecuteScalar();
+
+            return result?.ToString();
+        }
+
+        public bool ChangePsychologistPassword(string fullName, string login, string newPassword)
+        {
+            EnsurePsychologistTables();
+
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+UPDATE Psychologists
+SET Password = $password,
+    FullName = $fullName
+WHERE Login = $login;";
+
+            cmd.Parameters.AddWithValue("$password", newPassword);
+            cmd.Parameters.AddWithValue("$fullName", fullName ?? "");
+            cmd.Parameters.AddWithValue("$login", login?.Trim() ?? "");
+
+            return cmd.ExecuteNonQuery() > 0;
+        }
+
+        public void CreateDefaultPsychologistIfNotExists()
+        {
+            EnsurePsychologistTables();
+
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+INSERT OR IGNORE INTO Psychologists
+(FullName, Login, Password)
+VALUES
+('Психолог', 'psychologist', 'Admin123.');";
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public (string FullName, string Login, string Password)? GetPsychologistByLogin(string login)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+SELECT FullName, Login, Password
+FROM Psychologists
+WHERE Login = $login
+LIMIT 1;";
+
+            cmd.Parameters.AddWithValue("$login", login?.Trim() ?? "");
+
+            using var r = cmd.ExecuteReader();
+
+            if (r.Read())
+            {
+                return (
+                    r["FullName"]?.ToString(),
+                    r["Login"]?.ToString(),
+                    r["Password"]?.ToString()
+                );
+            }
+
+            return null;
+        }
     }
 }
