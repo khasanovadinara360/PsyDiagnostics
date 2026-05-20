@@ -523,29 +523,16 @@ VALUES
 
         private string GetSafeColumnName(string testName)
         {
-            if (string.IsNullOrWhiteSpace(testName))
-                return "CustomTest";
-
-            var result = testName.Trim();
-
-            foreach (var ch in Path.GetInvalidFileNameChars())
-                result = result.Replace(ch.ToString(), "");
-
-            result = result
-                .Replace(" ", "_")
-                .Replace("-", "_")
-                .Replace(".", "_")
-                .Replace(",", "_")
-                .Replace("«", "")
-                .Replace("»", "")
-                .Replace("(", "")
-                .Replace(")", "");
-
-            return result;
+            return testName?.Trim();
         }
 
         private void EnsureTestResultColumn(SqliteConnection db, string columnName)
         {
+            columnName = columnName?.Trim();
+
+            if (string.IsNullOrWhiteSpace(columnName))
+                return;
+
             var checkCmd = db.CreateCommand();
             checkCmd.CommandText = "PRAGMA table_info(TestResults);";
 
@@ -555,7 +542,7 @@ VALUES
             {
                 var existingName = reader["name"]?.ToString();
 
-                if (existingName == columnName)
+                if (string.Equals(existingName, columnName, StringComparison.OrdinalIgnoreCase))
                     return;
             }
 
@@ -799,8 +786,17 @@ WHERE 1 = 1
             db.Open();
             InitializeDatabase(db);
 
-            var safeColumnName = GetSafeColumnName(testName);
-            EnsureTestResultColumn(db, safeColumnName);
+            var columnName = testName;
+
+            if (ColumnExists(db, "TestResults", columnName))
+                return;
+
+            var cmd = db.CreateCommand();
+            cmd.CommandText = $@"
+        ALTER TABLE TestResults
+        ADD COLUMN [{columnName}] REAL DEFAULT 0;
+    ";
+            cmd.ExecuteNonQuery();
         }
         private string GetRiskByScore(double score)
         {
@@ -1293,46 +1289,92 @@ JOIN (
             db.Open();
             InitializeDatabase(db);
 
-            // 1. Удаляем строки по TestName
-            var deleteRowsCmd = db.CreateCommand();
-            deleteRowsCmd.CommandText = @"
+            // 1. Удаляем строки этого теста
+            var deleteCmd = db.CreateCommand();
+            deleteCmd.CommandText = @"
         DELETE FROM TestResults
         WHERE TestName = $testName;
     ";
-            deleteRowsCmd.Parameters.AddWithValue("$testName", testName);
-            deleteRowsCmd.ExecuteNonQuery();
+            deleteCmd.Parameters.AddWithValue("$testName", testName);
+            deleteCmd.ExecuteNonQuery();
 
-            // 2. Обнуляем колонку, если такая колонка есть
+            // 2. Удаляем колонку теста
             var safeColumn = GetSafeColumnName(testName);
 
-            var checkCmd = db.CreateCommand();
-            checkCmd.CommandText = "PRAGMA table_info(TestResults);";
+            DropColumnFromTestResults(db, safeColumn);
+        }
 
-            bool columnExists = false;
+        private void DropColumnFromTestResults(SqliteConnection db, string columnName)
+        {
+            var columns = new List<string>();
 
-            using (var reader = checkCmd.ExecuteReader())
+            var infoCmd = db.CreateCommand();
+            infoCmd.CommandText = "PRAGMA table_info(TestResults);";
+
+            using (var reader = infoCmd.ExecuteReader())
             {
                 while (reader.Read())
                 {
-                    if (reader["name"]?.ToString() == safeColumn)
+                    var name = reader["name"]?.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(name) &&
+                        !string.Equals(name, columnName, StringComparison.OrdinalIgnoreCase))
                     {
-                        columnExists = true;
-                        break;
+                        columns.Add(name);
                     }
                 }
             }
 
-            if (columnExists)
-            {
-                var updateCmd = db.CreateCommand();
-                updateCmd.CommandText = $@"
-            UPDATE TestResults
-            SET [{safeColumn}] = 0;
-        ";
-                updateCmd.ExecuteNonQuery();
-            }
+            if (!columns.Any())
+                return;
+
+            // если такой колонки нет — ничего не делаем
+            if (!ColumnExists(db, "TestResults", columnName))
+                return;
+
+            var columnsSql = string.Join(", ", columns.Select(c => $"[{c}]"));
+
+            using var transaction = db.BeginTransaction();
+
+            var createCmd = db.CreateCommand();
+            createCmd.Transaction = transaction;
+            createCmd.CommandText = $@"
+        CREATE TABLE TestResults_new AS
+        SELECT {columnsSql}
+        FROM TestResults;
+    ";
+            createCmd.ExecuteNonQuery();
+
+            var dropCmd = db.CreateCommand();
+            dropCmd.Transaction = transaction;
+            dropCmd.CommandText = "DROP TABLE TestResults;";
+            dropCmd.ExecuteNonQuery();
+
+            var renameCmd = db.CreateCommand();
+            renameCmd.Transaction = transaction;
+            renameCmd.CommandText = "ALTER TABLE TestResults_new RENAME TO TestResults;";
+            renameCmd.ExecuteNonQuery();
+
+            transaction.Commit();
         }
 
+        private bool ColumnExists(SqliteConnection db, string tableName, string columnName)
+        {
+            var cmd = db.CreateCommand();
+            cmd.CommandText = $"PRAGMA table_info([{tableName}]);";
+
+            using var reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var name = reader["name"]?.ToString();
+
+                if (string.Equals(name, columnName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
         public (int count, double low, double mid, double high) GetUnitStats(string unit)
         {
             using var db = new SqliteConnection(_conn);

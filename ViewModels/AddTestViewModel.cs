@@ -417,6 +417,9 @@ namespace PsyDiagnostics.ViewModels
             }
 
             SaveAllTests(tests);
+
+            _db.EnsureTestResultColumn(newTest.Name);
+
             LoadExistingTests();
 
             MessageBox.Show("Тест успешно сохранён");

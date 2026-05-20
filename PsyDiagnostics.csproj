@@ -8,11 +8,19 @@
 
   <ItemGroup>
     <None Remove="data.csv" />
+    <None Remove="Data\articles.json" />
+    <None Remove="Data\articles_info.json" />
     <None Remove="Data\tests.json" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="data.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\articles.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\articles_info.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\tests.json">
@@ -31,9 +39,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\articles.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Update="psy.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
