@@ -2035,59 +2035,24 @@ namespace PsyDiagnostics.ViewModels
         {
             var data = _db.GetRiskByUnits();
 
-            var lowValues = new List<double?>();
-            var midValues = new List<double?>();
-            var highValues = new List<double?>();
-
-            foreach (var x in data)
-            {
-                if (x.avgRisk <= 32)
-                {
-                    lowValues.Add(x.avgRisk);
-                    midValues.Add(null);
-                    highValues.Add(null);
-                }
-                else if (x.avgRisk <= 66)
-                {
-                    lowValues.Add(null);
-                    midValues.Add(x.avgRisk);
-                    highValues.Add(null);
-                }
-                else
-                {
-                    lowValues.Add(null);
-                    midValues.Add(null);
-                    highValues.Add(x.avgRisk);
-                }
-            }
-
             RiskByUnitSeries = new ISeries[]
             {
-        new ColumnSeries<double?>
+        new ColumnSeries<double>
         {
-            Name = "Низкий",
-            Values = lowValues,
-            Fill = new SolidColorPaint(SKColor.Parse("#B7F200")),
-            Stroke = null,
-            DataLabelsFormatter = p => p.Model.HasValue ? "Низкий" : ""
-        },
-
-        new ColumnSeries<double?>
-        {
-            Name = "Средний",
-            Values = midValues,
+            Name = "Риск",
+            Values = data.Select(x => x.avgRisk).ToList(),
             Fill = new SolidColorPaint(SKColor.Parse("#35D2AB")),
             Stroke = null,
-            DataLabelsFormatter = p => p.Model.HasValue ? "Средний" : ""
-        },
+            DataLabelsFormatter = p =>
+            {
+                if (p.Model <= 32)
+                    return "Низкий";
 
-        new ColumnSeries<double?>
-        {
-            Name = "Высокий",
-            Values = highValues,
-            Fill = new SolidColorPaint(SKColor.Parse("#FF1755")),
-            Stroke = null,
-            DataLabelsFormatter = p => p.Model.HasValue ? "Высокий" : ""
+                if (p.Model <= 66)
+                    return "Средний";
+
+                return "Высокий";
+            }
         }
             };
 
@@ -2150,38 +2115,61 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(RecidivismXAxis));
         }
 
+        private void BuildTopPeopleImprovementInfo(List<string> units)
+        {
+            TopPeople.Clear();
+
+            foreach (var unit in units)
+            {
+                var people = _db.GetTopPeopleByUnit(unit);
+
+                TopPeople.Add($"Отряд {unit}:");
+
+                if (people.Count == 0)
+                {
+                    TopPeople.Add("нет выраженных улучшений");
+                    continue;
+                }
+
+                foreach (var p in people)
+                {
+                    var article = _db.GetArticleByPrisoner(p.name);
+
+                    TopPeople.Add($"{p.name} — ст. {article}");
+                }
+            }
+        }
         public void BuildTopUnitsChart()
         {
             var data = _db.GetTopUnitsImprovement();
 
-            if (data == null || data.Count == 0)
-                return;
-
-            double total = data.Sum(x => x.improvement);
-
             TopUnitsSeries = new ISeries[]
             {
-        new ColumnSeries<double>
-        {
-            Values = data.Select(x => (double)x.improvement).ToArray(),
-            DataLabelsFormatter = point =>
-            {
-                double value = point.Coordinate.PrimaryValue;
-                return $"{value:F0}";
-            }
-        }
+                new ColumnSeries<double>
+                {
+                    Name = "Улучшение",
+                    Values = data.Select(x => x.improvement).ToList(),
+                    Fill = new SolidColorPaint(SKColor.Parse("#35D2AB")),
+                    Stroke = null,
+                    DataLabelsFormatter = p => p.Model > 0
+                        ? $"+{p.Model:F0}"
+                        : $"{p.Model:F0}"
+                }
             };
 
             TopUnitsXAxis = new Axis[]
             {
-        new Axis
-        {
-            Labels = data.Select(x => $"Отряд {x.unit}").ToArray()
-        }
+                new Axis
+                {
+                    Labels = data.Select(x => $"Отряд {x.unit}").ToArray()
+                }
             };
+
+            BuildTopPeopleImprovementInfo(data.Select(x => x.unit).ToList());
 
             OnPropertyChanged(nameof(TopUnitsSeries));
             OnPropertyChanged(nameof(TopUnitsXAxis));
+            OnPropertyChanged(nameof(TopPeople));
         }
         public void BuildPersonalChart()
         {

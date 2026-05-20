@@ -1060,6 +1060,81 @@ ORDER BY [{columnName}]
                 : Convert.ToDouble(result);
         }
 
+        public List<(string name, double improvement, string unit)> GetTopPeopleByUnit(string unit)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+WITH quarter_avg AS
+(
+    SELECT
+        TRIM(a.PrisonerId) AS PrisonerId,
+        TRIM(a.Unit) AS Unit,
+        a.Date,
+        AVG(COALESCE(a.RiskScore, a.Score, 0)) AS AvgRisk
+    FROM AiResults a
+    WHERE TRIM(a.Unit) = TRIM($unit)
+    GROUP BY TRIM(a.PrisonerId), TRIM(a.Unit), a.Date
+),
+first_last AS
+(
+    SELECT
+        q.PrisonerId,
+        q.Unit,
+
+        (
+            SELECT q1.AvgRisk
+            FROM quarter_avg q1
+            WHERE q1.PrisonerId = q.PrisonerId
+              AND q1.Unit = q.Unit
+            ORDER BY q1.Date ASC
+            LIMIT 1
+        ) AS FirstRisk,
+
+        (
+            SELECT q2.AvgRisk
+            FROM quarter_avg q2
+            WHERE q2.PrisonerId = q.PrisonerId
+              AND q2.Unit = q.Unit
+            ORDER BY q2.Date DESC
+            LIMIT 1
+        ) AS LastRisk
+
+    FROM quarter_avg q
+    GROUP BY q.PrisonerId, q.Unit
+)
+SELECT
+    COALESCE(p.FullName, fl.PrisonerId) AS FullName,
+    (fl.FirstRisk - fl.LastRisk) AS Improvement,
+    fl.Unit
+FROM first_last fl
+LEFT JOIN Participants p
+    ON TRIM(p.PrisonerId) = TRIM(fl.PrisonerId)
+WHERE (fl.FirstRisk - fl.LastRisk) > 0
+ORDER BY Improvement DESC
+LIMIT 5;";
+
+            cmd.Parameters.AddWithValue("$unit", unit ?? "");
+
+            var result = new List<(string, double, string)>();
+
+            using var r = cmd.ExecuteReader();
+
+            while (r.Read())
+            {
+                result.Add((
+                    r["FullName"]?.ToString(),
+                    r.IsDBNull(1) ? 0 : Convert.ToDouble(r["Improvement"]),
+                    r["Unit"]?.ToString()
+                ));
+            }
+
+            return result;
+        }
         public List<(string name, double risk, string unit)> GetTopPeopleFromBestUnit()
         {
             using var db = new SqliteConnection(_conn);
@@ -1068,53 +1143,59 @@ ORDER BY [{columnName}]
 
             var bestUnitCmd = db.CreateCommand();
             bestUnitCmd.CommandText = @"
-        SELECT t.Unit
-        FROM (
-            SELECT a.Unit, a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
-            FROM AiResults a
-            WHERE a.Date = (
-                SELECT MAX(a2.Date)
-                FROM AiResults a2
-                WHERE a2.PrisonerId = a.PrisonerId
-            )
-        ) t
-        GROUP BY t.Unit
-        ORDER BY AVG(t.RiskScore) ASC
-        LIMIT 1";
+WITH person_periods AS
+(
+    SELECT
+        TRIM(a.PrisonerId) AS PrisonerId,
+        TRIM(a.Unit) AS Unit,
+        a.Date,
+        AVG(COALESCE(a.RiskScore, a.Score, 0)) AS AvgRisk
+    FROM AiResults a
+    WHERE a.Date IS NOT NULL
+      AND TRIM(a.Date) <> ''
+    GROUP BY TRIM(a.PrisonerId), TRIM(a.Unit), a.Date
+),
+first_last AS
+(
+    SELECT
+        p.PrisonerId,
+        p.Unit,
+
+        (
+            SELECT pp.AvgRisk
+            FROM person_periods pp
+            WHERE pp.PrisonerId = p.PrisonerId
+              AND pp.Unit = p.Unit
+            ORDER BY pp.Date ASC
+            LIMIT 1
+        ) AS FirstRisk,
+
+        (
+            SELECT pp.AvgRisk
+            FROM person_periods pp
+            WHERE pp.PrisonerId = p.PrisonerId
+              AND pp.Unit = p.Unit
+            ORDER BY pp.Date DESC
+            LIMIT 1
+        ) AS LastRisk
+
+    FROM person_periods p
+    GROUP BY p.PrisonerId, p.Unit
+)
+SELECT Unit
+FROM first_last
+GROUP BY Unit
+ORDER BY AVG(FirstRisk - LastRisk) DESC
+LIMIT 1;";
 
             var bestUnit = bestUnitCmd.ExecuteScalar()?.ToString();
 
-            if (string.IsNullOrEmpty(bestUnit))
+            if (string.IsNullOrWhiteSpace(bestUnit))
                 return new List<(string, double, string)>();
 
-            var cmd = db.CreateCommand();
-            cmd.CommandText = @"
-        SELECT p.FullName, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore, a.Unit
-        FROM AiResults a
-        JOIN Participants p ON TRIM(p.PrisonerId) = TRIM(a.PrisonerId)
-        WHERE TRIM(a.Unit) = TRIM($unit)
-          AND a.Date = (
-              SELECT MAX(a2.Date)
-              FROM AiResults a2
-              WHERE a2.PrisonerId = a.PrisonerId
-          )
-        ORDER BY RiskScore ASC
-        LIMIT 5";
-            cmd.Parameters.AddWithValue("$unit", bestUnit);
-
-            var result = new List<(string, double, string)>();
-
-            using var r = cmd.ExecuteReader();
-            while (r.Read())
-            {
-                result.Add((
-                    r["FullName"].ToString(),
-                    Convert.ToDouble(r["RiskScore"]),
-                    r["Unit"].ToString()
-                ));
-            }
-
-            return result;
+            return GetTopPeopleByUnit(bestUnit)
+                .Select(x => (x.name, x.improvement, x.unit))
+                .ToList();
         }
 
         public List<(string name, double risk, string unit)> GetAllPeopleWithRisk(string unit)
@@ -1185,20 +1266,20 @@ ORDER BY RiskScore DESC, p.FullName ASC";
             InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
+
             cmd.CommandText = @"
-        SELECT 
-            AVG(CASE WHEN p.Recidivism = 0 THEN t.RiskScore END),
-            AVG(CASE WHEN p.Recidivism = 1 THEN t.RiskScore END)
-        FROM Participants p
-        JOIN (
-            SELECT a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
-            FROM AiResults a
-            WHERE a.Date = (
-                SELECT MAX(a2.Date)
-                FROM AiResults a2
-                WHERE a2.PrisonerId = a.PrisonerId
-            )
-        ) t ON p.PrisonerId = t.PrisonerId";
+SELECT 
+    AVG(CASE WHEN p.Recidivism = 0 THEN t.AvgRisk END),
+    AVG(CASE WHEN p.Recidivism = 1 THEN t.AvgRisk END)
+FROM Participants p
+JOIN (
+    SELECT 
+        TRIM(a.PrisonerId) AS PrisonerId,
+        AVG(COALESCE(a.RiskScore, a.Score, 0)) AS AvgRisk
+    FROM AiResults a
+    GROUP BY TRIM(a.PrisonerId)
+) t 
+    ON TRIM(p.PrisonerId) = TRIM(t.PrisonerId);";
 
             using var r = cmd.ExecuteReader();
 
@@ -1266,13 +1347,53 @@ FROM (
             InitializeDatabase(db);
 
             var cmd = db.CreateCommand();
+
             cmd.CommandText = @"
-        SELECT Unit, 
-               MAX(COALESCE(RiskScore, Score, 0)) - MIN(COALESCE(RiskScore, Score, 0)) as improvement
-        FROM AiResults
-        GROUP BY Unit
-        ORDER BY improvement DESC
-        LIMIT 5";
+WITH person_periods AS
+(
+    SELECT
+        TRIM(a.PrisonerId) AS PrisonerId,
+        TRIM(a.Unit) AS Unit,
+        a.Date,
+        AVG(COALESCE(a.RiskScore, a.Score, 0)) AS AvgRisk
+    FROM AiResults a
+    WHERE a.Date IS NOT NULL
+      AND TRIM(a.Date) <> ''
+    GROUP BY TRIM(a.PrisonerId), TRIM(a.Unit), a.Date
+),
+first_last AS
+(
+    SELECT
+        p.PrisonerId,
+        p.Unit,
+
+        (
+            SELECT pp.AvgRisk
+            FROM person_periods pp
+            WHERE pp.PrisonerId = p.PrisonerId
+              AND pp.Unit = p.Unit
+            ORDER BY pp.Date ASC
+            LIMIT 1
+        ) AS FirstRisk,
+
+        (
+            SELECT pp.AvgRisk
+            FROM person_periods pp
+            WHERE pp.PrisonerId = p.PrisonerId
+              AND pp.Unit = p.Unit
+            ORDER BY pp.Date DESC
+            LIMIT 1
+        ) AS LastRisk
+
+    FROM person_periods p
+    GROUP BY p.PrisonerId, p.Unit
+)
+SELECT
+    Unit,
+    AVG(FirstRisk - LastRisk) AS Improvement
+FROM first_last
+GROUP BY Unit
+ORDER BY CAST(Unit AS INTEGER);";
 
             using var r = cmd.ExecuteReader();
 
@@ -1281,8 +1402,8 @@ FROM (
             while (r.Read())
             {
                 list.Add((
-                    r["Unit"].ToString(),
-                    r.IsDBNull(1) ? 0 : r.GetDouble(1)
+                    r["Unit"]?.ToString(),
+                    r.IsDBNull(1) ? 0 : Convert.ToDouble(r["Improvement"])
                 ));
             }
 
@@ -1498,6 +1619,34 @@ LIMIT 1;";
             }
 
             return null;
+        }
+
+        public string GetArticleByPrisoner(string fullName)
+        {
+            using var db = new SqliteConnection(_conn);
+            db.Open();
+            InitializeDatabase(db);
+
+            var cmd = db.CreateCommand();
+
+            cmd.CommandText = @"
+SELECT 
+    COALESCE(ArticleNumber, '') ||
+    CASE
+        WHEN ArticlePart IS NOT NULL 
+             AND TRIM(ArticlePart) <> ''
+        THEN ' ч.' || ArticlePart
+        ELSE ''
+    END
+FROM Participants
+WHERE TRIM(FullName) = TRIM($name)
+LIMIT 1";
+
+            cmd.Parameters.AddWithValue("$name", fullName ?? "");
+
+            var result = cmd.ExecuteScalar();
+
+            return result?.ToString() ?? "-";
         }
     }
 }
