@@ -1128,17 +1128,13 @@ ORDER BY [{columnName}]
             cmd.CommandText = @"
 SELECT 
     p.FullName,
-    COALESCE(a.RiskScore, a.Score, 0) AS RiskScore,
+    AVG(COALESCE(a.RiskScore, a.Score, 0)) AS RiskScore,
     a.Unit
 FROM AiResults a
 JOIN Participants p 
     ON TRIM(p.PrisonerId) = TRIM(a.PrisonerId)
 WHERE TRIM(a.Unit) = TRIM($unit)
-AND a.Id = (
-    SELECT MAX(a2.Id)
-    FROM AiResults a2
-    WHERE TRIM(a2.PrisonerId) = TRIM(a.PrisonerId)
-)
+GROUP BY a.PrisonerId, p.FullName, a.Unit
 ORDER BY RiskScore DESC, p.FullName ASC";
 
             cmd.Parameters.AddWithValue("$unit", unit ?? "");
@@ -1234,20 +1230,18 @@ ORDER BY RiskScore DESC, p.FullName ASC";
 
             var statsCmd = db.CreateCommand();
             statsCmd.CommandText = @"
-        SELECT 
-            COUNT(CASE WHEN t.RiskScore >= 0 AND t.RiskScore <= 32 THEN 1 END),
-            COUNT(CASE WHEN t.RiskScore >= 33 AND t.RiskScore <= 66 THEN 1 END),
-            COUNT(CASE WHEN t.RiskScore >= 67 THEN 1 END)
-        FROM (
-            SELECT a.PrisonerId, COALESCE(a.RiskScore, a.Score, 0) AS RiskScore
-            FROM AiResults a
-            WHERE TRIM(a.Unit) = TRIM($unit)
-              AND a.Date = (
-                  SELECT MAX(a2.Date)
-                  FROM AiResults a2
-                  WHERE a2.PrisonerId = a.PrisonerId
-              )
-        ) t";
+SELECT 
+    COUNT(CASE WHEN avgRisk >= 0 AND avgRisk <= 32 THEN 1 END),
+    COUNT(CASE WHEN avgRisk >= 33 AND avgRisk <= 66 THEN 1 END),
+    COUNT(CASE WHEN avgRisk >= 67 THEN 1 END)
+FROM (
+    SELECT 
+        a.PrisonerId,
+        AVG(COALESCE(a.RiskScore, a.Score, 0)) AS avgRisk
+    FROM AiResults a
+    WHERE TRIM(a.Unit) = TRIM($unit)
+    GROUP BY a.PrisonerId
+) t";
             statsCmd.Parameters.AddWithValue("$unit", unit ?? "");
 
             using var r = statsCmd.ExecuteReader();

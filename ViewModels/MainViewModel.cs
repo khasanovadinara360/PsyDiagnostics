@@ -1976,30 +1976,39 @@ namespace PsyDiagnostics.ViewModels
 
             var series = new List<ISeries>();
 
+            // НИЗКИЙ РИСК
             if (low > 0)
             {
                 series.Add(new PieSeries<double>
                 {
                     Values = new List<double> { low },
-                    Name = "Низкий"
+                    Name = "Низкий",
+                    Fill = new SolidColorPaint(SKColor.Parse("#B7F200")),
+                    Stroke = null
                 });
             }
 
+            // СРЕДНИЙ РИСК
             if (mid > 0)
             {
                 series.Add(new PieSeries<double>
                 {
                     Values = new List<double> { mid },
-                    Name = "Средний"
+                    Name = "Средний",
+                    Fill = new SolidColorPaint(SKColor.Parse("#35D2AB")),
+                    Stroke = null
                 });
             }
 
+            // ВЫСОКИЙ РИСК
             if (high > 0)
             {
                 series.Add(new PieSeries<double>
                 {
                     Values = new List<double> { high },
-                    Name = "Высокий"
+                    Name = "Высокий",
+                    Fill = new SolidColorPaint(SKColor.Parse("#FF1755")),
+                    Stroke = null
                 });
             }
 
@@ -2011,16 +2020,74 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(RiskDistributionSeries));
         }
 
+        private string _riskByUnitsInfo;
+        public string RiskByUnitsInfo
+        {
+            get => _riskByUnitsInfo;
+            set
+            {
+                _riskByUnitsInfo = value;
+                OnPropertyChanged();
+            }
+        }
+
         public void BuildRiskByUnitsChart()
         {
             var data = _db.GetRiskByUnits();
 
+            var lowValues = new List<double?>();
+            var midValues = new List<double?>();
+            var highValues = new List<double?>();
+
+            foreach (var x in data)
+            {
+                if (x.avgRisk <= 32)
+                {
+                    lowValues.Add(x.avgRisk);
+                    midValues.Add(null);
+                    highValues.Add(null);
+                }
+                else if (x.avgRisk <= 66)
+                {
+                    lowValues.Add(null);
+                    midValues.Add(x.avgRisk);
+                    highValues.Add(null);
+                }
+                else
+                {
+                    lowValues.Add(null);
+                    midValues.Add(null);
+                    highValues.Add(x.avgRisk);
+                }
+            }
+
             RiskByUnitSeries = new ISeries[]
             {
-        new ColumnSeries<double>
+        new ColumnSeries<double?>
         {
-            Values = data.Select(x => x.avgRisk).ToList(),
-            DataLabelsFormatter = p => $"{p.Model:F0}%"
+            Name = "Низкий",
+            Values = lowValues,
+            Fill = new SolidColorPaint(SKColor.Parse("#B7F200")),
+            Stroke = null,
+            DataLabelsFormatter = p => p.Model.HasValue ? "Низкий" : ""
+        },
+
+        new ColumnSeries<double?>
+        {
+            Name = "Средний",
+            Values = midValues,
+            Fill = new SolidColorPaint(SKColor.Parse("#35D2AB")),
+            Stroke = null,
+            DataLabelsFormatter = p => p.Model.HasValue ? "Средний" : ""
+        },
+
+        new ColumnSeries<double?>
+        {
+            Name = "Высокий",
+            Values = highValues,
+            Fill = new SolidColorPaint(SKColor.Parse("#FF1755")),
+            Stroke = null,
+            DataLabelsFormatter = p => p.Model.HasValue ? "Высокий" : ""
         }
             };
 
@@ -2036,7 +2103,8 @@ namespace PsyDiagnostics.ViewModels
             {
         new Axis
         {
-            MinLimit = 0
+            MinLimit = 0,
+            MaxLimit = 100
         }
             };
 

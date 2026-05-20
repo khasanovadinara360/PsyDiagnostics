@@ -1520,7 +1520,7 @@
                                                 <TextBlock Text="Распределение риска"
                        Style="{StaticResource CardTitleStyle}"/>
 
-                                                <TextBlock Text="Диаграмма отражает общее распределение участников по уровням риска (низкий, средний, высокий) на основе результатов психологической диагностики. Она позволяет оценить текущую психологическую обстановку в группе. Преобладание высокого уровня риска указывает на неблагоприятную ситуацию и необходимость усиленного контроля и профилактических мероприятий. Сбалансированное распределение свидетельствует о стабильном состоянии контингента."
+                                                <TextBlock Text="Диаграмма отражает общее распределение участников по уровням риска (низкий, средний, высокий) на основе квартальных результатов психологической диагностики. Она позволяет оценить текущую психологическую обстановку в группе. Преобладание высокого уровня риска указывает на неблагоприятную ситуацию и необходимость усиленного контроля и профилактических мероприятий. Сбалансированное распределение свидетельствует о стабильном состоянии контингента."
                                                        TextWrapping="Wrap"
                                                        Opacity="0.7"
                                                        FontSize="12"
@@ -1581,10 +1581,10 @@
                                                             <StackPanel>
 
                                                                 <TextBlock Text="Низкий риск:"
-                                       Foreground="#4FC3F7"
-                                       FontSize="14"
-                                       FontWeight="Bold"
-                                       Margin="0,0,0,6"/>
+Foreground="#B7F200"
+FontSize="14"
+FontWeight="Bold"
+Margin="0,0,0,6"/>
 
                                                                 <ItemsControl ItemsSource="{Binding LowRiskPeople}">
                                                                     <ItemsControl.ItemTemplate>
@@ -1597,10 +1597,10 @@
                                                                 </ItemsControl>
 
                                                                 <TextBlock Text="Средний риск:"
-                                       Foreground="#FF7043"
-                                       FontSize="14"
-                                       FontWeight="Bold"
-                                       Margin="0,12,0,6"/>
+Foreground="#35D2AB"
+FontSize="14"
+FontWeight="Bold"
+Margin="0,12,0,6"/>
 
                                                                 <ItemsControl ItemsSource="{Binding MediumRiskPeople}">
                                                                     <ItemsControl.ItemTemplate>
@@ -1613,10 +1613,10 @@
                                                                 </ItemsControl>
 
                                                                 <TextBlock Text="Высокий риск:"
-                                       Foreground="#8BC34A"
-                                       FontSize="14"
-                                       FontWeight="Bold"
-                                       Margin="0,12,0,6"/>
+Foreground="#FF1755"
+FontSize="14"
+FontWeight="Bold"
+Margin="0,12,0,6"/>
 
                                                                 <ItemsControl ItemsSource="{Binding HighRiskPeople}">
                                                                     <ItemsControl.ItemTemplate>
@@ -1643,17 +1643,26 @@
                                         <Border Style="{StaticResource CardStyle}">
                                             <StackPanel>
                                                 <TextBlock Text="Риск по отрядам"
-   Style="{StaticResource CardTitleStyle}"/>
+               Style="{StaticResource CardTitleStyle}"/>
+
                                                 <TextBlock Text="Диаграмма отображает распределение уровней риска по отдельным отрядам и позволяет выявить группы с наиболее выраженными проблемами. Высокие значения риска в конкретных отрядах свидетельствуют о возможных неблагоприятных психологических условиях, требующих внимания специалистов. Низкие показатели указывают на более стабильную обстановку."
-                                                       TextWrapping="Wrap"
-                                                       Opacity="0.7"
-                                                       FontSize="12"
-                                                       Margin="0,6,0,10"
-                                                       Foreground="{StaticResource TextPrimaryColor}"/>
+               TextWrapping="Wrap"
+               Opacity="0.7"
+               FontSize="12"
+               Margin="0,6,0,10"
+               Foreground="{StaticResource TextPrimaryColor}"/>
+
                                                 <lvc:CartesianChart Height="250"
-            Series="{Binding RiskByUnitSeries}"
-            XAxes="{Binding UnitXAxis}"
-            YAxes="{Binding RiskYAxis}"/>
+                        Series="{Binding RiskByUnitSeries}"
+                        XAxes="{Binding UnitXAxis}"
+                        YAxes="{Binding RiskYAxis}"/>
+
+                                                <TextBlock Text="{Binding RiskByUnitsInfo}"
+               TextWrapping="Wrap"
+               FontSize="12"
+               Margin="0,8,0,0"
+               Opacity="0.85"
+               Foreground="{StaticResource TextPrimaryColor}"/>
                                             </StackPanel>
                                         </Border>
 
@@ -1671,6 +1680,7 @@
             Series="{Binding RecidivismSeries}"
             XAxes="{Binding RecidivismXAxis}"
             YAxes="{Binding RiskYAxis}"/>
+                                                
                                             </StackPanel>
                                         </Border>
 
