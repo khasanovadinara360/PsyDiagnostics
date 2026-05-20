@@ -185,15 +185,9 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
 
             var count = Convert.ToInt32(r["ChildrenCount"]);
 
-            var articleNumber = r["ArticleNumber"]?.ToString();
+            var articleNumber = r["ArticleNumber"]?.ToString() ?? "";
             var articlePart = r["ArticlePart"]?.ToString() ?? "";
             var articlePoint = r["ArticlePoint"]?.ToString() ?? "";
-
-            if (articlePart.Length > 1)
-                articlePart = articlePart.Remove(0, 2);
-
-            if (articlePoint.Length > 1)
-                articlePoint = articlePoint.Remove(0, 2);
 
             var p = new Participant
             {
@@ -283,15 +277,9 @@ CREATE TABLE IF NOT EXISTS PsychologistLoginLogs (
 
             var count = Convert.ToInt32(r["ChildrenCount"]);
 
-            var articleNumber = r["ArticleNumber"]?.ToString();
+            var articleNumber = r["ArticleNumber"]?.ToString() ?? "";
             var articlePart = r["ArticlePart"]?.ToString() ?? "";
             var articlePoint = r["ArticlePoint"]?.ToString() ?? "";
-
-            if (articlePart.Length > 1)
-                articlePart = articlePart.Remove(0, 2);
-
-            if (articlePoint.Length > 1)
-                articlePoint = articlePoint.Remove(0, 2);
 
             var p = new Participant
             {

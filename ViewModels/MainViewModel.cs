@@ -643,23 +643,12 @@ namespace PsyDiagnostics.ViewModels
                 AgeToText = _selectedSearchResult.Age.ToString();
 
 
-                FilterArticle = string.IsNullOrWhiteSpace(_selectedSearchResult.ArticleNumber)
-                    ? "Не выбрано"
-                    : _selectedSearchResult.ArticleNumber;
-
-                UpdateArticleParts();
-
-                FilterArticlePart = string.IsNullOrWhiteSpace(_selectedSearchResult.ArticlePart)
-                    ? "Не выбрано"
-                    : _selectedSearchResult.ArticlePart;
-
-                UpdateArticlePoints();
-
-                FilterArticlePoint = string.IsNullOrWhiteSpace(_selectedSearchResult.ArticlePoint)
-                    ? "Не выбрано"
-                    : _selectedSearchResult.ArticlePoint;
-
-                UpdateArticleTooltip();
+                ApplyArticleFieldsFromParticipant(new Participant
+                {
+                    ArticleNumber = _selectedSearchResult.ArticleNumber,
+                    ArticlePart = _selectedSearchResult.ArticlePart,
+                    ArticlePoint = _selectedSearchResult.ArticlePoint
+                });
 
                 // В БД срок хранится в годах, поэтому при выборе строки
                 // ставим диапазон: от 2 месяцев → до срока осужденного
@@ -718,18 +707,10 @@ namespace PsyDiagnostics.ViewModels
                     return;
 
                 var p = ParticipantVm.CurrentParticipant;
-
                 p.ArticleNumber = value.Number;
 
-                if (AvailableParts.Count > 0)
-                    p.ArticlePart = AvailableParts[0];
-                else
-                    p.ArticlePart = string.Empty;
-
-                if (AvailablePoints.Count > 0)
-                    p.ArticlePoint = AvailablePoints[0];
-                else
-                    p.ArticlePoint = string.Empty;
+                // Важно: здесь нельзя автоматически менять ArticlePart и ArticlePoint.
+                // При загрузке существующей анкеты из БД это сбрасывало часть и пункт.
 
                 OnPropertyChanged(nameof(AvailableParts));
                 OnPropertyChanged(nameof(AvailablePoints));
@@ -1217,6 +1198,135 @@ namespace PsyDiagnostics.ViewModels
                 : FilterArticlePoint;
         }
 
+
+        private void ApplyArticleFieldsFromParticipant(Participant participant)
+        {
+            _isFillingSearchFields = true;
+            _isUpdatingArticleDetails = true;
+
+            try
+            {
+                ArticleParts.Clear();
+                ArticlePoints.Clear();
+
+                ArticleParts.Add("Не выбрано");
+                ArticlePoints.Add("Не выбрано");
+
+                if (participant == null)
+                {
+                    _filterArticle = "Не выбрано";
+                    _filterArticlePart = "Не выбрано";
+                    _filterArticlePoint = "Не выбрано";
+
+                    ArticleSearch = string.Empty;
+                    SelectedArticle = null;
+                    FilteredArticles = AllArticles;
+
+                    OnPropertyChanged(nameof(FilterArticle));
+                    OnPropertyChanged(nameof(FilterArticlePart));
+                    OnPropertyChanged(nameof(FilterArticlePoint));
+                    OnPropertyChanged(nameof(ArticleParts));
+                    OnPropertyChanged(nameof(ArticlePoints));
+
+                    UpdateArticleTooltip();
+                    return;
+                }
+
+                string articleNumber = string.IsNullOrWhiteSpace(participant.ArticleNumber)
+                    ? "Не выбрано"
+                    : participant.ArticleNumber.Trim();
+
+                string articlePart = string.IsNullOrWhiteSpace(participant.ArticlePart)
+                    ? "Не выбрано"
+                    : participant.ArticlePart.Trim();
+
+                string articlePoint = string.IsNullOrWhiteSpace(participant.ArticlePoint)
+                    ? "Не выбрано"
+                    : participant.ArticlePoint.Trim();
+
+                _filterArticle = articleNumber;
+                OnPropertyChanged(nameof(FilterArticle));
+
+                if (articleNumber != "Не выбрано")
+                {
+                    var articleInfo = LoadArticleInfoItems()
+                        .FirstOrDefault(x => x.Number == articleNumber);
+
+                    if (articleInfo?.Parts != null)
+                    {
+                        foreach (var part in articleInfo.Parts)
+                        {
+                            if (!string.IsNullOrWhiteSpace(part.Part) &&
+                                !ArticleParts.Contains(part.Part))
+                            {
+                                ArticleParts.Add(part.Part);
+                            }
+                        }
+                    }
+
+                    if (articlePart != "Не выбрано" && !ArticleParts.Contains(articlePart))
+                        ArticleParts.Add(articlePart);
+                }
+
+                _filterArticlePart = articlePart;
+                OnPropertyChanged(nameof(FilterArticlePart));
+
+                if (articleNumber != "Не выбрано" && articlePart != "Не выбрано")
+                {
+                    var articleInfo = LoadArticleInfoItems()
+                        .FirstOrDefault(x => x.Number == articleNumber);
+
+                    var partInfo = articleInfo?.Parts?
+                        .FirstOrDefault(x => x.Part == articlePart);
+
+                    if (partInfo?.Points != null)
+                    {
+                        foreach (var point in partInfo.Points)
+                        {
+                            if (!string.IsNullOrWhiteSpace(point.Point) &&
+                                !ArticlePoints.Contains(point.Point))
+                            {
+                                ArticlePoints.Add(point.Point);
+                            }
+                        }
+                    }
+
+                    if (articlePoint != "Не выбрано" && !ArticlePoints.Contains(articlePoint))
+                        ArticlePoints.Add(articlePoint);
+                }
+
+                _filterArticlePoint = articlePoint;
+                OnPropertyChanged(nameof(FilterArticlePoint));
+
+                var article = AllArticles
+                    .FirstOrDefault(a => a.Number?.Trim() == articleNumber);
+
+                _selectedArticle = article;
+                OnPropertyChanged(nameof(SelectedArticle));
+
+                if (article != null)
+                {
+                    ArticleSearch = article.Number;
+                    FilteredArticles = new List<Article> { article };
+                }
+                else
+                {
+                    ArticleSearch = string.Empty;
+                    FilteredArticles = AllArticles;
+                }
+
+                OnPropertyChanged(nameof(ArticleParts));
+                OnPropertyChanged(nameof(ArticlePoints));
+
+                UpdateArticleTooltip();
+            }
+            finally
+            {
+                _isUpdatingArticleDetails = false;
+                _isFillingSearchFields = false;
+            }
+        }
+
         private void LoadSentenceValues()
         {
             AgeValues.Clear();
@@ -1644,7 +1754,11 @@ namespace PsyDiagnostics.ViewModels
 
                 var item = new TestHistoryItem
                 {
-                    TestName = r.TestName,
+                    TestName = new TestDefinition
+                    {
+                        Name = r.TestName
+                    }.DisplayName,
+
                     Score = r.Score,
                     Risk = risk,
                     Date = r.Date,
@@ -2556,29 +2670,15 @@ namespace PsyDiagnostics.ViewModels
                         BirthDate = DateTime.Today
                     };
 
+                    ApplyArticleFieldsFromParticipant(Current);
+
                     MessageBox.Show($"Не найден: {query}");
                     return;
                 }
 
                 Current = found;
 
-                var article = AllArticles
-                    .FirstOrDefault(a => a.Number?.Trim() == Current.ArticleNumber?.Trim());
-
-                SelectedArticle = article;
-
-                if (article != null)
-                {
-                    ArticleSearch = article.Number;
-                    FilteredArticles = new List<Article> { article };
-                }
-                else
-                {
-                    ArticleSearch = "";
-                    FilteredArticles = AllArticles;
-                }
-
-                OnPropertyChanged(nameof(SelectedArticle));
+                ApplyArticleFieldsFromParticipant(found);
             }
             catch (Exception ex)
             {
