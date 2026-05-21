@@ -2,25 +2,20 @@ using PsyDiagnostics.Helpers;
 using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
 using PsyDiagnostics.Views;
-using PsyDiagnostics.ViewModels;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
-using LiveChartsCore.SkiaSharpView.WPF;
-using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore;
-using LiveChartsCore.Painting;
+using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using SkiaSharp;
-using LiveChartsCore.Kernel.Sketches;
-using static System.Net.Mime.MediaTypeNames;
-using System.Windows.Media;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -31,7 +26,6 @@ namespace PsyDiagnostics.ViewModels
         public string Risk { get; set; }
         public string Date { get; set; }
 
-        // добавил для фильтрации по отряду
         public string FullName { get; set; }
         public string Unit { get; set; }
     }
@@ -50,10 +44,9 @@ namespace PsyDiagnostics.ViewModels
 
     public class MainViewModel : BaseViewModel
     {
-        private readonly DatabaseService _db = new DatabaseService();
+        private readonly DatabaseService _db = new();
 
         private string _topBarTitle = "PsyDiagnostics";
-
 
         private string _psychologistFullName;
         public string PsychologistFullName
@@ -272,7 +265,6 @@ namespace PsyDiagnostics.ViewModels
                     SelectedArticle = exactArticle;
             }
         }
-
 
         private string _searchFio;
         public string SearchFio
@@ -620,7 +612,6 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-
         private ParticipantSearchResult _selectedSearchResult;
         public ParticipantSearchResult SelectedSearchResult
         {
@@ -642,16 +633,12 @@ namespace PsyDiagnostics.ViewModels
                 AgeFromText = "16";
                 AgeToText = _selectedSearchResult.Age.ToString();
 
-
                 ApplyArticleFieldsFromParticipant(new Participant
                 {
                     ArticleNumber = _selectedSearchResult.ArticleNumber,
                     ArticlePart = _selectedSearchResult.ArticlePart,
                     ArticlePoint = _selectedSearchResult.ArticlePoint
                 });
-
-                // В БД срок хранится в годах, поэтому при выборе строки
-                // ставим диапазон: от 2 месяцев → до срока осужденного
 
                 SentenceFromNumberText = _selectedSearchResult.SentenceTerm > 0
                     ? "2"
@@ -708,9 +695,6 @@ namespace PsyDiagnostics.ViewModels
 
                 var p = ParticipantVm.CurrentParticipant;
                 p.ArticleNumber = value.Number;
-
-                // Важно: здесь нельзя автоматически менять ArticlePart и ArticlePoint.
-                // При загрузке существующей анкеты из БД это сбрасывало часть и пункт.
 
                 OnPropertyChanged(nameof(AvailableParts));
                 OnPropertyChanged(nameof(AvailablePoints));
@@ -806,8 +790,8 @@ namespace PsyDiagnostics.ViewModels
             SelectPsychologistRoleCommand = new RelayCommand(_ => { SelectRole(UserRole.Psychologist); });
             SelectPrisonerRoleCommand = new RelayCommand(_ => { SelectRole(UserRole.Prisoner); });
             ToggleFilterPanelCommand = new RelayCommand(_ => { IsFilterPanelVisible = !IsFilterPanelVisible; });
-            ExtendedSearchCommand = new RelayCommand(ExtendedSearch);
-            ClearSearchFiltersCommand = new RelayCommand(ClearSearchFilters);
+            ExtendedSearchCommand = new RelayCommand(_ => ExtendedSearch());
+            ClearSearchFiltersCommand = new RelayCommand(_ => ClearSearchFilters());
             PrisonerStartTestCommand = new RelayCommand(_ => PrisonerStartTest());
             AddTestCommand = new RelayCommand(_ => AddTest());
             ShowArticleInfoCommand = new RelayCommand(_ => ShowArticleInfo());
@@ -815,7 +799,6 @@ namespace PsyDiagnostics.ViewModels
             ClearParticipantCommand = new RelayCommand(_ => ClearParticipant());
             AllArticles = JsonHelper.LoadArticles();
             FilteredArticles = AllArticles;
-
 
             _isInitializingFilters = true;
             LoadSearchFilters();
@@ -885,7 +868,6 @@ namespace PsyDiagnostics.ViewModels
             p.NarcologistRegistry = 0;
             p.DrugUse = 0;
 
-            // криминальные
             p.ArticleNumber = string.Empty;
             p.ArticlePart = string.Empty;
             p.ArticlePoint = string.Empty;
@@ -895,7 +877,6 @@ namespace PsyDiagnostics.ViewModels
             p.Unit = string.Empty;
             p.Category = 0;
 
-            // очистка статьи
             ArticleSearch = string.Empty;
             SelectedArticle = null;
 
@@ -903,17 +884,14 @@ namespace PsyDiagnostics.ViewModels
             AvailablePoints.Clear();
             FilteredArticles.Clear();
 
-            // психологические
             p.CurrentFeelings = 0;
             p.AttitudeToUIS = 0;
             p.SuicideAttempts = 0;
             p.SelfHarmScars = 0;
             p.RelativesSuicide = 0;
 
-            // тестирование
             TestHistory.Clear();
 
-            // аналитика
             UnitRisk = string.Empty;
             UnitStats = string.Empty;
 
@@ -926,7 +904,6 @@ namespace PsyDiagnostics.ViewModels
             PersonalAiRisk = string.Empty;
             PersonalAiRecommendations = string.Empty;
 
-            // обновление UI
             OnPropertyChanged(nameof(SearchId));
             OnPropertyChanged(nameof(ParticipantVm));
             OnPropertyChanged(nameof(TestHistory));
@@ -1070,7 +1047,6 @@ namespace PsyDiagnostics.ViewModels
 
             public string Text { get; set; }
 
-            // ВОТ ЭТО
             public string Sanction { get; set; }
 
             public List<ArticlePointItem> Points { get; set; }
@@ -1197,7 +1173,6 @@ namespace PsyDiagnostics.ViewModels
                 ? string.Empty
                 : FilterArticlePoint;
         }
-
 
         private void ApplyArticleFieldsFromParticipant(Participant participant)
         {
@@ -1338,7 +1313,6 @@ namespace PsyDiagnostics.ViewModels
             TermNumberValues.Clear();
             TermNumberValues.Add("Не выбрано");
 
-            // Срок можно вводить вручную, а список даёт быстрый выбор от 1 до 35.
             for (int i = 1; i <= 35; i++)
                 TermNumberValues.Add(i.ToString());
 
@@ -1377,7 +1351,6 @@ namespace PsyDiagnostics.ViewModels
                 ExtendedSearch();
             }
         }
-
 
         private string _searchMessage;
         public string SearchMessage
@@ -1499,7 +1472,6 @@ namespace PsyDiagnostics.ViewModels
             return null;
         }
 
-
         private void ClearSearchFilters()
         {
             _isFillingSearchFields = true;
@@ -1563,7 +1535,7 @@ namespace PsyDiagnostics.ViewModels
             {
                 SelectedMode = mode;
 
-                var defs = TestLoader.LoadAll();
+                var defs = TestLoader.LoadDefinitions();
 
                 if (defs == null || defs.Count == 0)
                 {
@@ -1707,7 +1679,6 @@ namespace PsyDiagnostics.ViewModels
                 );
             }
         }
-
 
         private double GetResultScore(Dictionary<string, int> results, string testName)
         {
@@ -2232,7 +2203,6 @@ namespace PsyDiagnostics.ViewModels
             OnPropertyChanged(nameof(FilteredHistory));
         }
 
-        // ГЛАВНОЕ: диаграмма по выбранному отряду
         private void UpdateChart()
         {
             if (string.IsNullOrWhiteSpace(SelectedUnit))
@@ -2270,7 +2240,6 @@ namespace PsyDiagnostics.ViewModels
 
             var series = new List<ISeries>();
 
-            // НИЗКИЙ РИСК
             if (low > 0)
             {
                 series.Add(new PieSeries<double>
@@ -2282,7 +2251,6 @@ namespace PsyDiagnostics.ViewModels
                 });
             }
 
-            // СРЕДНИЙ РИСК
             if (mid > 0)
             {
                 series.Add(new PieSeries<double>
@@ -2294,7 +2262,6 @@ namespace PsyDiagnostics.ViewModels
                 });
             }
 
-            // ВЫСОКИЙ РИСК
             if (high > 0)
             {
                 series.Add(new PieSeries<double>
@@ -2647,18 +2614,17 @@ namespace PsyDiagnostics.ViewModels
                     return;
                 }
 
-                // Проверяем, является ли запрос ID (цифры)
                 bool isIdSearch = int.TryParse(query, out _);
                 Participant found;
 
                 if (isIdSearch)
                 {
-                    // Точный поиск по ID
+
                     found = _db.GetParticipant(query);
                 }
                 else
                 {
-                    // Поиск по ФИО (LIKE '%query%')
+
                     found = _db.GetParticipantByName(query);
                 }
 
@@ -2791,7 +2757,6 @@ namespace PsyDiagnostics.ViewModels
         {
             LoginError = "";
 
-            // Проверка блокировки
             if (_blockedUntil.HasValue && DateTime.Now < _blockedUntil.Value)
             {
                 var remain = _blockedUntil.Value - DateTime.Now;
@@ -2802,14 +2767,12 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // Если время блокировки прошло — сбрасываем блокировку и попытки
             if (_blockedUntil.HasValue && DateTime.Now >= _blockedUntil.Value)
             {
                 _blockedUntil = null;
                 _loginAttempts = 0;
             }
 
-            // Проверка логина
             if (string.IsNullOrWhiteSpace(PsychologistLoginFullName))
             {
                 LoginError = "Введите логин";
@@ -2825,7 +2788,6 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // Проверка пустого пароля
             if (string.IsNullOrWhiteSpace(password))
             {
                 LoginError = "Введите пароль";
@@ -2841,35 +2803,30 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // Минимальная длина
             if (password.Length < 8)
             {
                 LoginError = "Пароль должен содержать минимум 8 символов";
                 return;
             }
 
-            // Заглавная буква
             if (!password.Any(char.IsUpper))
             {
                 LoginError = "Пароль должен содержать заглавную букву";
                 return;
             }
 
-            // Цифра
             if (!password.Any(char.IsDigit))
             {
                 LoginError = "Пароль должен содержать цифру";
                 return;
             }
 
-            // Спецсимвол
             if (!password.Any(ch => !char.IsLetterOrDigit(ch)))
             {
                 LoginError = "Пароль должен содержать спецсимвол";
                 return;
             }
 
-            // Пробелы
             if (password.Contains(" "))
             {
                 LoginError = "Пароль не должен содержать пробелы";
@@ -2878,7 +2835,6 @@ namespace PsyDiagnostics.ViewModels
 
             string login = PsychologistLoginFullName.Trim();
 
-            // Получаем психолога по логину
             var psychologist = _db.GetPsychologistByLogin(login);
 
             if (psychologist == null)
@@ -2896,7 +2852,6 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // Неверный пароль
             if (password != psychologist.Value.Password)
             {
                 _loginAttempts++;
@@ -2909,7 +2864,6 @@ namespace PsyDiagnostics.ViewModels
                     false,
                     "Неверный пароль");
 
-                // Блокировка после 3 попыток
                 if (_loginAttempts >= 3)
                 {
                     _blockedUntil = DateTime.Now.AddMinutes(1);
@@ -2927,14 +2881,11 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // Сброс блокировки
             _loginAttempts = 0;
             _blockedUntil = null;
 
-            // В верхний левый угол выводим ФИО, а не логин
             PsychologistFullName = psychologist.Value.FullName;
 
-            // Лог успешного входа
             _db.AddPsychologistLoginLog(
                 psychologist.Value.FullName,
                 login,
@@ -3006,7 +2957,6 @@ namespace PsyDiagnostics.ViewModels
 
             string login = PsychologistLoginFullName.Trim();
 
-            // 1. Сначала проверяем существование логина
             var psychologist = _db.GetPsychologistByLogin(login);
 
             if (psychologist == null)
@@ -3024,7 +2974,6 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // 2. Только после этого проверяем новый пароль
             if (string.IsNullOrWhiteSpace(newPassword))
             {
                 LoginError = "Введите новый пароль";
@@ -3061,7 +3010,6 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // 3. Меняем пароль
             bool changed = _db.ChangePsychologistPassword(
                 psychologist.Value.FullName,
                 login,
@@ -3073,7 +3021,6 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            // 4. Логируем смену пароля
             _db.AddPsychologistLoginLog(
                 psychologist.Value.FullName,
                 login,

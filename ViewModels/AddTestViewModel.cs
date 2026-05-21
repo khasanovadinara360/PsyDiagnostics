@@ -1,11 +1,9 @@
-﻿using Newtonsoft.Json;
-using PsyDiagnostics.Helpers;
+﻿using PsyDiagnostics.Helpers;
 using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
@@ -15,7 +13,7 @@ namespace PsyDiagnostics.ViewModels
     public class AddTestViewModel : BaseViewModel
     {
         private readonly MainViewModel _main;
-        private readonly DatabaseService _db = new DatabaseService();
+        private readonly DatabaseService _db = new();
         private readonly List<Question> _questions = new();
 
         private string _testName;
@@ -25,10 +23,21 @@ namespace PsyDiagnostics.ViewModels
             set { _testName = value; OnPropertyChanged(); }
         }
 
-        public string LowMaxText { get; set; } = "32";
-        public string MediumMaxText { get; set; } = "66";
+        private string _lowMaxText = "32";
+        public string LowMaxText
+        {
+            get => _lowMaxText;
+            set { _lowMaxText = value; OnPropertyChanged(); }
+        }
 
-        private string _questionsCountText = "";
+        private string _mediumMaxText = "66";
+        public string MediumMaxText
+        {
+            get => _mediumMaxText;
+            set { _mediumMaxText = value; OnPropertyChanged(); }
+        }
+
+        private string _questionsCountText = string.Empty;
         public string QuestionsCountText
         {
             get => _questionsCountText;
@@ -124,135 +133,39 @@ namespace PsyDiagnostics.ViewModels
         public bool IsEditingQuestion
         {
             get => _isEditingQuestion;
-            set
-            {
-                _isEditingQuestion = value;
-                OnPropertyChanged();
-            }
+            set { _isEditingQuestion = value; OnPropertyChanged(); }
         }
 
-        public ObservableCollection<string> ExistingTests { get; set; } = new();
-        public ObservableCollection<string> QuestionsPreview { get; set; } = new();
+        public ObservableCollection<string> ExistingTests { get; } = new();
+        public ObservableCollection<string> QuestionsPreview { get; } = new();
 
         public ICommand AddQuestionCommand { get; }
-        public ICommand SaveTestCommand { get; }
-        public ICommand DeleteTestCommand { get; }
-        public ICommand BackCommand { get; }
         public ICommand SaveQuestionChangesCommand { get; }
         public ICommand DeleteQuestionCommand { get; }
         public ICommand EditQuestionCommand { get; }
+        public ICommand SaveTestCommand { get; }
+        public ICommand DeleteTestCommand { get; }
+        public ICommand BackCommand { get; }
 
         public AddTestViewModel(MainViewModel main)
         {
             _main = main;
 
             AddQuestionCommand = new RelayCommand(_ => AddQuestion());
-            SaveTestCommand = new RelayCommand(_ => SaveTest());
-            DeleteTestCommand = new RelayCommand(_ => DeleteTest());
-            BackCommand = new RelayCommand(_ => _main.ShowParticipantPage());
             SaveQuestionChangesCommand = new RelayCommand(_ => SaveQuestionChanges());
             DeleteQuestionCommand = new RelayCommand(_ => DeleteQuestion());
             EditQuestionCommand = new RelayCommand(_ => EditQuestion());
+            SaveTestCommand = new RelayCommand(_ => SaveTest());
+            DeleteTestCommand = new RelayCommand(_ => DeleteTest());
+            BackCommand = new RelayCommand(_ => _main.ShowParticipantPage());
 
             LoadExistingTests();
         }
 
-        private string GetDataFolder()
-        {
-            var folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data");
-
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            return folder;
-        }
-
-        private string GetTestsFilePath()
-        {
-            return Path.Combine(GetDataFolder(), "tests.json");
-        }
-
-        private List<Test> LoadAllTests()
-        {
-            try
-            {
-                var path = GetTestsFilePath();
-
-                if (!File.Exists(path))
-                    return new List<Test>();
-
-                var json = File.ReadAllText(path);
-
-                var tests = JsonConvert.DeserializeObject<List<Test>>(json)
-                            ?? new List<Test>();
-
-                return tests
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                    .GroupBy(x => x.Name.Trim())
-                    .Select(g => g.First())
-                    .OrderBy(x => x.Name)
-                    .ToList();
-            }
-            catch
-            {
-                return new List<Test>();
-            }
-        }
-
-        private void SaveAllTests(List<Test> tests)
-        {
-            var path = GetTestsFilePath();
-
-            var json = JsonConvert.SerializeObject(
-                tests,
-                Formatting.Indented);
-
-            File.WriteAllText(path, json);
-        }
-
-        private void LoadExistingTests()
-        {
-            ExistingTests.Clear();
-
-            foreach (var test in LoadAllTests())
-            {
-                ExistingTests.Add(test.Name);
-            }
-        }
-
-        private void LoadTestIntoEditor(string testName)
-        {
-            var test = LoadAllTests()
-                .FirstOrDefault(x => x.Name == testName);
-
-            if (test == null)
-                return;
-
-            TestName = test.Name;
-            QuestionsCountText = test.Questions?.Count.ToString() ?? "0";
-
-            _questions.Clear();
-            QuestionsPreview.Clear();
-
-            if (test.Questions != null)
-            {
-                foreach (var question in test.Questions)
-                {
-                    _questions.Add(question);
-                    QuestionsPreview.Add(BuildQuestionPreview(QuestionsPreview.Count + 1, question));
-                }
-            }
-
-            FillQuestionFields(test.Questions?.FirstOrDefault());
-        }
-
         private void AddQuestion()
         {
-            if (!int.TryParse(QuestionsCountText, out int maxQuestions) || maxQuestions <= 0)
-            {
-                MessageBox.Show("Введите корректное количество вопросов");
+            if (!TryGetQuestionsCount(out int maxQuestions))
                 return;
-            }
 
             if (_questions.Count >= maxQuestions)
             {
@@ -260,29 +173,8 @@ namespace PsyDiagnostics.ViewModels
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(QuestionText))
-            {
-                MessageBox.Show("Введите текст вопроса");
+            if (!TryBuildQuestion(out Question question))
                 return;
-            }
-
-            var answers = new List<Answer>();
-
-            AddAnswerIfValid(answers, Answer1Text, Answer1ValueText);
-            AddAnswerIfValid(answers, Answer2Text, Answer2ValueText);
-            AddAnswerIfValid(answers, Answer3Text, Answer3ValueText);
-
-            if (answers.Count == 0)
-            {
-                MessageBox.Show("Добавьте хотя бы один ответ");
-                return;
-            }
-
-            var question = new Question
-            {
-                Text = QuestionText.Trim(),
-                Answers = answers
-            };
 
             _questions.Add(question);
             QuestionsPreview.Add(BuildQuestionPreview(_questions.Count, question));
@@ -292,15 +184,9 @@ namespace PsyDiagnostics.ViewModels
 
         private void EditQuestion()
         {
-            if (string.IsNullOrWhiteSpace(SelectedAddedQuestion))
-            {
-                MessageBox.Show("Выберите вопрос для изменения");
-                return;
-            }
+            int index = GetSelectedQuestionIndex();
 
-            int index = QuestionsPreview.IndexOf(SelectedAddedQuestion);
-
-            if (index < 0 || index >= _questions.Count)
+            if (index < 0)
                 return;
 
             FillQuestionFields(_questions[index]);
@@ -309,39 +195,16 @@ namespace PsyDiagnostics.ViewModels
 
         private void SaveQuestionChanges()
         {
-            if (string.IsNullOrWhiteSpace(SelectedAddedQuestion))
-            {
-                MessageBox.Show("Выберите вопрос для изменения");
-                return;
-            }
+            int index = GetSelectedQuestionIndex();
 
-            int index = QuestionsPreview.IndexOf(SelectedAddedQuestion);
-
-            if (index < 0 || index >= _questions.Count)
+            if (index < 0)
                 return;
 
-            if (string.IsNullOrWhiteSpace(QuestionText))
-            {
-                MessageBox.Show("Введите текст вопроса");
+            if (!TryBuildQuestion(out Question question))
                 return;
-            }
 
-            var answers = new List<Answer>();
-
-            AddAnswerIfValid(answers, Answer1Text, Answer1ValueText);
-            AddAnswerIfValid(answers, Answer2Text, Answer2ValueText);
-            AddAnswerIfValid(answers, Answer3Text, Answer3ValueText);
-
-            if (answers.Count == 0)
-            {
-                MessageBox.Show("Добавьте хотя бы один ответ");
-                return;
-            }
-
-            _questions[index].Text = QuestionText.Trim();
-            _questions[index].Answers = answers;
-
-            QuestionsPreview[index] = BuildQuestionPreview(index + 1, _questions[index]);
+            _questions[index] = question;
+            QuestionsPreview[index] = BuildQuestionPreview(index + 1, question);
 
             ClearQuestionFields();
 
@@ -350,15 +213,9 @@ namespace PsyDiagnostics.ViewModels
 
         private void DeleteQuestion()
         {
-            if (string.IsNullOrWhiteSpace(SelectedAddedQuestion))
-            {
-                MessageBox.Show("Выберите вопрос для удаления");
-                return;
-            }
+            int index = GetSelectedQuestionIndex();
 
-            int index = QuestionsPreview.IndexOf(SelectedAddedQuestion);
-
-            if (index < 0 || index >= _questions.Count)
+            if (index < 0)
                 return;
 
             _questions.RemoveAt(index);
@@ -372,24 +229,13 @@ namespace PsyDiagnostics.ViewModels
 
         private void SaveTest()
         {
-            if (string.IsNullOrWhiteSpace(TestName))
-            {
-                MessageBox.Show("Введите название теста");
+            if (!TryValidateTest(out int requiredCount, out int lowMax, out int mediumMax))
                 return;
-            }
-
-            if (!int.TryParse(QuestionsCountText, out int requiredCount) || requiredCount <= 0)
-            {
-                MessageBox.Show("Введите корректное количество вопросов");
-                return;
-            }
 
             if (_questions.Count != requiredCount)
             {
-                string word = GetQuestionWord(requiredCount);
-
                 MessageBox.Show(
-                    $"Нужно добавить {requiredCount} {word}. Сейчас добавлено: {_questions.Count}.");
+                    $"Нужно добавить {requiredCount} {GetQuestionWord(requiredCount)}. Сейчас добавлено: {_questions.Count}.");
                 return;
             }
 
@@ -398,22 +244,23 @@ namespace PsyDiagnostics.ViewModels
             var newTest = new Test
             {
                 Name = TestName.Trim(),
-                LowMax = 32,
-                MediumMax = 66,
+                LowMax = lowMax,
+                MediumMax = mediumMax,
                 Questions = _questions.ToList()
             };
 
-            var existing = tests.FirstOrDefault(t => t.Name == newTest.Name);
+            var existing = tests.FirstOrDefault(t =>
+                string.Equals(t.Name, newTest.Name, StringComparison.OrdinalIgnoreCase));
 
-            if (existing != null)
+            if (existing == null)
+            {
+                tests.Add(newTest);
+            }
+            else
             {
                 existing.LowMax = newTest.LowMax;
                 existing.MediumMax = newTest.MediumMax;
                 existing.Questions = newTest.Questions;
-            }
-            else
-            {
-                tests.Add(newTest);
             }
 
             SaveAllTests(tests);
@@ -446,7 +293,7 @@ namespace PsyDiagnostics.ViewModels
 
             var tests = LoadAllTests();
 
-            var removed = tests.RemoveAll(t =>
+            int removed = tests.RemoveAll(t =>
                 string.Equals(t.Name, SelectedExistingTest, StringComparison.OrdinalIgnoreCase));
 
             if (removed == 0)
@@ -456,19 +303,7 @@ namespace PsyDiagnostics.ViewModels
             }
 
             SaveAllTests(tests);
-
-            try
-            {
-                _db.DeleteTestResultsByName(SelectedExistingTest);
-            }
-            catch
-            {
-                MessageBox.Show(
-                    "Тест удалён из JSON, но результаты из базы данных удалить не удалось. Проверьте метод DeleteTestResultsByName в DatabaseService.",
-                    "Предупреждение",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-            }
+            DeleteTestResults(SelectedExistingTest);
 
             ClearTestEditor();
             LoadExistingTests();
@@ -476,72 +311,148 @@ namespace PsyDiagnostics.ViewModels
             MessageBox.Show("Тест удалён");
         }
 
-        private void ClearTestEditor()
+        private void DeleteTestResults(string testName)
         {
-            _selectedExistingTest = null;
-            OnPropertyChanged(nameof(SelectedExistingTest));
+            try
+            {
+                _db.DeleteTestResultsByName(testName);
+            }
+            catch
+            {
+                MessageBox.Show(
+                    "Тест удалён из JSON, но результаты из базы данных удалить не удалось.",
+                    "Предупреждение",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
 
-            TestName = "";
-            QuestionsCountText = "";
-            ClearQuestionFields();
+        private void LoadExistingTests()
+        {
+            ExistingTests.Clear();
+
+            foreach (var test in LoadAllTests())
+                ExistingTests.Add(test.Name);
+        }
+
+        private void LoadTestIntoEditor(string testName)
+        {
+            var test = LoadAllTests()
+                .FirstOrDefault(x => string.Equals(x.Name, testName, StringComparison.OrdinalIgnoreCase));
+
+            if (test == null)
+                return;
+
+            TestName = test.Name;
+            LowMaxText = test.LowMax.ToString();
+            MediumMaxText = test.MediumMax.ToString();
+            QuestionsCountText = test.Questions?.Count.ToString() ?? "0";
 
             _questions.Clear();
             QuestionsPreview.Clear();
-        }
 
-        private void ClearQuestionFields()
-        {
-            SelectedAddedQuestion = null;
-            IsEditingQuestion = false;
-
-            QuestionText = "";
-            Answer1Text = "Нет";
-            Answer1ValueText = "0";
-            Answer2Text = "Иногда";
-            Answer2ValueText = "1";
-            Answer3Text = "Да";
-            Answer3ValueText = "2";
-        }
-
-        private void FillQuestionFields(Question question)
-        {
-            if (question == null)
+            if (test.Questions != null)
             {
-                QuestionText = "";
-                Answer1Text = "Нет";
-                Answer1ValueText = "0";
-                Answer2Text = "Иногда";
-                Answer2ValueText = "1";
-                Answer3Text = "Да";
-                Answer3ValueText = "2";
-                return;
+                foreach (var question in test.Questions)
+                {
+                    _questions.Add(question);
+                    QuestionsPreview.Add(BuildQuestionPreview(QuestionsPreview.Count + 1, question));
+                }
             }
 
-            QuestionText = question.Text;
+            FillQuestionFields(test.Questions?.FirstOrDefault());
+        }
 
-            Answer1Text = question.Answers != null && question.Answers.Count > 0
-                ? question.Answers[0].Text
-                : "";
+        private List<Test> LoadAllTests()
+        {
+            return TestLoader.LoadTests();
+        }
 
-            Answer1ValueText = question.Answers != null && question.Answers.Count > 0
-                ? question.Answers[0].Value.ToString()
-                : "";
+        private void SaveAllTests(List<Test> tests)
+        {
+            TestLoader.SaveTests(tests);
+        }
 
-            Answer2Text = question.Answers != null && question.Answers.Count > 1
-                ? question.Answers[1].Text
-                : "";
+        private bool TryValidateTest(out int requiredCount, out int lowMax, out int mediumMax)
+        {
+            requiredCount = 0;
+            lowMax = 0;
+            mediumMax = 0;
 
-            Answer2ValueText = question.Answers != null && question.Answers.Count > 1
-                ? question.Answers[1].Value.ToString()
-                : "";
+            if (string.IsNullOrWhiteSpace(TestName))
+            {
+                MessageBox.Show("Введите название теста");
+                return false;
+            }
 
-            Answer3Text = question.Answers != null && question.Answers.Count > 2
-                ? question.Answers[2].Text
-                : "";
+            if (!int.TryParse(QuestionsCountText, out requiredCount) || requiredCount <= 0)
+            {
+                MessageBox.Show("Введите корректное количество вопросов");
+                return false;
+            }
 
-            Answer3ValueText = question.Answers != null && question.Answers.Count > 2
-                ? question.Answers[2].Value.ToString()
-                : "";
+            if (!int.TryParse(LowMaxText, out lowMax) || lowMax < 0)
+            {
+                MessageBox.Show("Введите корректную границу низкого уровня");
+                return false;
+            }
+
+            if (!int.TryParse(MediumMaxText, out mediumMax) || mediumMax <= lowMax)
+            {
+                MessageBox.Show("Введите корректную границу среднего уровня");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryGetQuestionsCount(out int count)
+        {
+            if (!int.TryParse(QuestionsCountText, out count) || count <= 0)
+            {
+                MessageBox.Show("Введите корректное количество вопросов");
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryBuildQuestion(out Question question)
+        {
+            question = null;
+
+            if (string.IsNullOrWhiteSpace(QuestionText))
+            {
+                MessageBox.Show("Введите текст вопроса");
+                return false;
+            }
+
+            var answers = BuildAnswers();
+
+            if (answers.Count == 0)
+            {
+                MessageBox.Show("Добавьте хотя бы один ответ");
+                return false;
+            }
+
+            question = new Question
+            {
+                Text = QuestionText.Trim(),
+                Answers = answers
+            };
+
+            return true;
+        }
+
+        private List<Answer> BuildAnswers()
+        {
+            var answers = new List<Answer>();
+
+            AddAnswerIfValid(answers, Answer1Text, Answer1ValueText);
+            AddAnswerIfValid(answers, Answer2Text, Answer2ValueText);
+            AddAnswerIfValid(answers, Answer3Text, Answer3ValueText);
+
+            return answers;
         }
 
         private void AddAnswerIfValid(List<Answer> answers, string text, string valueText)
@@ -559,20 +470,109 @@ namespace PsyDiagnostics.ViewModels
             });
         }
 
+        private int GetSelectedQuestionIndex()
+        {
+            if (string.IsNullOrWhiteSpace(SelectedAddedQuestion))
+            {
+                MessageBox.Show("Выберите вопрос");
+                return -1;
+            }
+
+            int index = QuestionsPreview.IndexOf(SelectedAddedQuestion);
+
+            if (index < 0 || index >= _questions.Count)
+                return -1;
+
+            return index;
+        }
+
+        private void ClearTestEditor()
+        {
+            _selectedExistingTest = null;
+            OnPropertyChanged(nameof(SelectedExistingTest));
+
+            TestName = string.Empty;
+            LowMaxText = "32";
+            MediumMaxText = "66";
+            QuestionsCountText = string.Empty;
+
+            _questions.Clear();
+            QuestionsPreview.Clear();
+
+            ClearQuestionFields();
+        }
+
+        private void ClearQuestionFields()
+        {
+            SelectedAddedQuestion = null;
+            IsEditingQuestion = false;
+
+            QuestionText = string.Empty;
+            Answer1Text = "Нет";
+            Answer1ValueText = "0";
+            Answer2Text = "Иногда";
+            Answer2ValueText = "1";
+            Answer3Text = "Да";
+            Answer3ValueText = "2";
+        }
+
+        private void FillQuestionFields(Question question)
+        {
+            if (question == null)
+            {
+                ClearAnswerFields();
+                return;
+            }
+
+            QuestionText = question.Text;
+
+            Answer1Text = GetAnswerText(question, 0);
+            Answer1ValueText = GetAnswerValue(question, 0);
+
+            Answer2Text = GetAnswerText(question, 1);
+            Answer2ValueText = GetAnswerValue(question, 1);
+
+            Answer3Text = GetAnswerText(question, 2);
+            Answer3ValueText = GetAnswerValue(question, 2);
+        }
+
+        private void ClearAnswerFields()
+        {
+            QuestionText = string.Empty;
+            Answer1Text = "Нет";
+            Answer1ValueText = "0";
+            Answer2Text = "Иногда";
+            Answer2ValueText = "1";
+            Answer3Text = "Да";
+            Answer3ValueText = "2";
+        }
+
+        private string GetAnswerText(Question question, int index)
+        {
+            return question.Answers != null && question.Answers.Count > index
+                ? question.Answers[index].Text
+                : string.Empty;
+        }
+
+        private string GetAnswerValue(Question question, int index)
+        {
+            return question.Answers != null && question.Answers.Count > index
+                ? question.Answers[index].Value.ToString()
+                : string.Empty;
+        }
+
         private void RefreshQuestionsPreview()
         {
             QuestionsPreview.Clear();
 
             for (int i = 0; i < _questions.Count; i++)
-            {
                 QuestionsPreview.Add(BuildQuestionPreview(i + 1, _questions[i]));
-            }
         }
 
         private string BuildQuestionPreview(int number, Question question)
         {
             var answers = question.Answers == null
-                ? ""
+                ? string.Empty
                 : string.Join("; ", question.Answers.Select(a => $"{a.Text} ({a.Value})"));
 
             return $"{number}. {question.Text}\nОтветы: {answers}";

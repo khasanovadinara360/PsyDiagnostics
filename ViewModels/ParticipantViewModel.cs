@@ -1,16 +1,17 @@
-﻿using System;
+﻿using PsyDiagnostics.Helpers;
+using PsyDiagnostics.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using PsyDiagnostics.Helpers;
-using PsyDiagnostics.Models;
 
 namespace PsyDiagnostics.ViewModels
 {
     public class ParticipantViewModel : BaseViewModel
     {
         private Participant _currentParticipant;
+
         public Participant CurrentParticipant
         {
             get => _currentParticipant;
@@ -20,6 +21,7 @@ namespace PsyDiagnostics.ViewModels
                 OnPropertyChanged();
             }
         }
+
         public DateTime BirthDate
         {
             get => CurrentParticipant?.BirthDate ?? DateTime.Today;
@@ -32,111 +34,117 @@ namespace PsyDiagnostics.ViewModels
             }
         }
 
-
-        // Поиск теперь живёт в MainViewModel, поэтому здесь он не нужен.
-        // Оставляем только то, что относится к анкете и переходу к тестам.
-
         public ICommand GoToTestCommand { get; }
-        public Action<Participant> OnNavigateToTest;
 
-        // Коллекции значений enum для ComboBox
+        public Action<Participant> OnNavigateToTest { get; set; }
+
         public IReadOnlyList<Gender> Genders { get; } =
-            Enum.GetValues(typeof(Gender)).Cast<Gender>().ToList();
+            GetEnumValues<Gender>();
 
         public IReadOnlyList<Citizenship> Citizenships { get; } =
-    Enum.GetValues(typeof(Citizenship)).Cast<Citizenship>().ToList();
-
-
+            GetEnumValues<Citizenship>();
 
         public IReadOnlyList<FamilyUpbringing> FamilyUpbringings { get; } =
-            Enum.GetValues(typeof(FamilyUpbringing)).Cast<FamilyUpbringing>().ToList();
+            GetEnumValues<FamilyUpbringing>();
 
         public IReadOnlyList<MaritalStatus> MaritalStatuses { get; } =
-            Enum.GetValues(typeof(MaritalStatus)).Cast<MaritalStatus>().ToList();
+            GetEnumValues<MaritalStatus>();
 
         public IReadOnlyList<YesNo> YesNoValues { get; } =
-            Enum.GetValues(typeof(YesNo)).Cast<YesNo>().ToList();
+            GetEnumValues<YesNo>();
 
         public IReadOnlyList<ChildrenPresence> ChildrenPresenceValues { get; } =
-            Enum.GetValues(typeof(ChildrenPresence)).Cast<ChildrenPresence>().ToList();
+            GetEnumValues<ChildrenPresence>();
 
         public IReadOnlyList<EducationSurvey> EducationValues { get; } =
-            Enum.GetValues(typeof(EducationSurvey)).Cast<EducationSurvey>().ToList();
+            GetEnumValues<EducationSurvey>();
 
         public IReadOnlyList<ProfessionPresence> ProfessionPresenceValues { get; } =
-            Enum.GetValues(typeof(ProfessionPresence)).Cast<ProfessionPresence>().ToList();
+            GetEnumValues<ProfessionPresence>();
 
         public IReadOnlyList<Religion> ReligionValues { get; } =
-            Enum.GetValues(typeof(Religion)).Cast<Religion>().ToList();
+            GetEnumValues<Religion>();
 
         public IReadOnlyList<ArmyService> ArmyServiceValues { get; } =
-            Enum.GetValues(typeof(ArmyService)).Cast<ArmyService>().ToList();
+            GetEnumValues<ArmyService>();
 
         public IReadOnlyList<CombatParticipation> CombatParticipationValues { get; } =
-            Enum.GetValues(typeof(CombatParticipation)).Cast<CombatParticipation>().ToList();
+            GetEnumValues<CombatParticipation>();
 
         public IReadOnlyList<SomaticDiseases> SomaticDiseasesValues { get; } =
-            Enum.GetValues(typeof(SomaticDiseases)).Cast<SomaticDiseases>().ToList();
+            GetEnumValues<SomaticDiseases>();
 
         public IReadOnlyList<Disability> DisabilityValues { get; } =
-            Enum.GetValues(typeof(Disability)).Cast<Disability>().ToList();
+            GetEnumValues<Disability>();
 
         public IReadOnlyList<MentalDiseases> MentalDiseasesValues { get; } =
-            Enum.GetValues(typeof(MentalDiseases)).Cast<MentalDiseases>().ToList();
+            GetEnumValues<MentalDiseases>();
 
         public IReadOnlyList<PsychiatristRegistry> PsychiatristRegistryValues { get; } =
-            Enum.GetValues(typeof(PsychiatristRegistry)).Cast<PsychiatristRegistry>().ToList();
+            GetEnumValues<PsychiatristRegistry>();
 
         public IReadOnlyList<Gambling> GamblingValues { get; } =
-            Enum.GetValues(typeof(Gambling)).Cast<Gambling>().ToList();
+            GetEnumValues<Gambling>();
 
         public IReadOnlyList<Obligations> ObligationsValues { get; } =
-            Enum.GetValues(typeof(Obligations)).Cast<Obligations>().ToList();
+            GetEnumValues<Obligations>();
 
         public IReadOnlyList<NarcologistRegistry> NarcologistRegistryValues { get; } =
-            Enum.GetValues(typeof(NarcologistRegistry)).Cast<NarcologistRegistry>().ToList();
+            GetEnumValues<NarcologistRegistry>();
 
         public IReadOnlyList<DrugUse> DrugUseValues { get; } =
-            Enum.GetValues(typeof(DrugUse)).Cast<DrugUse>().ToList();
+            GetEnumValues<DrugUse>();
 
         public IReadOnlyList<SuicideAttempts> SuicideAttemptsValues { get; } =
-            Enum.GetValues(typeof(SuicideAttempts)).Cast<SuicideAttempts>().ToList();
+            GetEnumValues<SuicideAttempts>();
 
         public IReadOnlyList<SelfHarmScars> SelfHarmScarsValues { get; } =
-            Enum.GetValues(typeof(SelfHarmScars)).Cast<SelfHarmScars>().ToList();
+            GetEnumValues<SelfHarmScars>();
 
         public IReadOnlyList<RelativesSuicide> RelativesSuicideValues { get; } =
-            Enum.GetValues(typeof(RelativesSuicide)).Cast<RelativesSuicide>().ToList();
+            GetEnumValues<RelativesSuicide>();
 
         public IReadOnlyList<CurrentFeelings> CurrentFeelingsValues { get; } =
-            Enum.GetValues(typeof(CurrentFeelings)).Cast<CurrentFeelings>().ToList();
+            GetEnumValues<CurrentFeelings>();
 
         public IReadOnlyList<AttitudeToUIS> AttitudeToUISValues { get; } =
-            Enum.GetValues(typeof(AttitudeToUIS)).Cast<AttitudeToUIS>().ToList();
+            GetEnumValues<AttitudeToUIS>();
 
         public IReadOnlyList<CrimeType> CrimeTypes { get; } =
-            Enum.GetValues(typeof(CrimeType)).Cast<CrimeType>().ToList();
+            GetEnumValues<CrimeType>();
 
         public IReadOnlyList<Recidivism> Recidivisms { get; } =
-            Enum.GetValues(typeof(Recidivism)).Cast<Recidivism>().ToList();
+            GetEnumValues<Recidivism>();
 
         public IReadOnlyList<Category> Categories { get; } =
-            Enum.GetValues(typeof(Category)).Cast<Category>().ToList();
+            GetEnumValues<Category>();
 
         public ParticipantViewModel()
         {
-            GoToTestCommand = new RelayCommand(_ => GoToTest());
+            GoToTestCommand =
+                new RelayCommand(_ => GoToTest());
         }
 
         private void GoToTest()
         {
             if (CurrentParticipant == null)
             {
-                MessageBox.Show("Сначала сохраните или выберите участника");
+                MessageBox.Show(
+                    "Сначала сохраните или выберите участника");
+
                 return;
             }
 
             OnNavigateToTest?.Invoke(CurrentParticipant);
+        }
+
+        private static IReadOnlyList<T> GetEnumValues<T>()
+            where T : Enum
+        {
+            return Enum
+                .GetValues(typeof(T))
+                .Cast<T>()
+                .ToList();
         }
     }
 }

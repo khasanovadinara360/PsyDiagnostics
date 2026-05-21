@@ -971,12 +971,12 @@
 
                                     <StackPanel>
 
-    <!-- статья -->
-    <TextBlock Text="Статья"
+                                        <!-- статья -->
+                                        <TextBlock Text="Статья"
                Foreground="{StaticResource TextSecondaryColor}"
                Margin="0,0,0,3"/>
 
-    <ComboBox Height="32"
+                                        <ComboBox Height="32"
               Margin="0,0,0,8"
               Style="{StaticResource DarkComboBox}"
               ItemsSource="{Binding Articles}"
@@ -985,31 +985,31 @@
               IsTextSearchEnabled="True"
               StaysOpenOnEdit="True"/>
 
-    <!-- часть -->
-    <TextBlock Text="Часть"
+                                        <!-- часть -->
+                                        <TextBlock Text="Часть"
                Foreground="{StaticResource TextSecondaryColor}"
                Margin="0,0,0,3"/>
 
-    <ComboBox Height="32"
+                                        <ComboBox Height="32"
               Margin="0,0,0,8"
               Style="{StaticResource DarkComboBox}"
               ItemsSource="{Binding ArticleParts}"
               SelectedItem="{Binding FilterArticlePart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
               IsEditable="False"/>
 
-    <!-- пункт -->
-    <TextBlock Text="Пункт"
+                                        <!-- пункт -->
+                                        <TextBlock Text="Пункт"
                Foreground="{StaticResource TextSecondaryColor}"
                Margin="0,0,0,3"/>
 
-    <ComboBox Height="32"
+                                        <ComboBox Height="32"
               Margin="0,0,0,5"
               Style="{StaticResource DarkComboBox}"
               ItemsSource="{Binding ArticlePoints}"
               SelectedItem="{Binding FilterArticlePoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
               IsEditable="False"/>
 
-</StackPanel>
+                                    </StackPanel>
                                 </DockPanel>
 
                                 <TextBlock Text="{Binding ArticleTooltipText}"
@@ -1705,7 +1705,7 @@ Margin="0,12,0,6"/>
             Series="{Binding RecidivismSeries}"
             XAxes="{Binding RecidivismXAxis}"
             YAxes="{Binding RiskYAxis}"/>
-                                                
+
                                             </StackPanel>
                                         </Border>
 

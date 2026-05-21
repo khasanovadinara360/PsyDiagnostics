@@ -15,9 +15,6 @@ using System.Windows.Shapes;
 
 namespace PsyDiagnostics.Views
 {
-    /// <summary>
-    /// Логика взаимодействия для TestingView.xaml
-    /// </summary>
     public partial class TestingView : UserControl
     {
         public TestingView()

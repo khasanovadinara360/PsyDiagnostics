@@ -1,19 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PsyDiagnostics.Models
+﻿namespace PsyDiagnostics.Models
 {
     public class TestResultRecord
     {
-        public string TestName { get; set; }
+        public string TestName { get; set; } = string.Empty;
+
         public int Score { get; set; }
+
         public int Prediction { get; set; }
+
         public double Probability { get; set; }
+
         public double RiskScore { get; set; }
-        public string Unit { get; set; }   
-        public string Date { get; set; }
+
+        public string Unit { get; set; } = string.Empty;
+
+        public string Date { get; set; } = string.Empty;
     }
 }

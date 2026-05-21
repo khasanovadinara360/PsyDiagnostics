@@ -1,7 +1,7 @@
-﻿using System;
+﻿using PsyDiagnostics.ViewModels;
+using System;
 using System.Windows;
 using System.Windows.Input;
-using PsyDiagnostics.ViewModels;
 
 namespace PsyDiagnostics
 {
@@ -9,6 +9,7 @@ namespace PsyDiagnostics
     {
         public MainWindow()
         {
+            InitializeComponent();
 
             DataContext = new MainViewModel();
         }
@@ -43,10 +44,8 @@ namespace PsyDiagnostics
 
         public void SetParticipantTitle(string fullName)
         {
-            if (DataContext is MainViewModel vm)
-            {
-                vm.TopBarTitle = GetShortName(fullName);
-            }
+            if (DataContext is MainViewModel viewModel)
+                viewModel.TopBarTitle = GetShortName(fullName);
         }
 
         private string GetShortName(string fullName)

@@ -10,94 +10,102 @@
         <SolidColorBrush x:Key="TextPrimaryColor" Color="#FFF5F5F7"/>
         <SolidColorBrush x:Key="TextSecondaryColor" Color="#FF9FA4B5"/>
 
-        <Style TargetType="Button">
+        <Style x:Key="ModeButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Padding" Value="12,0"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="Background" Value="{StaticResource BgCardColor}"/>
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Height" Value="44"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="12,0"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
         </Style>
 
-        <Style x:Key="TitleText" TargetType="TextBlock">
+        <Style x:Key="AccentButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource ModeButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style x:Key="TitleTextStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,8"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimaryColor}"/>
             <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
-        <Style x:Key="SubtitleText" TargetType="TextBlock">
+        <Style x:Key="SubtitleTextStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,24"/>
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="TextAlignment" Value="Center"/>
-            <Setter Property="Margin" Value="0,0,0,24"/>
         </Style>
 
-        <Style x:Key="ModeDescription" TargetType="TextBlock">
+        <Style x:Key="ModeDescriptionStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,12"/>
             <Setter Property="Foreground" Value="{StaticResource TextSecondaryColor}"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
             <Setter Property="TextAlignment" Value="Center"/>
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="{StaticResource BgMainColor}" Margin="20">
-        <Border Background="{StaticResource BgCardColor}"
-                BorderBrush="{StaticResource BorderColor}"
-                BorderThickness="1"
-                CornerRadius="6"
+    <Grid Margin="20" Background="{StaticResource BgMainColor}">
+        <Border Width="420"
                 Padding="24"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Width="420">
+                Background="{StaticResource BgCardColor}"
+                BorderBrush="{StaticResource BorderColor}"
+                BorderThickness="1"
+                CornerRadius="6">
 
             <StackPanel>
-
                 <TextBlock Text="Выбор режима тестирования"
-                           Style="{StaticResource TitleText}"/>
+                           Style="{StaticResource TitleTextStyle}"/>
 
                 <TextBlock Text="Выберите формат прохождения тестов"
-                           Style="{StaticResource SubtitleText}"/>
+                           Style="{StaticResource SubtitleTextStyle}"/>
 
-                <!-- Экспресс -->
                 <Button Content="Экспресс режим"
-                        Command="{Binding ExpressCommand}"/>
+                        Command="{Binding ExpressCommand}"
+                        Style="{StaticResource ModeButtonStyle}"/>
+
                 <TextBlock Text="Быстрое прохождение, минимальный набор тестов"
-                           Style="{StaticResource ModeDescription}"/>
+                           Style="{StaticResource ModeDescriptionStyle}"/>
 
-                <!-- Обычный -->
                 <Button Content="Базовый режим"
-                        Command="{Binding NormalCommand}"/>
-                <TextBlock Text="Стандартный набор тестов"
-                           Style="{StaticResource ModeDescription}"/>
+                        Command="{Binding NormalCommand}"
+                        Style="{StaticResource ModeButtonStyle}"/>
 
-                <!-- Полный -->
+                <TextBlock Text="Стандартный набор тестов"
+                           Style="{StaticResource ModeDescriptionStyle}"/>
+
                 <Button Content="Комплексный режим"
-                        Command="{Binding FullCommand}"/>
+                        Command="{Binding FullCommand}"
+                        Style="{StaticResource ModeButtonStyle}"/>
+
                 <TextBlock Text="Максимальная диагностика, все тесты"
-                           Style="{StaticResource ModeDescription}"/>
+                           Style="{StaticResource ModeDescriptionStyle}"/>
 
                 <Separator Margin="0,8,0,16"
                            Background="{StaticResource BorderColor}"/>
 
-                <!-- Навигация -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center">
                     <Button Content="Назад"
                             Command="{Binding BackCommand}"
                             Width="100"
-                            Margin="5,0"/>
+                            Margin="5,0"
+                            Style="{StaticResource ModeButtonStyle}"/>
 
                     <Button Content="Главная"
                             Command="{Binding HomeCommand}"
-                        Background="{StaticResource AccentColor}"
-                        BorderBrush="Transparent"
                             Width="100"
-                            Margin="5,0"/>
+                            Margin="5,0"
+                            Style="{StaticResource AccentButtonStyle}"/>
                 </StackPanel>
-
             </StackPanel>
         </Border>
     </Grid>

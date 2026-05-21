@@ -5,9 +5,12 @@ namespace PsyDiagnostics.Models
 {
     public class Question
     {
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
+
         public List<Answer> Answers { get; set; } = new();
+
         public int Answer { get; set; }
+
         public TestViewModel TestViewModel { get; set; }
     }
 }

@@ -24,81 +24,89 @@ namespace PsyDiagnostics.Views
             _isPasswordVisible = !_isPasswordVisible;
 
             if (_isPasswordVisible)
-            {
-                NewPasswordTextBox.Text = NewPasswordBox.Password;
-
-                NewPasswordTextBox.Visibility = Visibility.Visible;
-                NewPasswordBox.Visibility = Visibility.Collapsed;
-
-                EyeIcon.Text = "👁";
-
-                NewPasswordTextBox.Focus();
-                NewPasswordTextBox.CaretIndex = NewPasswordTextBox.Text.Length;
-            }
+                ShowPasswordText();
             else
-            {
-                NewPasswordBox.Password = NewPasswordTextBox.Text;
+                ShowPasswordBox();
 
-                NewPasswordBox.Visibility = Visibility.Visible;
-                NewPasswordTextBox.Visibility = Visibility.Collapsed;
-
-                EyeIcon.Text = "👁";
-
-                NewPasswordBox.Focus();
-            }
+            EyeIcon.Text = "👁";
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            var password = NewPassword;
+            string password = NewPassword;
 
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                ShowError("Введите новый пароль");
+            if (!ValidatePassword(password))
                 return;
-            }
 
-            if (password.Length < 8)
-            {
-                ShowError("Пароль должен содержать минимум 8 символов");
-                return;
-            }
-
-            if (!Regex.IsMatch(password, @"[A-ZА-Я]"))
-            {
-                ShowError("Пароль должен содержать хотя бы одну заглавную букву");
-                return;
-            }
-
-            if (!Regex.IsMatch(password, @"\d"))
-            {
-                ShowError("Пароль должен содержать хотя бы одну цифру");
-                return;
-            }
-
-            if (!Regex.IsMatch(password, @"[^\w\s]"))
-            {
-                ShowError("Пароль должен содержать хотя бы один спецсимвол");
-                return;
-            }
             ResetPasswordErrorText.Text = "";
 
-            Window.GetWindow(this).DialogResult = true;
-            Window.GetWindow(this).Close();
+            var window = Window.GetWindow(this);
+
+            if (window == null)
+                return;
+
+            window.DialogResult = true;
+            window.Close();
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            Window.GetWindow(this).DialogResult = false;
-            Window.GetWindow(this).Close();
+            var window = Window.GetWindow(this);
+
+            if (window == null)
+                return;
+
+            window.DialogResult = false;
+            window.Close();
         }
 
-        private void ShowError(string message)
+        private void ShowPasswordText()
+        {
+            NewPasswordTextBox.Text = NewPasswordBox.Password;
+            NewPasswordTextBox.Visibility = Visibility.Visible;
+            NewPasswordBox.Visibility = Visibility.Collapsed;
+
+            NewPasswordTextBox.Focus();
+            NewPasswordTextBox.CaretIndex = NewPasswordTextBox.Text.Length;
+        }
+
+        private void ShowPasswordBox()
+        {
+            NewPasswordBox.Password = NewPasswordTextBox.Text;
+            NewPasswordBox.Visibility = Visibility.Visible;
+            NewPasswordTextBox.Visibility = Visibility.Collapsed;
+
+            NewPasswordBox.Focus();
+        }
+
+        private bool ValidatePassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return ShowError("Введите новый пароль");
+
+            if (password.Length < 8)
+                return ShowError("Пароль должен содержать минимум 8 символов");
+
+            if (!Regex.IsMatch(password, @"[A-ZА-Я]"))
+                return ShowError("Пароль должен содержать хотя бы одну заглавную букву");
+
+            if (!Regex.IsMatch(password, @"\d"))
+                return ShowError("Пароль должен содержать хотя бы одну цифру");
+
+            if (!Regex.IsMatch(password, @"[^\w\s]"))
+                return ShowError("Пароль должен содержать хотя бы один спецсимвол");
+
+            return true;
+        }
+
+        private bool ShowError(string message)
         {
             ResetPasswordErrorText.Foreground =
                 new SolidColorBrush(Color.FromRgb(255, 83, 112));
 
             ResetPasswordErrorText.Text = message;
+
+            return false;
         }
     }
 }

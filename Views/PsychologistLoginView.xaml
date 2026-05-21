@@ -3,65 +3,89 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#1E1E28">
 
-    <Grid>
+    <UserControl.Resources>
+        <Style x:Key="LabelTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#9FA4B5"/>
+        </Style>
 
+        <Style x:Key="InputTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Background" Value="#1E1E28"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#323244"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="PasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="10,0,40,0"/>
+            <Setter Property="Background" Value="#1E1E28"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#323244"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Background" Value="#4E5DFF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Background" Value="#323244"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
         <Border Width="420"
                 Padding="30"
-                CornerRadius="15"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
                 Background="#252532"
                 BorderBrush="#323244"
                 BorderThickness="1"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
+                CornerRadius="15">
 
             <StackPanel>
-
                 <TextBlock Text="Авторизация психолога"
-                           FontSize="24"
-                           FontWeight="Bold"
+                           Margin="0,0,0,25"
                            Foreground="White"
-                           Margin="0,0,0,25"/>
+                           FontSize="24"
+                           FontWeight="Bold"/>
 
                 <TextBlock Text="Логин"
-                           Foreground="#9FA4B5"/>
+                           Style="{StaticResource LabelTextStyle}"/>
 
-                <TextBox Height="38"
+                <TextBox Text="{Binding PsychologistLoginFullName, UpdateSourceTrigger=PropertyChanged}"
                          Margin="0,5,0,15"
-                         Padding="10,0"
-                         Background="#1E1E28"
-                         Foreground="White"
-                         BorderBrush="#323244"
-                         BorderThickness="1"
-                         Text="{Binding PsychologistLoginFullName, UpdateSourceTrigger=PropertyChanged}"/>
+                         Style="{StaticResource InputTextBoxStyle}"/>
 
                 <TextBlock Text="Пароль"
-                           Foreground="#9FA4B5"/>
+                           Style="{StaticResource LabelTextStyle}"/>
 
                 <Grid Margin="0,5,0,5">
-
                     <PasswordBox x:Name="PasswordBox"
-                                 Height="38"
-                                 Padding="10,0,40,0"
-                                 Background="#1E1E28"
-                                 Foreground="White"
-                                 BorderBrush="#323244"
-                                 BorderThickness="1"/>
+                                 Style="{StaticResource PasswordBoxStyle}"/>
 
                     <TextBox x:Name="VisiblePasswordBox"
-                             Height="38"
                              Padding="10,0,40,0"
-                             Background="#1E1E28"
-                             Foreground="White"
-                             BorderBrush="#323244"
-                             BorderThickness="1"
-                             Visibility="Collapsed"/>
+                             Visibility="Collapsed"
+                             Style="{StaticResource InputTextBoxStyle}"/>
 
                     <Button x:Name="TogglePasswordButton"
                             Width="32"
                             Height="32"
+                            Margin="0,0,3,0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
-                            Margin="0,0,3,0"
                             Background="Transparent"
                             BorderThickness="0"
                             Foreground="White"
@@ -69,41 +93,28 @@
                             Cursor="Hand"
                             Content="👁"
                             Click="TogglePassword_Click"/>
-
                 </Grid>
 
                 <TextBlock Text="Минимум 8 символов, заглавная буква, цифра и спецсимвол"
+                           Margin="0,0,0,10"
                            Foreground="#9FA4B5"
-                           FontSize="11"
-                           Margin="0,0,0,10"/>
+                           FontSize="11"/>
 
                 <TextBlock Text="{Binding LoginError}"
-           Foreground="{Binding LoginMessageColor}"
-           TextWrapping="Wrap"
-           Margin="0,0,0,10"/>
+                           Margin="0,0,0,10"
+                           Foreground="{Binding LoginMessageColor}"
+                           TextWrapping="Wrap"/>
 
                 <Button Content="Войти"
-                        Height="40"
-                        Background="#4E5DFF"
-                        Foreground="White"
-                        BorderThickness="0"
-                        FontWeight="SemiBold"
-                        Cursor="Hand"
+                        Margin="0,0,0,10"
                         Click="Login_Click"
                         IsDefault="True"
-                        Margin="0,0,0,10"/>
+                        Style="{StaticResource PrimaryButtonStyle}"/>
 
                 <Button Content="Забыли пароль?"
-                        Height="35"
-                        Background="#323244"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Cursor="Hand"
-                        Click="ResetPassword_Click"/>
-
+                        Click="ResetPassword_Click"
+                        Style="{StaticResource SecondaryButtonStyle}"/>
             </StackPanel>
-
         </Border>
-
     </Grid>
 </UserControl>

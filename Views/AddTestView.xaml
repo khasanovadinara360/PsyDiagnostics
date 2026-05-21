@@ -5,8 +5,10 @@
     <UserControl.Resources>
         <SolidColorBrush x:Key="BgMainColor" Color="#FF1E1E28"/>
         <SolidColorBrush x:Key="BgCardColor" Color="#FF252532"/>
+        <SolidColorBrush x:Key="CardColor" Color="#FF2A2A40"/>
         <SolidColorBrush x:Key="BorderColor" Color="#FF323244"/>
         <SolidColorBrush x:Key="AccentColor" Color="#FF4E5DFF"/>
+        <SolidColorBrush x:Key="DangerColor" Color="#FFB63A3A"/>
         <SolidColorBrush x:Key="TextPrimaryColor" Color="#FFF5F5F7"/>
         <SolidColorBrush x:Key="TextSecondaryColor" Color="#FF9FA4B5"/>
 
@@ -56,9 +58,29 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <Style x:Key="CardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardColor}"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+
+        <Style x:Key="DangerButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource DangerColor}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
     </UserControl.Resources>
 
-    <Grid Background="#1E1E28" Margin="20">
+    <Grid Background="{StaticResource BgMainColor}" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -73,9 +95,7 @@
                    Margin="0,0,0,15"/>
 
         <Border Grid.Row="1"
-                Background="#2A2A40"
-                Padding="15"
-                CornerRadius="8"
+                Style="{StaticResource CardStyle}"
                 Margin="0,0,0,10">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -107,13 +127,10 @@
                 <ColumnDefinition Width="0.95*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Левая часть: добавление вопроса -->
-            <Border Grid.Column="0"
-                    Background="#2A2A40"
-                    Padding="15"
-                    CornerRadius="8">
+            <Border Grid.Column="0" Style="{StaticResource CardStyle}">
                 <StackPanel>
                     <TextBlock Text="Текст вопроса" FontWeight="SemiBold"/>
+
                     <TextBox Text="{Binding QuestionText, UpdateSourceTrigger=PropertyChanged}"
                              Height="34"
                              Margin="0,5,0,15"/>
@@ -124,10 +141,12 @@
                             <ColumnDefinition Width="90"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="Ответ" Foreground="#9FA4B5"/>
+                        <TextBlock Text="Ответ"
+                                   Foreground="{StaticResource TextSecondaryColor}"/>
+
                         <TextBlock Grid.Column="1"
                                    Text="Баллы"
-                                   Foreground="#9FA4B5"
+                                   Foreground="{StaticResource TextSecondaryColor}"
                                    HorizontalAlignment="Center"/>
                     </Grid>
 
@@ -136,7 +155,9 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="90"/>
                         </Grid.ColumnDefinitions>
+
                         <TextBox Text="{Binding Answer1Text, UpdateSourceTrigger=PropertyChanged}"/>
+
                         <TextBox Grid.Column="1"
                                  Text="{Binding Answer1ValueText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="10,0,0,0"/>
@@ -147,7 +168,9 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="90"/>
                         </Grid.ColumnDefinitions>
+
                         <TextBox Text="{Binding Answer2Text, UpdateSourceTrigger=PropertyChanged}"/>
+
                         <TextBox Grid.Column="1"
                                  Text="{Binding Answer2ValueText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="10,0,0,0"/>
@@ -158,7 +181,9 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="90"/>
                         </Grid.ColumnDefinitions>
+
                         <TextBox Text="{Binding Answer3Text, UpdateSourceTrigger=PropertyChanged}"/>
+
                         <TextBox Grid.Column="1"
                                  Text="{Binding Answer3ValueText, UpdateSourceTrigger=PropertyChanged}"
                                  Margin="10,0,0,0"/>
@@ -168,16 +193,11 @@
                             Command="{Binding AddQuestionCommand}"
                             Height="36"
                             Margin="0,18,0,0"
-                            Background="#4E5DFF"
-                            BorderBrush="Transparent"/>
+                            Style="{StaticResource PrimaryButtonStyle}"/>
                 </StackPanel>
             </Border>
 
-            <!-- Средняя часть: добавленные вопросы -->
-            <Border Grid.Column="2"
-                    Background="#2A2A40"
-                    Padding="15"
-                    CornerRadius="8">
+            <Border Grid.Column="2" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -194,29 +214,21 @@
                     <StackPanel Grid.Row="1"
                                 Orientation="Horizontal"
                                 Margin="0,0,0,10">
-
                         <Button Content="Сохранить вопрос"
                                 Command="{Binding SaveQuestionChangesCommand}"
-                                Height="34"
                                 Width="145"
                                 Margin="0,0,8,0"
-                                Background="#4E5DFF"
-                                BorderBrush="Transparent"/>
+                                Style="{StaticResource PrimaryButtonStyle}"/>
 
                         <Button Content="Удалить вопрос"
                                 Command="{Binding DeleteQuestionCommand}"
-                                Height="34"
                                 Width="120"
-                                Background="#B63A3A"
-                                BorderBrush="Transparent"/>
+                                Style="{StaticResource DangerButtonStyle}"/>
                     </StackPanel>
 
                     <ListBox Grid.Row="2"
                              ItemsSource="{Binding QuestionsPreview}"
                              SelectedItem="{Binding SelectedAddedQuestion, Mode=TwoWay}"
-                             Background="#252532"
-                             BorderBrush="#323244"
-                             BorderThickness="1"
                              MaxHeight="430"
                              ScrollViewer.VerticalScrollBarVisibility="Visible"
                              ScrollViewer.CanContentScroll="False">
@@ -228,11 +240,7 @@
                 </Grid>
             </Border>
 
-            <!-- Правая часть: существующие тесты -->
-            <Border Grid.Column="4"
-                    Background="#2A2A40"
-                    Padding="15"
-                    CornerRadius="8">
+            <Border Grid.Column="4" Style="{StaticResource CardStyle}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -248,18 +256,14 @@
 
                     <ListBox Grid.Row="1"
                              ItemsSource="{Binding ExistingTests}"
-                             SelectedItem="{Binding SelectedExistingTest, Mode=TwoWay}"
-                             Background="#252532"
-                             BorderBrush="#323244"
-                             BorderThickness="1"/>
+                             SelectedItem="{Binding SelectedExistingTest, Mode=TwoWay}"/>
 
                     <Button Grid.Row="2"
                             Content="Удалить тест"
                             Command="{Binding DeleteTestCommand}"
                             Height="36"
                             Margin="0,12,0,0"
-                            Background="#B63A3A"
-                            BorderBrush="Transparent"/>
+                            Style="{StaticResource DangerButtonStyle}"/>
                 </Grid>
             </Border>
         </Grid>
@@ -278,8 +282,7 @@
                     Command="{Binding SaveTestCommand}"
                     Width="160"
                     Height="38"
-                    Background="#4E5DFF"
-                    Foreground="White"/>
+                    Style="{StaticResource PrimaryButtonStyle}"/>
         </StackPanel>
     </Grid>
 </UserControl>

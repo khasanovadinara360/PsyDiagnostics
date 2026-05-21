@@ -1,34 +1,31 @@
-﻿using System.Collections.ObjectModel;
-using System.Linq;
-using System.Windows.Input;
-using PsyDiagnostics.Helpers;
-using PsyDiagnostics.Models;
+﻿using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace PsyDiagnostics.ViewModels
 {
     public class TestResultItem : BaseViewModel
     {
-        public string TestName { get; set; }
+        public string TestName { get; set; } = string.Empty;
+
         public int Score { get; set; }
-        public string Risk { get; set; }
-        public string Date { get; set; }
+
+        public string Risk { get; set; } = string.Empty;
+
+        public string Date { get; set; } = string.Empty;
     }
 
     public class TestingViewModel : BaseViewModel
     {
         private readonly MainViewModel _main;
-        private readonly DatabaseService _db = new DatabaseService();
+        private readonly DatabaseService _db = new();
 
-        public ObservableCollection<TestResultItem> Results { get; }
-
-        public ICommand ExportPdfCommand { get; }
+        public ObservableCollection<TestResultItem> Results { get; } = new();
 
         public TestingViewModel(MainViewModel main)
         {
             _main = main;
-            Results = new ObservableCollection<TestResultItem>();
-            ExportPdfCommand = new RelayCommand(ExportPdf);
 
             LoadResults();
         }
@@ -41,26 +38,20 @@ namespace PsyDiagnostics.ViewModels
                 return;
 
             var report = _db.GetFullReport(_main.Current.PrisonerId);
+
             if (report.aiResults == null)
                 return;
 
-            foreach (var r in report.aiResults.OrderByDescending(r => r.Date))
+            foreach (var result in report.aiResults.OrderByDescending(x => x.Date))
             {
-                string risk = r.Prediction == 1 ? "Высокий риск" : "Низкий риск";
-
                 Results.Add(new TestResultItem
                 {
-                    TestName = r.TestName,
-                    Score = r.Score,
-                    Risk = risk,
-                    Date = r.Date
+                    TestName = result.TestName,
+                    Score = result.Score,
+                    Risk = result.Prediction == 1 ? "Высокий риск" : "Низкий риск",
+                    Date = result.Date
                 });
             }
-        }
-
-        private void ExportPdf()
-        {
-            
         }
     }
 }

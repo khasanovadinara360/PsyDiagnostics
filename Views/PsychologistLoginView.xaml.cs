@@ -1,13 +1,13 @@
-﻿using System.Windows;
+﻿using PsyDiagnostics.ViewModels;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using PsyDiagnostics.ViewModels;
 
 namespace PsyDiagnostics.Views
 {
     public partial class PsychologistLoginView : UserControl
     {
-        private bool _passwordVisible = false;
+        private bool _passwordVisible;
 
         public PsychologistLoginView()
         {
@@ -16,32 +16,35 @@ namespace PsyDiagnostics.Views
 
         private void Login_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is MainViewModel vm)
-            {
-                var password = _passwordVisible
-                    ? VisiblePasswordBox.Text
-                    : PasswordBox.Password;
+            if (DataContext is not MainViewModel viewModel)
+                return;
 
-                vm.LoginPsychologist(password);
-            }
+            string password = _passwordVisible
+                ? VisiblePasswordBox.Text
+                : PasswordBox.Password;
+
+            viewModel.LoginPsychologist(password);
         }
 
         private void ResetPassword_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is not MainViewModel vm)
+            if (DataContext is not MainViewModel viewModel)
                 return;
 
-            if (string.IsNullOrWhiteSpace(vm.PsychologistLoginFullName))
+            if (string.IsNullOrWhiteSpace(viewModel.PsychologistLoginFullName))
             {
-                vm.LoginError = "Сначала введите логин";
+                viewModel.LoginError = "Сначала введите логин";
                 return;
             }
 
-            var psychologist = vm.GetPsychologistByLogin(vm.PsychologistLoginFullName.Trim());
+            var psychologist = viewModel.GetPsychologistByLogin(
+                viewModel.PsychologistLoginFullName.Trim());
 
             if (psychologist == null)
             {
-                vm.LoginError = "Пользователь с таким логином не найден";
+                viewModel.LoginError =
+                    "Пользователь с таким логином не найден";
+
                 return;
             }
 
@@ -55,30 +58,29 @@ namespace PsyDiagnostics.Views
                 Height = 320,
                 ResizeMode = ResizeMode.NoResize,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                Background = new SolidColorBrush(Color.FromRgb(30, 30, 40)),
+                Background = new SolidColorBrush(
+                    Color.FromRgb(30, 30, 40)),
+
                 Owner = Window.GetWindow(this)
             };
 
             bool? result = window.ShowDialog();
 
             if (result == true)
-            {
-                vm.ResetPsychologistPassword(resetView.NewPassword);
-            }
+                viewModel.ResetPsychologistPassword(
+                    resetView.NewPassword);
         }
 
         private void TogglePassword_Click(object sender, RoutedEventArgs e)
         {
-            if (!_passwordVisible)
+            _passwordVisible = !_passwordVisible;
+
+            if (_passwordVisible)
             {
                 VisiblePasswordBox.Text = PasswordBox.Password;
 
                 VisiblePasswordBox.Visibility = Visibility.Visible;
                 PasswordBox.Visibility = Visibility.Collapsed;
-
-                TogglePasswordButton.Content = "👁";
-
-                _passwordVisible = true;
             }
             else
             {
@@ -86,11 +88,9 @@ namespace PsyDiagnostics.Views
 
                 PasswordBox.Visibility = Visibility.Visible;
                 VisiblePasswordBox.Visibility = Visibility.Collapsed;
-
-                TogglePasswordButton.Content = "👁";
-
-                _passwordVisible = false;
             }
+
+            TogglePasswordButton.Content = "👁";
         }
     }
 }

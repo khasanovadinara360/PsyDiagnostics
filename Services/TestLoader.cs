@@ -1,46 +1,87 @@
 ﻿using Newtonsoft.Json;
+using PsyDiagnostics.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using PsyDiagnostics.Models;
+using System.Linq;
 
-public static class TestLoader
+namespace PsyDiagnostics.Services
 {
-    public static List<TestDefinition> LoadAll()
+    public static class TestLoader
     {
-        var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "tests.json");
+        private static readonly string FilePath =
+            Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Data",
+                "tests.json");
 
-        if (!File.Exists(path))
-            return new List<TestDefinition>();
-
-        try
+        public static List<TestDefinition> LoadDefinitions()
         {
-            var json = File.ReadAllText(path);
-
-            var tests = JsonConvert.DeserializeObject<List<Test>>(json);
-            if (tests == null)
+            if (!File.Exists(FilePath))
                 return new List<TestDefinition>();
 
-            var defs = new List<TestDefinition>();
+            var json = File.ReadAllText(FilePath);
 
-            foreach (var t in tests)
-            {
-                if (string.IsNullOrWhiteSpace(t.Name))
-                    continue;
+            var definitions = JsonConvert.DeserializeObject<List<TestDefinition>>(json)
+                              ?? new List<TestDefinition>();
 
-                defs.Add(new TestDefinition
-                {
-                    Name = t.Name
-                    // DisplayName берётся из switch в самом TestDefinition
-                });
-            }
-
-            return defs;
+            return definitions
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .GroupBy(x => x.Name)
+                .Select(x => x.First())
+                .OrderBy(x => x.DisplayName)
+                .ToList();
         }
-        catch
+
+        public static List<Test> LoadTests()
         {
-            return new List<TestDefinition>();
+            if (!File.Exists(FilePath))
+                return new List<Test>();
+
+            var json = File.ReadAllText(FilePath);
+
+            var tests = JsonConvert.DeserializeObject<List<Test>>(json)
+                        ?? new List<Test>();
+
+            tests = tests
+                .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                .GroupBy(x => x.Name)
+                .Select(x => x.First())
+                .OrderBy(x => x.DisplayName)
+                .ToList();
+
+            PrepareTests(tests);
+
+            return tests;
+        }
+
+        public static void SaveTests(List<Test> tests)
+        {
+            Directory.CreateDirectory(
+                Path.GetDirectoryName(FilePath));
+
+            var json = JsonConvert.SerializeObject(
+                tests ?? new List<Test>(),
+                Formatting.Indented);
+
+            File.WriteAllText(FilePath, json);
+        }
+
+        private static void PrepareTests(IEnumerable<Test> tests)
+        {
+            foreach (var test in tests)
+            {
+                foreach (var question in test.Questions)
+                {
+                    question.TestViewModel = null;
+
+                    foreach (var answer in question.Answers)
+                    {
+                        answer.Question = question;
+                        answer.TestViewModel = null;
+                    }
+                }
+            }
         }
     }
-
 }

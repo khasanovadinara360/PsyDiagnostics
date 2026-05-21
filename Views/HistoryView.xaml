@@ -1,17 +1,69 @@
 ﻿<UserControl x:Class="PsyDiagnostics.Views.HistoryView"
- xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
- xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <StackPanel Margin="20">
+    <Grid Margin="20" Background="#1E1E2F">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
-        <TextBlock Text="История" FontSize="22"/>
+        <TextBlock Grid.Row="0"
+                   Text="История"
+                   Margin="0,0,0,15"
+                   Foreground="White"
+                   FontSize="22"
+                   FontWeight="Bold"/>
 
-        <TextBox Width="200" Text="{Binding SearchId}" Margin="5"/>
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,15">
+            <TextBox Width="220"
+                     Height="32"
+                     Text="{Binding SearchId, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,0,10,0"/>
 
-        <Button Content="Найти"
-                Command="{Binding SearchCommand}"
-                Margin="5"/>
+            <Button Content="Найти"
+                    Command="{Binding LoadCommand}"
+                    Padding="20,6"/>
+        </StackPanel>
 
-        <DataGrid ItemsSource="{Binding Results}" Height="200"/>
-    </StackPanel>
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Results}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Тест"
+                                    Binding="{Binding TestName}"
+                                    Width="*"/>
+
+                <DataGridTextColumn Header="Баллы"
+                                    Binding="{Binding Score}"
+                                    Width="90"/>
+
+                <DataGridTextColumn Header="Прогноз"
+                                    Binding="{Binding Prediction}"
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Вероятность"
+                                    Binding="{Binding Probability}"
+                                    Width="120"/>
+
+                <DataGridTextColumn Header="Риск"
+                                    Binding="{Binding RiskScore}"
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Отряд"
+                                    Binding="{Binding Unit}"
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Дата"
+                                    Binding="{Binding Date}"
+                                    Width="150"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
 </UserControl>

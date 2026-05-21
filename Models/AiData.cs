@@ -12,15 +12,12 @@ namespace PsyDiagnostics.Models
         [LoadColumn(5)] public float Anxiety { get; set; }
         [LoadColumn(6)] public float Resilience { get; set; }
         [LoadColumn(7)] public float Hostility { get; set; }
-
         [LoadColumn(8)] public float Label { get; set; }
     }
-
     public class AiPrediction
     {
         [ColumnName("PredictedLabel")]
         public bool Prediction { get; set; }
-
         public float Probability { get; set; }
         public float Score { get; set; }
     }

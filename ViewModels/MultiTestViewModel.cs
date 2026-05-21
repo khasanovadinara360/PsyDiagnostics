@@ -1,10 +1,10 @@
-﻿using System;
+﻿using PsyDiagnostics.Helpers;
+using PsyDiagnostics.Models;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 using System.Windows.Input;
-using PsyDiagnostics.Helpers;
-using PsyDiagnostics.Models;
 
 namespace PsyDiagnostics.ViewModels
 {
@@ -12,8 +12,7 @@ namespace PsyDiagnostics.ViewModels
     {
         private readonly MainViewModel _main;
         private readonly TestMode _mode;
-
-        public ObservableCollection<TestViewModel> TestViewModels { get; }
+        private readonly Dictionary<string, int> _allResults = new();
 
         private TestViewModel _currentTest;
         public TestViewModel CurrentTest
@@ -22,73 +21,96 @@ namespace PsyDiagnostics.ViewModels
             set { _currentTest = value; OnPropertyChanged(); }
         }
 
-        private readonly Dictionary<string, int> _allResults = new();
+        public ObservableCollection<TestViewModel> TestViewModels { get; } = new();
 
         public ICommand SelectTestCommand { get; }
 
-        public MultiTestViewModel(MainViewModel main, IEnumerable<TestDefinition> defs, TestMode mode)
+        public MultiTestViewModel(
+            MainViewModel main,
+            IEnumerable<TestDefinition> definitions,
+            TestMode mode)
         {
             _main = main;
             _mode = mode;
 
-            TestViewModels = new ObservableCollection<TestViewModel>();
-
-            foreach (var def in defs)
-            {
-                var tvm = new TestViewModel(_main, def, mode);
-                tvm.OnFinished += () => OnSingleTestFinished(tvm);
-                TestViewModels.Add(tvm);
-            }
+            CreateTestViewModels(definitions);
 
             CurrentTest = TestViewModels.FirstOrDefault();
-            SelectTestCommand = new RelayCommand(p => SelectTest(p));
+
+            SelectTestCommand = new RelayCommand(parameter => SelectTest(parameter));
+        }
+
+        private void CreateTestViewModels(IEnumerable<TestDefinition> definitions)
+        {
+            foreach (var definition in definitions)
+            {
+                var viewModel = new TestViewModel(_main, definition, _mode);
+
+                viewModel.OnFinished += () => OnSingleTestFinished(viewModel);
+
+                TestViewModels.Add(viewModel);
+            }
         }
 
         private void SelectTest(object parameter)
         {
-            if (parameter is not TestViewModel vm)
+            if (_mode != TestMode.Normal)
                 return;
 
-            if (_mode == TestMode.Normal)
-                CurrentTest = vm;
+            if (parameter is TestViewModel viewModel)
+                CurrentTest = viewModel;
         }
 
         private void OnSingleTestFinished(TestViewModel finished)
         {
-            var res = finished.GetResults();
-
-            foreach (var kv in res)
-                _allResults[kv.Key] = kv.Value;
+            SaveTestResult(finished);
 
             finished.IsCompleted = true;
 
-            if (_mode == TestMode.Full)
-            {
-                var idx = TestViewModels.IndexOf(finished);
+            if (TryMoveToNextFullTest(finished))
+                return;
 
-                if (idx >= 0 && idx < TestViewModels.Count - 1)
-                {
-                    CurrentTest = TestViewModels[idx + 1];
-                    return;
-                }
-            }
-
-            bool allFinished = TestViewModels.All(vm =>
-            {
-                var r = vm.GetResults();
-                return r != null && r.Count > 0;
-            });
-
-            if (allFinished)
+            if (AreAllTestsFinished())
             {
                 _main.ShowResult(_allResults);
+                return;
             }
-            else
+
+            MessageBox.Show(
+                "Вы выбрали несколько тестов. Чтобы получить результат, нужно пройти все выбранные тесты.");
+        }
+
+        private void SaveTestResult(TestViewModel finished)
+        {
+            var results = finished.GetResults();
+
+            foreach (var result in results)
+                _allResults[result.Key] = result.Value;
+        }
+
+        private bool TryMoveToNextFullTest(TestViewModel finished)
+        {
+            if (_mode != TestMode.Full)
+                return false;
+
+            int index = TestViewModels.IndexOf(finished);
+
+            if (index < 0 || index >= TestViewModels.Count - 1)
+                return false;
+
+            CurrentTest = TestViewModels[index + 1];
+
+            return true;
+        }
+
+        private bool AreAllTestsFinished()
+        {
+            return TestViewModels.All(viewModel =>
             {
-                System.Windows.MessageBox.Show(
-                    "Вы выбрали несколько тестов. Чтобы получить результат, нужно пройти все выбранные тесты."
-                );
-            }
+                var results = viewModel.GetResults();
+
+                return results != null && results.Count > 0;
+            });
         }
     }
 }

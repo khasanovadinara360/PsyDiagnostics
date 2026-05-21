@@ -6,24 +6,23 @@ namespace PsyDiagnostics.ViewModels
 {
     public class ResultsViewModel : BaseViewModel
     {
-        private readonly DatabaseService _db = new DatabaseService();
+        private readonly DatabaseService _db = new();
 
-        public ObservableCollection<TestResultRecord> Results { get; set; }
-            = new ObservableCollection<TestResultRecord>();
+        public ObservableCollection<TestResultRecord> Results { get; } = new();
 
         public ResultsViewModel(string prisonerId)
         {
-            Load(prisonerId);
+            LoadResults(prisonerId);
         }
 
-        private void Load(string id)
+        private void LoadResults(string prisonerId)
         {
-            var data = _db.GetFullReport(id);
+            var report = _db.GetFullReport(prisonerId);
 
             Results.Clear();
 
-            foreach (var r in data.aiResults)
-                Results.Add(r);
+            foreach (var result in report.aiResults)
+                Results.Add(result);
         }
     }
 }

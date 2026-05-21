@@ -1,20 +1,20 @@
-﻿using System;
+﻿using PsyDiagnostics.Helpers;
+using PsyDiagnostics.Models;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
-using PsyDiagnostics.Helpers;
-using PsyDiagnostics.Models;
 
 namespace PsyDiagnostics.ViewModels
 {
     public class SelectableTestDefinition : BaseViewModel
     {
+        private bool _isSelected;
+
         public TestDefinition Definition { get; }
 
-        private bool _isSelected;
         public bool IsSelected
         {
             get => _isSelected;
@@ -24,6 +24,7 @@ namespace PsyDiagnostics.ViewModels
                     return;
 
                 _isSelected = value;
+
                 OnPropertyChanged();
 
                 OnSelectionChanged?.Invoke(this, value);
@@ -34,9 +35,9 @@ namespace PsyDiagnostics.ViewModels
 
         public event Action<SelectableTestDefinition, bool> OnSelectionChanged;
 
-        public SelectableTestDefinition(TestDefinition def)
+        public SelectableTestDefinition(TestDefinition definition)
         {
-            Definition = def;
+            Definition = definition;
         }
     }
 
@@ -45,98 +46,133 @@ namespace PsyDiagnostics.ViewModels
         public ObservableCollection<SelectableTestDefinition> Tests { get; }
 
         public ICommand StartCommand { get; }
+
         public ICommand BackCommand { get; }
 
         public TestMode Mode { get; }
 
         public Action<IList<TestDefinition>, TestMode> OnStart { get; set; }
+
         public Action OnBack { get; set; }
 
-        public TestSelectionViewModel(IEnumerable<TestDefinition> defs, TestMode mode)
+        public TestSelectionViewModel(
+            IEnumerable<TestDefinition> definitions,
+            TestMode mode)
         {
             Mode = mode;
+
             Tests = new ObservableCollection<SelectableTestDefinition>(
-                defs.Select(d => new SelectableTestDefinition(d)));
+                definitions.Select(x => new SelectableTestDefinition(x)));
 
-            foreach (var t in Tests)
-                t.OnSelectionChanged += OnTestSelectionChanged;
+            SubscribeToSelectionChanges();
 
-            StartCommand = new RelayCommand(Start);
-            BackCommand = new RelayCommand(() => OnBack?.Invoke());
+            StartCommand = new RelayCommand(_ => Start());
+
+            BackCommand = new RelayCommand(_ => OnBack?.Invoke());
         }
 
-        private void OnTestSelectionChanged(SelectableTestDefinition changed, bool isSelected)
+        private void SubscribeToSelectionChanges()
         {
-            if (!isSelected)
+            foreach (var test in Tests)
+                test.OnSelectionChanged += OnTestSelectionChanged;
+        }
+
+        private void OnTestSelectionChanged(
+            SelectableTestDefinition changed,
+            bool isSelected)
+        {
+            if (!isSelected || Mode != TestMode.Express)
                 return;
 
-            if (Mode == TestMode.Express)
+            var selected = Tests
+                .Where(x => x.IsSelected)
+                .ToList();
+
+            if (selected.Count <= 1)
             {
-                var alreadySelected = Tests.Where(t => t.IsSelected).ToList();
+                UnselectOtherTests(changed);
+                return;
+            }
 
-                if (alreadySelected.Count > 1)
-                {
-                    changed.OnSelectionChanged -= OnTestSelectionChanged;
-                    changed.IsSelected = false;
-                    changed.OnSelectionChanged += OnTestSelectionChanged;
+            changed.OnSelectionChanged -= OnTestSelectionChanged;
 
-                    MessageBox.Show("В режиме экспресс можно выбрать только один тест.");
-                }
-                else
-                {
-                    foreach (var t in Tests)
-                    {
-                        if (t != changed && t.IsSelected)
-                        {
-                            t.OnSelectionChanged -= OnTestSelectionChanged;
-                            t.IsSelected = false;
-                            t.OnSelectionChanged += OnTestSelectionChanged;
-                        }
-                    }
-                }
+            changed.IsSelected = false;
+
+            changed.OnSelectionChanged += OnTestSelectionChanged;
+
+            MessageBox.Show(
+                "В режиме экспресс можно выбрать только один тест.");
+        }
+
+        private void UnselectOtherTests(SelectableTestDefinition selected)
+        {
+            foreach (var test in Tests)
+            {
+                if (test == selected || !test.IsSelected)
+                    continue;
+
+                test.OnSelectionChanged -= OnTestSelectionChanged;
+
+                test.IsSelected = false;
+
+                test.OnSelectionChanged += OnTestSelectionChanged;
             }
         }
 
         private void Start()
         {
-            var selectedDefs = Tests
-                .Where(t => t.IsSelected)
-                .Select(t => t.Definition)
+            var selectedTests = Tests
+                .Where(x => x.IsSelected)
+                .Select(x => x.Definition)
                 .ToList();
+
+            if (!ValidateSelection(selectedTests))
+                return;
+
+            OnStart?.Invoke(selectedTests, Mode);
+        }
+
+        private bool ValidateSelection(List<TestDefinition> selectedTests)
+        {
+            if (selectedTests.Count == 0)
+            {
+                MessageBox.Show("Выберите хотя бы один тест.");
+                return false;
+            }
 
             if (Mode == TestMode.Express)
             {
-                if (selectedDefs.Count == 0)
+                if (selectedTests.Count > 1)
                 {
-                    MessageBox.Show("Выберите один тест для экспресс‑режима.");
-                    return;
+                    MessageBox.Show(
+                        "В режиме экспресс можно выбрать только один тест.");
+
+                    return false;
                 }
 
-                if (selectedDefs.Count > 1)
-                {
-                    MessageBox.Show("В режиме экспресс можно выбрать только один тест.");
-                    return;
-                }
+                return true;
             }
-            else if (Mode == TestMode.Normal)
+
+            if (Mode == TestMode.Normal)
             {
-                if (selectedDefs.Count < 2)
+                if (selectedTests.Count < 2)
                 {
-                    MessageBox.Show("В обычном режиме нужно выбрать минимум два теста.");
-                    return;
-                }
-                if (selectedDefs.Count > 7)
-                {
-                    MessageBox.Show("В обычном режиме нужно выбрать максимум 7 тестов.");
-                    return;
+                    MessageBox.Show(
+                        "В обычном режиме нужно выбрать минимум два теста.");
 
+                    return false;
+                }
+
+                if (selectedTests.Count > 7)
+                {
+                    MessageBox.Show(
+                        "В обычном режиме можно выбрать максимум 7 тестов.");
+
+                    return false;
                 }
             }
 
-            if (selectedDefs.Count == 0)
-                return;
-
-            OnStart?.Invoke(selectedDefs, Mode);
+            return true;
         }
     }
 }

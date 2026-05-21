@@ -15,9 +15,6 @@ using System.Windows.Shapes;
 
 namespace PsyDiagnostics.Views
 {
-    /// <summary>
-    /// Логика взаимодействия для ModeSelectionView.xaml
-    /// </summary>
     public partial class ModeSelectionView : UserControl
     {
         public ModeSelectionView()

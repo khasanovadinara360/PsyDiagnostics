@@ -15,9 +15,6 @@ using System.Windows.Shapes;
 
 namespace PsyDiagnostics.Views
 {
-    /// <summary>
-    /// Логика взаимодействия для MultiTestView.xaml
-    /// </summary>
     public partial class MultiTestView : UserControl
     {
         public MultiTestView()

@@ -4,68 +4,86 @@
              xmlns:vm="clr-namespace:PsyDiagnostics.ViewModels"
              xmlns:views="clr-namespace:PsyDiagnostics.Views">
 
+    <UserControl.Resources>
+        <Style x:Key="TestListButtonStyle" TargetType="Button">
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#2C2C40"/>
+            <Setter Property="BorderBrush" Value="#4A4A6A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+
+        <Style x:Key="HomeButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#2C2C40"/>
+            <Setter Property="BorderBrush" Value="#4A4A6A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.CanGoHomeAfterTests,
+                                               RelativeSource={RelativeSource AncestorType=Window}}"
+                             Value="True">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <DataTemplate DataType="{x:Type vm:TestViewModel}">
+            <views:TestView/>
+        </DataTemplate>
+    </UserControl.Resources>
+
     <Grid Background="#1E1E2F">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- основное содержимое (левый список + TestView) -->
         <Grid Grid.Row="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="220"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="#232336">
+            <Border Grid.Column="0"
+                    Background="#232336">
+
                 <ListBox ItemsSource="{Binding TestViewModels}"
                          SelectedItem="{Binding CurrentTest}"
                          Margin="5"
                          Background="Transparent"
                          BorderThickness="0">
+
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Button Content="{Binding TestTitleWithCheck}"
-                                    Margin="2"
-                                    Padding="8,4"
                                     Command="{Binding DataContext.SelectTestCommand,
                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"/>
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource TestListButtonStyle}"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Border>
 
             <ContentControl Grid.Column="1"
-                            Content="{Binding CurrentTest}">
-                <ContentControl.Resources>
-                    <DataTemplate DataType="{x:Type vm:TestViewModel}">
-                        <views:TestView/>
-                    </DataTemplate>
-                </ContentControl.Resources>
-            </ContentControl>
+                            Content="{Binding CurrentTest}"/>
         </Grid>
 
-        <!-- нижняя панель: кнопка На главную только после завершения всех тестов -->
-        <DockPanel Grid.Row="1" Margin="10">
+        <DockPanel Grid.Row="1"
+                   Margin="10"
+                   LastChildFill="False">
+
             <Button Content="На главную"
+                    DockPanel.Dock="Left"
                     Command="{Binding DataContext.GoHomeCommand,
                                       RelativeSource={RelativeSource AncestorType=Window}}"
-                    HorizontalAlignment="Left"
-                    Padding="15,8">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding DataContext.CanGoHomeAfterTests,
-                                                           RelativeSource={RelativeSource AncestorType=Window}}"
-                                         Value="True">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
+                    Style="{StaticResource HomeButtonStyle}"/>
         </DockPanel>
     </Grid>
 </UserControl>

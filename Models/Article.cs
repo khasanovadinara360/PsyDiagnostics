@@ -6,7 +6,6 @@ namespace PsyDiagnostics.Models
     {
         public string Number { get; set; }
         public string Title { get; set; }
-
         public List<string> Parts { get; set; }
         public List<string> Points { get; set; }
         public string Display => $"{Number} УК РФ - {Title}";

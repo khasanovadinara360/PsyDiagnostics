@@ -9,10 +9,12 @@ namespace PsyDiagnostics.Models
     public class Participant : INotifyPropertyChanged, IDataErrorInfo
     {
         public event PropertyChangedEventHandler PropertyChanged;
+
         private void OnPropertyChanged([CallerMemberName] string name = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
         public string PrisonerId { get; set; }
 
         private string _fullName;
@@ -47,7 +49,10 @@ namespace PsyDiagnostics.Models
             {
                 var today = DateTime.Today;
                 var age = today.Year - BirthDate.Year;
-                if (BirthDate > today.AddYears(-age)) age--;
+
+                if (BirthDate > today.AddYears(-age))
+                    age--;
+
                 return age < 0 ? 0 : age;
             }
         }
@@ -55,21 +60,15 @@ namespace PsyDiagnostics.Models
         public string BirthPlace { get; set; }
         public string Nationality { get; set; }
         public string Residence { get; set; }
-
         public Citizenship Citizenship { get; set; }
 
         private MaritalStatus _maritalStatus;
         public MaritalStatus MaritalStatus
         {
             get => _maritalStatus;
-            set
-            {
-                _maritalStatus = value;
-                OnPropertyChanged();
-            }
+            set { _maritalStatus = value; OnPropertyChanged(); }
         }
 
-        // Есть ли дети – enum, а не bool
         private ChildrenPresence _hasChildren;
         public ChildrenPresence HasChildren
         {
@@ -99,9 +98,6 @@ namespace PsyDiagnostics.Models
             get => _willKeepContact;
             set { _willKeepContact = value; OnPropertyChanged(); }
         }
-
-        //public string Education { get; set; }
-        //public string ProfessionBeforeConviction { get; set; }
 
         private ProfessionPresence _hasProfession;
         public ProfessionPresence HasProfession
@@ -243,24 +239,32 @@ namespace PsyDiagnostics.Models
             (string.IsNullOrWhiteSpace(ArticlePoint) ? "" : $" п.«{ArticlePoint}»") +
             " УК РФ";
 
-        // Срок как число лет
         private int _sentenceTerm;
         public int SentenceTerm
         {
             get => _sentenceTerm;
-            set { _sentenceTerm = value; OnPropertyChanged(); OnPropertyChanged(nameof(SentenceTermDisplay)); }
+            set
+            {
+                _sentenceTerm = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SentenceTermDisplay));
+            }
         }
 
         public string SentenceTermDisplay
         {
             get
             {
-                var years = SentenceTerm;
-                if (years <= 0) return "";
+                if (SentenceTerm <= 0)
+                    return "";
 
-                if (years == 1) return "1 год";
-                if (years >= 2 && years <= 4) return $"{years} года";
-                return $"{years} лет";
+                if (SentenceTerm == 1)
+                    return "1 год";
+
+                if (SentenceTerm >= 2 && SentenceTerm <= 4)
+                    return $"{SentenceTerm} года";
+
+                return $"{SentenceTerm} лет";
             }
         }
 
@@ -273,8 +277,10 @@ namespace PsyDiagnostics.Models
             set
             {
                 _recidivism = value;
+
                 if (_recidivism == Recidivism.Нет)
                     _previousConvictions = 0;
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(PreviousConvictions));
             }
@@ -298,7 +304,6 @@ namespace PsyDiagnostics.Models
 
         public bool IsValid()
         {
-
             return
                 this[nameof(FullName)] == null &&
                 this[nameof(BirthDate)] == null &&
@@ -311,25 +316,17 @@ namespace PsyDiagnostics.Models
                 this[nameof(PreviousConvictions)] == null;
         }
 
-
-
         public string this[string columnName]
         {
             get
             {
                 switch (columnName)
                 {
-                    // =========================
-                    // ЛИЧНЫЕ
-                    // =========================
-
                     case nameof(FullName):
                         if (string.IsNullOrWhiteSpace(FullName))
                             return "Введите ФИО";
 
-                        var parts = FullName.Trim().Split(' ');
-
-                        if (parts.Length < 3)
+                        if (FullName.Trim().Split(' ').Length < 3)
                             return "Минимум фамилия, имя и отчество";
                         break;
 
@@ -390,8 +387,7 @@ namespace PsyDiagnostics.Models
                         break;
 
                     case nameof(ChildrenCount):
-                        if (HasChildren.ToString().Contains("Yes") &&
-                            ChildrenCount <= 0)
+                        if (HasChildren.ToString().Contains("Yes") && ChildrenCount <= 0)
                             return "Введите количество детей";
                         break;
 
@@ -411,8 +407,7 @@ namespace PsyDiagnostics.Models
                         break;
 
                     case nameof(Profession):
-                        if (HasProfession.ToString().Contains("Has") &&
-                            string.IsNullOrWhiteSpace(Profession))
+                        if (HasProfession.ToString().Contains("Has") && string.IsNullOrWhiteSpace(Profession))
                             return "Введите профессию";
                         break;
 
@@ -420,10 +415,6 @@ namespace PsyDiagnostics.Models
                         if (Religion == 0)
                             return "Выберите вероисповедание";
                         break;
-
-                    // =========================
-                    // СОЦИАЛЬНЫЕ
-                    // =========================
 
                     case nameof(ArmyService):
                         if (ArmyService == 0)
@@ -474,10 +465,6 @@ namespace PsyDiagnostics.Models
                         if (DrugUse == 0)
                             return "Укажите употребление наркотических веществ";
                         break;
-
-                    // =========================
-                    // КРИМИНАЛЬНЫЕ
-                    // =========================
 
                     case nameof(ArticleNumber):
                         if (string.IsNullOrWhiteSpace(ArticleNumber))
@@ -546,57 +533,53 @@ namespace PsyDiagnostics.Models
                 return null;
             }
         }
+
         public List<string> GetErrors()
         {
             var errors = new List<string>();
 
             var props = new[]
             {
-        // ЛИЧНЫЕ
-        nameof(FullName),
-        nameof(Gender),
-        nameof(BirthDate),
-        nameof(Citizenship),
-        nameof(BirthPlace),
-        nameof(Residence),
-        nameof(Nationality),
-        nameof(FamilyUpbringing),
-        nameof(MaritalStatus),
-        nameof(HasCloseRelatives),
-        nameof(HasChildren),
-        nameof(ChildrenCount),
-        nameof(WillKeepContact),
-        nameof(EducationLevel),
-        nameof(HasProfession),
-        nameof(Profession),
-        nameof(Religion),
-
-        // СОЦИАЛЬНЫЕ
-        nameof(ArmyService),
-        nameof(CombatParticipation),
-        nameof(SomaticDiseases),
-        nameof(Disability),
-        nameof(MentalDiseases),
-        nameof(PsychiatristRegistry),
-        nameof(Gambling),
-        nameof(Obligations),
-        nameof(NarcologistRegistry),
-        nameof(DrugUse),
-
-        // КРИМИНАЛЬНЫЕ
-        nameof(ArticleNumber),
-        nameof(ArticlePart),
-        nameof(SentenceTerm),
-        nameof(CurrentFeelings),
-        nameof(AttitudeToUIS),
-        nameof(SuicideAttempts),
-        nameof(SelfHarmScars),
-        nameof(RelativesSuicide),
-        nameof(CrimeType),
-        nameof(Recidivism),
-        nameof(Unit),
-        nameof(Category)
-    };
+                nameof(FullName),
+                nameof(Gender),
+                nameof(BirthDate),
+                nameof(Citizenship),
+                nameof(BirthPlace),
+                nameof(Residence),
+                nameof(Nationality),
+                nameof(FamilyUpbringing),
+                nameof(MaritalStatus),
+                nameof(HasCloseRelatives),
+                nameof(HasChildren),
+                nameof(ChildrenCount),
+                nameof(WillKeepContact),
+                nameof(EducationLevel),
+                nameof(HasProfession),
+                nameof(Profession),
+                nameof(Religion),
+                nameof(ArmyService),
+                nameof(CombatParticipation),
+                nameof(SomaticDiseases),
+                nameof(Disability),
+                nameof(MentalDiseases),
+                nameof(PsychiatristRegistry),
+                nameof(Gambling),
+                nameof(Obligations),
+                nameof(NarcologistRegistry),
+                nameof(DrugUse),
+                nameof(ArticleNumber),
+                nameof(ArticlePart),
+                nameof(SentenceTerm),
+                nameof(CurrentFeelings),
+                nameof(AttitudeToUIS),
+                nameof(SuicideAttempts),
+                nameof(SelfHarmScars),
+                nameof(RelativesSuicide),
+                nameof(CrimeType),
+                nameof(Recidivism),
+                nameof(Unit),
+                nameof(Category)
+            };
 
             foreach (var prop in props)
             {
