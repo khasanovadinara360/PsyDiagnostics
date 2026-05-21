@@ -1,5 +1,6 @@
 ﻿using PsyDiagnostics.Helpers;
 using PsyDiagnostics.ViewModels;
+using Newtonsoft.Json;
 
 namespace PsyDiagnostics.Models
 {
@@ -11,8 +12,10 @@ namespace PsyDiagnostics.Models
 
         public int Value { get; set; }
 
+        [JsonIgnore]
         public Question Question { get; set; }
 
+        [JsonIgnore]
         public TestViewModel TestViewModel { get; set; }
 
         public bool IsSelected

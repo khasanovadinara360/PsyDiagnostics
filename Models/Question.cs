@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using PsyDiagnostics.ViewModels;
 
 namespace PsyDiagnostics.Models
@@ -11,6 +12,7 @@ namespace PsyDiagnostics.Models
 
         public int Answer { get; set; }
 
+        [JsonIgnore]
         public TestViewModel TestViewModel { get; set; }
     }
 }

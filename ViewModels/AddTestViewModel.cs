@@ -1,4 +1,5 @@
-﻿using PsyDiagnostics.Helpers;
+﻿using Newtonsoft.Json;
+using PsyDiagnostics.Helpers;
 using PsyDiagnostics.Models;
 using PsyDiagnostics.Services;
 using System;
@@ -7,11 +8,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.IO;
 
 namespace PsyDiagnostics.ViewModels
 {
     public class AddTestViewModel : BaseViewModel
     {
+        private readonly string _testsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "tests.json");
         private readonly MainViewModel _main;
         private readonly DatabaseService _db = new();
         private readonly List<Question> _questions = new();
@@ -229,49 +232,78 @@ namespace PsyDiagnostics.ViewModels
 
         private void SaveTest()
         {
-            if (!TryValidateTest(out int requiredCount, out int lowMax, out int mediumMax))
-                return;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(TestName))
+                {
+                    MessageBox.Show("Введите название теста");
+                    return;
+                }
 
-            if (_questions.Count != requiredCount)
+                if (!int.TryParse(QuestionsCountText, out int requiredCount) || requiredCount <= 0)
+                {
+                    MessageBox.Show("Введите корректное количество вопросов");
+                    return;
+                }
+
+                if (_questions == null || _questions.Count != requiredCount)
+                {
+                    MessageBox.Show($"Нужно добавить {requiredCount} вопросов. Сейчас добавлено: {_questions?.Count ?? 0}.");
+                    return;
+                }
+
+                foreach (var q in _questions)
+                {
+                    if (string.IsNullOrWhiteSpace(q.Text))
+                    {
+                        MessageBox.Show("У одного из вопросов пустой текст");
+                        return;
+                    }
+
+                    if (q.Answers == null || q.Answers.Count == 0)
+                    {
+                        MessageBox.Show($"У вопроса \"{q.Text}\" нет вариантов ответа");
+                        return;
+                    }
+                }
+
+                var tests = LoadAllTests() ?? new List<Test>();
+
+                var newTest = new Test
+                {
+                    Name = TestName.Trim(),
+                    LowMax = 10,
+                    MediumMax = 20,
+                    Questions = _questions.ToList()
+                };
+
+                var existing = tests.FirstOrDefault(t =>
+                    string.Equals(t.Name, newTest.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                {
+                    existing.LowMax = newTest.LowMax;
+                    existing.MediumMax = newTest.MediumMax;
+                    existing.Questions = newTest.Questions;
+                }
+                else
+                {
+                    tests.Add(newTest);
+                }
+
+                SaveAllTests(tests);
+                LoadExistingTests();
+
+                MessageBox.Show("Тест успешно сохранён");
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Нужно добавить {requiredCount} {GetQuestionWord(requiredCount)}. Сейчас добавлено: {_questions.Count}.");
-                return;
+                    "Ошибка при сохранении теста:\n\n" + ex.Message,
+                    "Ошибка",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
-
-            var tests = LoadAllTests();
-
-            var newTest = new Test
-            {
-                Name = TestName.Trim(),
-                LowMax = lowMax,
-                MediumMax = mediumMax,
-                Questions = _questions.ToList()
-            };
-
-            var existing = tests.FirstOrDefault(t =>
-                string.Equals(t.Name, newTest.Name, StringComparison.OrdinalIgnoreCase));
-
-            if (existing == null)
-            {
-                tests.Add(newTest);
-            }
-            else
-            {
-                existing.LowMax = newTest.LowMax;
-                existing.MediumMax = newTest.MediumMax;
-                existing.Questions = newTest.Questions;
-            }
-
-            SaveAllTests(tests);
-
-            _db.EnsureTestResultColumn(newTest.Name);
-
-            LoadExistingTests();
-
-            MessageBox.Show("Тест успешно сохранён");
-
-            _main.ShowParticipantPage();
         }
 
         private void DeleteTest()
@@ -370,7 +402,20 @@ namespace PsyDiagnostics.ViewModels
 
         private void SaveAllTests(List<Test> tests)
         {
-            TestLoader.SaveTests(tests);
+            var directory = Path.GetDirectoryName(_testsPath);
+
+            if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            var json = JsonConvert.SerializeObject(
+                tests,
+                Formatting.Indented,
+                new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                });
+
+            File.WriteAllText(_testsPath, json);
         }
 
         private bool TryValidateTest(out int requiredCount, out int lowMax, out int mediumMax)
