@@ -65,9 +65,9 @@
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right">
 
-                <Button Content="Режим заключенный"
+                <!--<Button Content="Режим заключенный"
                         Style="{StaticResource ModeButtonStyle}"
-                        Command="{Binding SwitchToPrisonerModeCommand}"/>
+                        Command="{Binding SwitchToPrisonerModeCommand}"/>-->
 
                 <Button Content="—"
                         Style="{StaticResource TitleBarButtonStyle}"

@@ -26,15 +26,15 @@ namespace PsyDiagnostics.Services
         {
             var input = new AiData
             {
-                Aggression = results.GetValueOrDefault("Агрессивность") / 30f,
+                Aggression = results.GetValueOrDefault("Уровень агрессивности") / 30f,
                 Impulsivity = results.GetValueOrDefault("Импульсивность") / 30f,
-                Stress = results.GetValueOrDefault("Стресс") / 30f,
+                Depression = results.GetValueOrDefault("Депрессивное состояние") / 30f,
+                Stress = results.GetValueOrDefault("Стрессоустойчивость") / 30f,
                 Adaptation = results.GetValueOrDefault("Социальная адаптация") / 30f,
-                Depression = results.GetValueOrDefault("Эмоциональное состояние") / 30f,
 
-                Anxiety = 0.5f,
-                Resilience = 0.5f,
-                Hostility = 0.5f
+                Anxiety = results.GetValueOrDefault("Тревожность") / 30f,
+                Resilience = results.GetValueOrDefault("Психологическая устойчивость") / 30f,
+                Hostility = results.GetValueOrDefault("Враждебность") / 30f
             };
 
             var result = _engine.Predict(input);

@@ -1,0 +1,602 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="PsyDiagnostics.Helpers.CountToVisibilityConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="32.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Helpers\CountToVisibilityConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Helpers.EnumDescriptionConverter" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="35.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Helpers\EnumDescriptionConverter.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Helpers.JsonHelper" Collapsed="true">
+    <Position X="41" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAEAAAAAAAAAAAEAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Helpers\JsonHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Helpers.RelayCommand" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="41" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAEACAAQAAECAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Helpers\RelayCommand.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Models.AiData" Collapsed="true">
+    <Position X="34" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIEAEEAAAAAAAAAAAAAAAAAQIgAAAAAAACQAAAAA=</HashCode>
+      <FileName>Models\AiData.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.AiPrediction" Collapsed="true">
+    <Position X="35.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAAAgAAAAAAIAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\AiData.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.Answer" Collapsed="true">
+    <Position X="16.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAAEAAAAAAAAACACAAAAAAEAAAgCAAAAAA=</HashCode>
+      <FileName>Models\Answer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.Article" Collapsed="true">
+    <Position X="42.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAgEAAAFAAAQAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Article.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.EnumExtensions" Collapsed="true">
+    <Position X="37.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\EnumExtensions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.Participant" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="39.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>lKCGGBAIZQwKgYDjKGtAIEYI2QAASEEAZAGhARCgDYA=</HashCode>
+      <FileName>Models\Participant.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Models.ParticipantSearchResult" Collapsed="true">
+    <Position X="41" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAgIACIEAAAAAAQAAAAAAABAAAAACgCAA=</HashCode>
+      <FileName>Models\ParticipantSearchResult.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.PredictionRequest" Collapsed="true">
+    <Position X="34" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIEAEAAAAAAAAAAAAAAAAAAQIgAAAAAAACQAAAAA=</HashCode>
+      <FileName>Models\PredictionModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.PredictionResponse" Collapsed="true">
+    <Position X="35.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\PredictionModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.Question" Collapsed="true">
+    <Position X="39.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAACgAAAAA=</HashCode>
+      <FileName>Models\Question.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.ResultRecord" Collapsed="true">
+    <Position X="32.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAiAAAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Models\ResultRecord.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.Test" Collapsed="true">
+    <Position X="35.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAAAAAAAAABACQBAAAAAAAEAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Test.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.TestDefinition" Collapsed="true">
+    <Position X="37.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAQAAAAAAAABAAAAAAQAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\TestDefinition.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Models.TestResultRecord" Collapsed="true">
+    <Position X="42.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAAAQAAAAAAAiAIAAAAIAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Models\TestResultRecord.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Services.AiService" Collapsed="true">
+    <Position X="37.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Services\AiService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Services.ApiService" Collapsed="true">
+    <Position X="39.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAAAAAAAAAAAAAAAAAAAAAAAAAAAQCAAAAAAEAAAAA=</HashCode>
+      <FileName>Services\ApiService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Services.DatabaseService" Collapsed="true">
+    <Position X="34" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAIkAwABBAAMAEIECJAGEQiAAAAAEwAAARBAmQAAMDE=</HashCode>
+      <FileName>Services\DatabaseService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Services.MLPredictor" Collapsed="true">
+    <Position X="32.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAg=</HashCode>
+      <FileName>Services\MLPredictor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Services.MlService" Collapsed="true">
+    <Position X="34" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAQAAAAAAg=</HashCode>
+      <FileName>Services\MlService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Services.PdfReportService" Collapsed="true">
+    <Position X="32.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ECAAAAAAAAAABAAAAABABAAAAAAAAAAAAAACAAAAAAA=</HashCode>
+      <FileName>Services\PdfReportService.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Services.TestLoader" Collapsed="true">
+    <Position X="41" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAEAAAAAAAAAAAAEAAAAAABAgAAAAAA=</HashCode>
+      <FileName>Services\TestLoader.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.AddTestViewModel" Collapsed="true">
+    <Position X="9.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>NgCLmCEAAAEAWACAxIJLwBAASEEIhGgaAoATCBWCEqA=</HashCode>
+      <FileName>ViewModels\AddTestViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.BaseViewModel" Collapsed="true">
+    <Position X="15.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAIAAAAAAAgAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ViewModels\BaseViewModel.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.HistoryViewModel" Collapsed="true">
+    <Position X="18.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAgQAQAAAACAAAAAAAAAAAHAAACAGEASACBAAAAAA=</HashCode>
+      <FileName>ViewModels\HistoryViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.TestHistoryItem" Collapsed="true">
+    <Position X="20.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAIiAIAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>ViewModels\MainViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.MainViewModel" Collapsed="true">
+    <Position X="27.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>m+LVtY1vF6ao6v575RWd57tPUADPkx/L2ipWzw9mV9o=</HashCode>
+      <FileName>ViewModels\MainViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.ModeSelectionViewModel" Collapsed="true">
+    <Position X="0.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAACCQAAAAACAAAAAAAAAgQAAACAAACgAA=</HashCode>
+      <FileName>ViewModels\ModeSelectionViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.MultiTestViewModel" Collapsed="true">
+    <Position X="2.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABBABAAAAAAAAAgACgACQAAACgAAAAEACAAQAAAA=</HashCode>
+      <FileName>ViewModels\MultiTestViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.ParticipantViewModel" Collapsed="true">
+    <Position X="5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABBAQABACACAAAAAQwJQIxMAFAAEIAIAwAYBECQAQQ=</HashCode>
+      <FileName>ViewModels\ParticipantViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.ResultsViewModel" Collapsed="true">
+    <Position X="7.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAACAAAAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>ViewModels\ResultViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.TestResultItem" Collapsed="true">
+    <Position X="11.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAiAAAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>ViewModels\TestingViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.TestingViewModel" Collapsed="true">
+    <Position X="14" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAgAAAAAAAAAAAAAAAAAAACAAAAAAAAQACAAAAAAA=</HashCode>
+      <FileName>ViewModels\TestingViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.SelectableTestDefinition" Collapsed="true">
+    <Position X="23" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAAGAAAAAAAAACAAAAAAAAAAAAAAAACAAA=</HashCode>
+      <FileName>ViewModels\TestSelectionViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.TestSelectionViewModel" Collapsed="true">
+    <Position X="25.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EABAAAAAAKAACAAAEAAABAAAAAAAAAgAAAACAAABAAQ=</HashCode>
+      <FileName>ViewModels\TestSelectionViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.ViewModels.TestViewModel" Collapsed="true">
+    <Position X="29.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CgAAgBAAgAChABMZEkAioESAABCAKF0EJIAGAAAIAgA=</HashCode>
+      <FileName>ViewModels\TestViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.Views.AddTestView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="32.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\AddTestView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.HistoryView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="39.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\HistoryView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.ModeSelectionView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="35.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\ModeSelectionView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.MultiTestView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="37.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\MultiTestView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.ParticipantView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="42.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\ParticipantView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.PsychologistLoginView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="37.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAgCAAAAAAAAAAAAAAAgQAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\PsychologistLoginView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.ResetPasswordView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="42.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BAAAASAAAAAAAAAAQBQAAAAABAQAAAAAAAAAAIAAAAA=</HashCode>
+      <FileName>Views\ResetPasswordView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.RoleSelectionView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="34" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\RoleSelectionView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.TestingView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="39.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\TestingView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.TestSelectionView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="32.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\TestSelectionView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.Views.TestView" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="34" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Views\TestView.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="PsyDiagnostics.App" Collapsed="true">
+    <Position X="41" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>App.xaml.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="PsyDiagnostics.MainWindow" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="42.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAECACAAAQgAAAAAAAAAAAAAQAAA=</HashCode>
+      <FileName>MainWindow.xaml.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Enum Name="PsyDiagnostics.Models.Citizenship" Collapsed="true">
+    <Position X="41" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAAQAAAAAAAAAAgAAAIAAAAAAiAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.EducationLevel" Collapsed="true">
+    <Position X="39.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAACAAAAQAAAAAAAAAAAIAAAAIAAAQ=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.MaritalStatus" Collapsed="true">
+    <Position X="35.75" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAgAAAAAAEAAAAAAAAAAAAAAAAAAIAAAAAAACA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.CrimeType" Collapsed="true">
+    <Position X="32.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAgAAAQJAEAAgAGEAgAAAAQIwgGMAAAABAAIA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.Recidivism" Collapsed="true">
+    <Position X="34" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.Category" Collapsed="true">
+    <Position X="37.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAABAAAAAAAAAABAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.Gender" Collapsed="true">
+    <Position X="34" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAIAIAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.FamilyUpbringing" Collapsed="true">
+    <Position X="42.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAEAAACAAAAAAAAAAAAABAAEAAoAiAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.YesNo" Collapsed="true">
+    <Position X="35.75" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.ChildrenPresence" Collapsed="true">
+    <Position X="39.25" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.EducationSurvey" Collapsed="true">
+    <Position X="41" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAIAAAAAAAAAAAAACABAAIAAgAAAAAQ=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.ProfessionPresence" Collapsed="true">
+    <Position X="42.75" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.Religion" Collapsed="true">
+    <Position X="37.5" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAkAAAgAAAAABACAAAIAACAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.ArmyService" Collapsed="true">
+    <Position X="34" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.CombatParticipation" Collapsed="true">
+    <Position X="42.75" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.SomaticDiseases" Collapsed="true">
+    <Position X="41" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAQAAAAAAAQAAAAABAIAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.Disability" Collapsed="true">
+    <Position X="35.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.MentalDiseases" Collapsed="true">
+    <Position X="37.5" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.PsychiatristRegistry" Collapsed="true">
+    <Position X="32.25" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.Gambling" Collapsed="true">
+    <Position X="32.25" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.Obligations" Collapsed="true">
+    <Position X="41" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAQAAAAEBgAEAAIAAAAgACAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.NarcologistRegistry" Collapsed="true">
+    <Position X="39.25" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.DrugUse" Collapsed="true">
+    <Position X="37.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAgAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.SuicideAttempts" Collapsed="true">
+    <Position X="42.75" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAIAAACAAQAAAAAgAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.SelfHarmScars" Collapsed="true">
+    <Position X="39.25" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.RelativesSuicide" Collapsed="true">
+    <Position X="35.75" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAIAAAAAAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.CurrentFeelings" Collapsed="true">
+    <Position X="34" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIBAAAAAAAAIAAAAQAAAAAAABAAAAAIAAAkAQABA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.AttitudeToUIS" Collapsed="true">
+    <Position X="35.75" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAAAAABAAAAAAAAAAAAAQAAAhAAAIAEAACAAAA=</HashCode>
+      <FileName>Models\Enums.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.Models.UserRole" Collapsed="true">
+    <Position X="34" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAA=</HashCode>
+      <FileName>Models\UserRole.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.ViewModels.AnalyticsSection" Collapsed="true">
+    <Position X="32.25" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAAAAAAAAAAAAAAAAAACAAAAAAAIAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ViewModels\MainViewModel.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="PsyDiagnostics.ViewModels.TestMode" Collapsed="true">
+    <Position X="32.25" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAgAAAAAAAAAAAAAAAAAAAAAIAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>ViewModels\TestMode.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
