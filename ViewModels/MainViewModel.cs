@@ -621,52 +621,59 @@ namespace PsyDiagnostics.ViewModels
                 _selectedSearchResult = value;
                 OnPropertyChanged();
 
-                if (_selectedSearchResult == null)
+                if (value == null)
                     return;
+
+                var selected = value;
 
                 _isFillingSearchFields = true;
 
-                SearchId = _selectedSearchResult.PrisonerId;
-                SearchFio = _selectedSearchResult.FullName;
-                FilterCitizenship = _selectedSearchResult.Citizenship;
-                FilterCity = _selectedSearchResult.Residence;
+                SearchId = selected.PrisonerId ?? "";
+                SearchFio = selected.FullName ?? "";
+                FilterCitizenship = selected.Citizenship;
+                FilterCity = string.IsNullOrWhiteSpace(selected.Residence)
+                    ? "Не выбрано"
+                    : selected.Residence;
+
                 AgeFromText = "16";
-                AgeToText = _selectedSearchResult.Age.ToString();
+                AgeToText = selected.Age > 0
+                    ? selected.Age.ToString()
+                    : "Не выбрано";
 
                 ApplyArticleFieldsFromParticipant(new Participant
                 {
-                    ArticleNumber = _selectedSearchResult.ArticleNumber,
-                    ArticlePart = _selectedSearchResult.ArticlePart,
-                    ArticlePoint = _selectedSearchResult.ArticlePoint
+                    ArticleNumber = selected.ArticleNumber,
+                    ArticlePart = selected.ArticlePart,
+                    ArticlePoint = selected.ArticlePoint
                 });
 
-                SentenceFromNumberText = _selectedSearchResult.SentenceTerm > 0
+                SentenceFromNumberText = selected.SentenceTerm > 0
                     ? "2"
                     : "Не выбрано";
 
-                SentenceFromUnit = _selectedSearchResult.SentenceTerm > 0
+                SentenceFromUnit = selected.SentenceTerm > 0
                     ? "месяцев"
                     : "Не выбрано";
 
-                SentenceToNumberText = _selectedSearchResult.SentenceTerm > 0
-                    ? _selectedSearchResult.SentenceTerm.ToString()
+                SentenceToNumberText = selected.SentenceTerm > 0
+                    ? selected.SentenceTerm.ToString()
                     : "Не выбрано";
 
-                SentenceToUnit = _selectedSearchResult.SentenceTerm > 0
+                SentenceToUnit = selected.SentenceTerm > 0
                     ? "лет"
                     : "Не выбрано";
 
-                FilterUnit = string.IsNullOrWhiteSpace(_selectedSearchResult.Unit)
+                FilterUnit = string.IsNullOrWhiteSpace(selected.Unit)
                     ? "Не выбрано"
-                    : _selectedSearchResult.Unit;
+                    : selected.Unit;
 
-                FilterRisk = string.IsNullOrWhiteSpace(_selectedSearchResult.Risk)
+                FilterRisk = string.IsNullOrWhiteSpace(selected.Risk)
                     ? "Не выбрано"
-                    : _selectedSearchResult.Risk;
+                    : selected.Risk;
 
                 _isFillingSearchFields = false;
 
-                SearchCommand.Execute(null);
+                SearchCommand?.Execute(null);
             }
         }
 
